@@ -1,0 +1,3 @@
+## 100-word Draft
+
+Large software projects often employ multiple data storage systems in order to take advantage of different access patterns. Each one of them could be providing some consistency model (i. e strong consistency), but often no guarantees are given out of the box when they are combined together. The "Online Event Processing" paradigm proposed by Martin Kleppmann et al. provides an eventually consistent solution for this problem. My project will build on the latter and explore ways to provide stronger consistency guarantees. In particular, snapshot isolation would be a valuable addition to the heterogeneous distributed storage systems used in large-scale software products.
