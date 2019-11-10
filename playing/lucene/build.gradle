@@ -1,0 +1,11 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+mainClassName = "EntryPoint"
+
+dependencies {
+    implementation group: 'org.apache.lucene', name: 'lucene-core', version: '8.3.0'
+}
+
