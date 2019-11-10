@@ -18,5 +18,5 @@ include 'services:webservice'
 rootProject.name = 'part-ii-project'
 include 'playing:kafka'
 include 'playing:lucene'
-
+include 'playing:psql'
 

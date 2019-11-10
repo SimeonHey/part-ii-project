@@ -29,12 +29,8 @@ import java.util.Scanner;
 import java.util.stream.Collectors;
 
 public class EntryPoint {
-    public static final String LUCENE_ARCHIVE_PATH = "/home/simeon/Documents/Kamburij/II/project/part-ii-project" +
-        "/playing/Lucene/lucene-archive";
-    public static final String MY_INDEX_STUFF = "/home/simeon/Documents/Kamburij/II/project/part-ii-project/playing" +
-        "/Lucene/to-index";
-    public static final String DEFAULT_INDEX_DEST = "/home/simeon/Documents/Kamburij/II/project/part-ii-project" +
-        "/playing/Lucene/output/index";
+    public static final String MY_INDEX_STUFF = "./to_index";
+    public static final String DEFAULT_INDEX_DEST = "./luceneindex/index_output";
     public static final Boolean SHOULD_INDEX = true;
 
     public static void indexDocsTo(String docsStringPath, String indexTo) throws IOException {
@@ -106,10 +102,18 @@ public class EntryPoint {
         Scanner in = new Scanner(System.in);
 
         while (true) {
-            System.out.print("\nSearch query: ");
-            String toSearchFor = in.nextLine();
+            System.out.println("\nSearch query: ");
+
+            String toSearchFor;
+            try {
+                toSearchFor = in.nextLine();
+            } catch (Exception e) {
+                break;
+            }
 
             getTopHits(indexTo, toSearchFor).forEach(System.out::println);
         }
+
+        System.out.println("Terminating lucene");
     }
 }

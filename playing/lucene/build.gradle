@@ -4,6 +4,9 @@ plugins {
 }
 
 mainClassName = "EntryPoint"
+run {
+    standardInput = System.in
+}
 
 dependencies {
     implementation group: 'org.apache.lucene', name: 'lucene-core', version: '8.3.0'
