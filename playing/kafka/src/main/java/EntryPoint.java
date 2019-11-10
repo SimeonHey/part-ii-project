@@ -1,3 +1,4 @@
+import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -26,8 +27,17 @@ public class EntryPoint {
         long messagesCount = 0;
 
         System.out.println("Sending messages for messages...");
+
         while (true) {
-            String messageToSend = inScanner.nextLine();
+            String messageToSend;
+            try {
+                messageToSend = inScanner.nextLine();
+            }
+            catch (NoSuchElementException e) {
+                System.out.println("End of input stream!");
+                break;
+            }
+
             ProducerRecord<Long, String> producerRecord = new ProducerRecord<>(IKafkaConstants.TOPIC_NAME,
                 messagesCount, messageToSend);
 

@@ -1,20 +1,15 @@
 plugins {
-    id 'groovy'
     id 'java'
+    id 'application'
 }
 
-group 'com.partii.playing.simeon'
-version '1.0-SNAPSHOT'
+mainClassName = 'EntryPoint'
 
-sourceCompatibility = 1.8
-
-repositories {
-    mavenCentral()
+run {
+    standardInput = System.in
 }
 
 dependencies {
-    implementation 'org.codehaus.groovy:groovy-all:2.3.11'
     implementation group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
-
-    testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
+
