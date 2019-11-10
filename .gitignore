@@ -96,6 +96,10 @@ hs_err_pid*
 .gradle
 /build/
 
+
+/playing/*/build
+
+
 # Ignore Gradle GUI config
 gradle-app.setting
 
