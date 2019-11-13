@@ -16,9 +16,13 @@ include 'services:webservice'
 */
 
 rootProject.name = 'part-ii-project'
+
 include 'playing:kafka'
 include 'playing:lucene'
 include 'playing:psql'
 
-include 'simple_olep:storage_systems:psql', 'simple_olep:storage_systems:lucene'
-include 'simepl_olep:storage_api'
+include ':common'
+include ':storage_systems:psql'
+include ':storage_systems:lucene'
+include ':storage_api'
+

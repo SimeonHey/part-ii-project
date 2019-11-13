@@ -1,0 +1,7 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
+}

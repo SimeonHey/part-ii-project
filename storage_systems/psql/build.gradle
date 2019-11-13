@@ -7,5 +7,6 @@ mainClassName = 'EntryPoint'
 
 dependencies {
     implementation group: 'postgresql', name: 'postgresql', version: '9.1-901-1.jdbc4'
+    implementation group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
 }
 
