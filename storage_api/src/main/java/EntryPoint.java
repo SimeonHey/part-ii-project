@@ -16,8 +16,9 @@ public class EntryPoint {
         Producer<Long, StupidStreamObject> producer = KafkaUtils.createProducer();
 
         for (int index = 0; index < IKafkaConstants.MESSAGE_COUNT; index++) {
-            StupidStreamObject toSend =
-                StupidStreamObjectFactory.getPostMessageRequest("simeon", "what's up");
+            StupidStreamObject toSend = (index%2 == 0)
+                ? PostMessageRequest.toStupidStreamObject("simeon", "what's up")
+                : SearchMessageRequest.toStupidStreamObject("searchtext bby");
 
             ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(IKafkaConstants.TOPIC_NAME, toSend);
             try {

@@ -3,7 +3,8 @@ import java.util.HashMap;
 
 public class StupidStreamObject implements Serializable {
     public enum ObjectType {
-        POST_MESSAGE
+        POST_MESSAGE,
+        SEARCH_MESSAGES
     }
 
     private ObjectType objectType;
