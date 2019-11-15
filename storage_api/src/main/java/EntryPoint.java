@@ -13,10 +13,13 @@ public class EntryPoint {
         // Produce queries to Kafka topics
         // Possibly listen for answers
 
-        Producer<Long, String> producer = MyKafkaProducer.createProducer();
+        Producer<Long, StupidStreamObject> producer = KafkaUtils.createProducer();
+
         for (int index = 0; index < IKafkaConstants.MESSAGE_COUNT; index++) {
-            ProducerRecord<Long, String> record = new ProducerRecord<>(IKafkaConstants.TOPIC_NAME,
-                "This is record " + index);
+            StupidStreamObject toSend =
+                StupidStreamObjectFactory.getPostMessageRequest("simeon", "what's up");
+
+            ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(IKafkaConstants.TOPIC_NAME, toSend);
             try {
                 RecordMetadata metadata = producer.send(record).get();
                 System.out.println("Record sent with key " + index + " to partition " + metadata.partition()
