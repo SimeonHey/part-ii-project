@@ -1,4 +1,4 @@
-public class PostMessageRequest extends BaseRequest {
+public class PostMessageRequest {
     private static final String KEY_SENDER = "sender";
     private static final String KEY_MESSAGE_TEXT = "messageText";
 
@@ -6,8 +6,6 @@ public class PostMessageRequest extends BaseRequest {
     private String messageText;
 
     public PostMessageRequest (StupidStreamObject stupidStreamObject) {
-        super(stupidStreamObject);
-
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.POST_MESSAGE) {
             throw new RuntimeException("Incorrect object type");
         }

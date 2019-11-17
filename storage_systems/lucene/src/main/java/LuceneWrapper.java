@@ -1,39 +1,12 @@
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpServer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+public class LuceneWrapper {
+    // Proxy for Lucene transactions
 
-import java.io.IOException;
-import java.io.OutputStream;
+    public void postMessage(PostMessageRequest postMessageRequest) {
 
-public class LuceneWrapper implements KafkaConsumerObserver<Long, StupidStreamObject> {
-    public LuceneWrapper(SubscribableConsumer<Long, StupidStreamObject> consumer, HttpServer httpServer) {
-        consumer.subscribe(this);
-        httpServer.createContext("/lucene/search", this::handleSearch);
-        httpServer.createContext("/lucene/discover", this::handleDiscover);
     }
 
-    @Override
-    public void messageReceived(ConsumerRecord<Long, StupidStreamObject> message) {
-        System.out.println("Lucene received values of type " + message.value().getObjectType().toString() + " with " +
-            "properties:");
-        message.value().getProperties().forEach((key, value) ->
-            System.out.println(key + " - " + value));
-    }
-
-    private void handleSearch(HttpExchange httpExchange) throws IOException {
-        String query = "URL params were: " + httpExchange.getRequestURI().getQuery();
-
-        httpExchange.sendResponseHeaders(200, query.getBytes().length);
-
-        OutputStream os = httpExchange.getResponseBody();
-        os.write(query.getBytes());
-        os.close();
-
-        httpExchange.close();
-    }
-
-    private void handleDiscover(HttpExchange httpExchange) throws IOException {
-        httpExchange.sendResponseHeaders(200, 0);
-        httpExchange.close();
+    public SearchMessageResponse searchMessage(SearchMessageRequest searchMessageRequest) {
+        return new SearchMessageResponse("The request was " +
+            searchMessageRequest.getSearchText() + " but too lazy");
     }
 }

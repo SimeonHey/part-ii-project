@@ -35,10 +35,10 @@ public class SubscribableConsumer<K, V> {
             }
             //print each record.
             consumerRecords.forEach(record -> {
-                /*System.out.println("Record Key " + record.key());
+                System.out.println("Record Key " + record.key());
                 System.out.println("Record value " + record.value());
                 System.out.println("Record partition " + record.partition());
-                System.out.println("Record offset " + record.offset());*/
+                System.out.println("Record offset " + record.offset());
 
                 subscribers.forEach(subscriber -> subscriber.messageReceived(record));
             });
