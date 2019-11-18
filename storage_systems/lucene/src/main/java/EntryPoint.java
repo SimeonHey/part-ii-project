@@ -10,8 +10,8 @@ public class EntryPoint {
         int argListeningPort = Integer.parseInt(args[0]);
 
         // Connect to Kafka & possibly the storage api
-        SubscribableConsumer<Long, StupidStreamObject> consumer =
-            new SubscribableConsumer<>(KafkaUtils.createConsumer());
+        LoopingConsumer<Long, StupidStreamObject> consumer =
+            new LoopingConsumer<>(KafkaUtils.createConsumer());
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(argListeningPort), 0);
         LuceneWrapper luceneWrapper = new LuceneWrapper();
         Gson gson = new Gson();
