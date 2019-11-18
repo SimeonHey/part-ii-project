@@ -52,13 +52,20 @@ public class EntryPoint {
     public static void main(String[] args) throws IOException {
         // Consume command line arguments
         String argLuceneAddress = args[0];
+        String argPsqlAddress = args[1];
 
         // Setup connection with Kafka, possibly storage systems too
         Producer<Long, StupidStreamObject> producer = KafkaUtils.createProducer();
 
-        HttpURLConnection con =
+        HttpURLConnection conLucene =
             sendHttpGetRequest(argLuceneAddress, "lucene/discover", "");
-        if (con.getResponseCode() != 200) {
+        if (conLucene.getResponseCode() != 200) {
+            throw new RuntimeException("Couldn't discover lucene");
+        }
+
+        HttpURLConnection conPsql =
+            sendHttpGetRequest(argPsqlAddress, "psql/discover", "");
+        if (conPsql.getResponseCode() != 200) {
             throw new RuntimeException("Couldn't discover lucene");
         }
 
@@ -78,8 +85,12 @@ public class EntryPoint {
                     produceMessage(producer, PostMessageRequest.toStupidStreamObject(line[1], line[2], uuid++));
                     break;
                 case "search":
-                    String resp = httpRequestResponse(argLuceneAddress, "lucene/search", line[1]);
-                    System.out.println("Search response: " + resp);
+                    String resp1 = httpRequestResponse(argLuceneAddress, "lucene/search", line[1]);
+                    System.out.println("Search response: " + resp1);
+                    break;
+                case "details":
+                    String resp2 = httpRequestResponse(argPsqlAddress, "psql/messageDetails", line[1]);
+                    System.out.println("Message details: " + resp2);
                     break;
                 default:
                     System.out.println("Couldn't catch that");

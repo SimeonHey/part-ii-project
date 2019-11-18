@@ -13,10 +13,6 @@ import java.util.Collections;
 import java.util.Properties;
 
 public class KafkaUtils {
-    public KafkaUtils() {
-        System.out.println("Kafka utils initialised");
-    }
-
     public static Consumer<Long, StupidStreamObject> createConsumer() {
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, IKafkaConstants.KAFKA_BROKERS);
