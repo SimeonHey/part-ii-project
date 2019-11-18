@@ -1,11 +1,26 @@
-public class SearchMessageResponse {
-    private final String result;
+import java.util.ArrayList;
+import java.util.List;
 
-    public SearchMessageResponse(String result) {
-        this.result = result;
+public class SearchMessageResponse {
+    private final List<Long> occurrences;
+
+    public SearchMessageResponse() {
+        this.occurrences = new ArrayList<>();
     }
 
-    public String getResult() {
-        return result;
+    public SearchMessageResponse addOccurrence(Long uuid) {
+        this.occurrences.add(uuid);
+        return this;
+    }
+
+    public List<Long> getOccurrences() {
+        return occurrences;
+    }
+
+    @Override
+    public String toString() {
+        return "SearchMessageResponse{" +
+            "occurrences=" + occurrences.toString() +
+            '}';
     }
 }

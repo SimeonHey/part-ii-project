@@ -20,6 +20,13 @@ public class SearchMessageRequest {
         return stupidStreamObject;
     }
 
+    @Override
+    public String toString() {
+        return "SearchMessageRequest{" +
+            "searchText='" + searchText + '\'' +
+            '}';
+    }
+
     public String getSearchText() {
         return searchText;
     }

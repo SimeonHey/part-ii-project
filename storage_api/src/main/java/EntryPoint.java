@@ -62,20 +62,20 @@ public class EntryPoint {
             throw new RuntimeException("Couldn't discover lucene");
         }
 
-        System.out.println("Lucene search response: " +
-            httpRequestResponse(argLuceneAddress, "lucene/search", "paraaaaam"));
-
         // Start listening for queries
         // Produce queries to Kafka topics
         // Possibly listen for answers
         Scanner scanner = new Scanner(System.in);
+        long uuid = 0; // TODO: come up with a real uuid
+
         while (true) {
+            System.out.println("Enter query:");
             String[] line = scanner.nextLine().split(" ");
             System.out.println("Got " + Arrays.toString(line));
 
             switch (line[0]) {
                 case "post":
-                    produceMessage(producer, PostMessageRequest.toStupidStreamObject(line[1], line[2]));
+                    produceMessage(producer, PostMessageRequest.toStupidStreamObject(line[1], line[2], uuid++));
                     break;
                 case "search":
                     String resp = httpRequestResponse(argLuceneAddress, "lucene/search", line[1]);
