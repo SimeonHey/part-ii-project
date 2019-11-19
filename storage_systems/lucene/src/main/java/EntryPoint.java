@@ -11,7 +11,7 @@ public class EntryPoint {
 
         // Connect to Kafka & possibly the storage api
         LoopingConsumer<Long, StupidStreamObject> consumer =
-            new LoopingConsumer<>(KafkaUtils.createConsumer());
+            new LoopingConsumer<>(KafkaUtils.createConsumer("lucene"));
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(argListeningPort), 0);
         LuceneWrapper luceneWrapper = new LuceneWrapper();
         Gson gson = new Gson();

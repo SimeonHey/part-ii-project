@@ -62,12 +62,14 @@ public class EntryPoint {
         if (conLucene.getResponseCode() != 200) {
             throw new RuntimeException("Couldn't discover lucene");
         }
+        System.out.println("Connected to Lucene");
 
         HttpURLConnection conPsql =
             sendHttpGetRequest(argPsqlAddress, "psql/discover", "");
         if (conPsql.getResponseCode() != 200) {
             throw new RuntimeException("Couldn't discover lucene");
         }
+        System.out.println("Connected to PSQL");
 
         // Start listening for queries
         // Produce queries to Kafka topics
@@ -82,7 +84,7 @@ public class EntryPoint {
 
             switch (line[0]) {
                 case "post":
-                    produceMessage(producer, PostMessageRequest.toStupidStreamObject(line[1], line[2], uuid++));
+                    produceMessage(producer, PostMessageRequest.toStupidStreamObject(line[1], line[2]));
                     break;
                 case "search":
                     String resp1 = httpRequestResponse(argLuceneAddress, "lucene/search", line[1]);

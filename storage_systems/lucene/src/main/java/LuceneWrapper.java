@@ -2,6 +2,7 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
@@ -31,7 +32,7 @@ public class LuceneWrapper {
     private final Path indexPath = Paths.get(DEFAULT_INDEX_DEST);
     private final Analyzer analyzer = new StandardAnalyzer();
 
-    public void postMessage(PostMessageRequest postMessageRequest) {
+    public void postMessage(PostMessageRequest postMessageRequest, Long uuid) {
         final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         System.out.println("Lucene posts message: " + postMessageRequest);
 
@@ -56,7 +57,7 @@ public class LuceneWrapper {
             Document doc = new Document();
             doc.add(new StringField("sender", postMessageRequest.getSender(), Field.Store.YES));
             doc.add(new TextField("message", postMessageRequest.getMessageText(), Field.Store.NO));
-            doc.add(new StringField("uuid", postMessageRequest.getUuid().toString(), Field.Store.YES));
+            doc.add(new StoredField("uuid", uuid));
 
             indexWriter.addDocument(doc);
             System.out.println("Successfully added message " + postMessageRequest.toString());

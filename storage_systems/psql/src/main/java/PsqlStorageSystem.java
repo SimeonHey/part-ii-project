@@ -30,9 +30,11 @@ public class PsqlStorageSystem implements KafkaConsumerObserver<Long, StupidStre
             System.out.println(key + " - " + value));
 
         StupidStreamObject streamObject = message.value();
+        Long uuid = message.offset();
+
         switch (streamObject.getObjectType()) {
             case POST_MESSAGE:
-                this.psqlWrapper.postMessage(new PostMessageRequest(streamObject));
+                this.psqlWrapper.postMessage(new PostMessageRequest(streamObject), uuid);
                 break;
             default:
                 throw new RuntimeException("Unknown stream object type");

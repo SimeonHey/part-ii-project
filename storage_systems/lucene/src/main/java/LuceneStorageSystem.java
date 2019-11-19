@@ -30,9 +30,10 @@ public class LuceneStorageSystem implements KafkaConsumerObserver<Long, StupidSt
             System.out.println(key + " - " + value));
 
         StupidStreamObject streamObject = message.value();
+        Long uuid = message.offset();
         switch (streamObject.getObjectType()) {
             case POST_MESSAGE:
-                this.luceneWrapper.postMessage(new PostMessageRequest(streamObject));
+                this.luceneWrapper.postMessage(new PostMessageRequest(streamObject), uuid);
                 break;
             case SEARCH_MESSAGES:
                 // this.luceneWrapper.searchMessage(new SearchMessageRequest(streamObject));

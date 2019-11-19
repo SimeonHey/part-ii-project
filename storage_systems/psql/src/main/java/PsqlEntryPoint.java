@@ -11,7 +11,7 @@ public class PsqlEntryPoint {
 
         // Connect to Kafka & possibly the storage api
         LoopingConsumer<Long, StupidStreamObject> consumer =
-            new LoopingConsumer<>(KafkaUtils.createConsumer());
+            new LoopingConsumer<>(KafkaUtils.createConsumer("psql"));
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(argListeningPort), 0);
         PsqlWrapper psqlWrapper = new PsqlWrapper();
         Gson gson = new Gson();

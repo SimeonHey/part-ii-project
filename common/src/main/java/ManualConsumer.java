@@ -14,7 +14,7 @@ public class ManualConsumer<K, V> extends SubscribableConsumer<K, V> {
             System.out.println("Record Key " + record.key());
             System.out.println("Record value " + record.value());
             System.out.println("Record partition " + record.partition());
-            System.out.println("Record offset " + record.offset());
+            System.out.println("Record offset " + record.offset()); // TODO: Could use this as uuid (mathes the order)
 
             this.subscribers.forEach(subscriber -> subscriber.messageReceived(record));
         });
