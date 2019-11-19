@@ -6,14 +6,16 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
+import java.util.logging.Logger;
 
 import java.util.Collections;
 import java.util.Properties;
 
 public class KafkaUtils {
     public static Consumer<Long, StupidStreamObject> createConsumer(String consumerGroup) {
+        Logger logger = Logger.getLogger(KafkaUtils.class.getName());
+        logger.info("Creating a consumer for consumerGroup " + consumerGroup);
+
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, IKafkaConstants.KAFKA_BROKERS);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
@@ -33,7 +35,7 @@ public class KafkaUtils {
         props.put(ProducerConfig.CLIENT_ID_CONFIG, IKafkaConstants.CLIENT_ID);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StupidStreamObjectSer.class.getName());
-        //props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, CustomPartitioner.class.getName());
+
         return new KafkaProducer<>(props);
     }
 }

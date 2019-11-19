@@ -5,8 +5,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Logger;
 
 public class LuceneStorageSystem implements KafkaConsumerObserver<Long, StupidStreamObject> {
+    private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystem.class.getName());
+    
     private LuceneWrapper luceneWrapper;
     private Gson gson;
 
@@ -24,10 +27,10 @@ public class LuceneStorageSystem implements KafkaConsumerObserver<Long, StupidSt
 
     @Override
     public void messageReceived(ConsumerRecord<Long, StupidStreamObject> message) {
-        System.out.println("Lucene received values of type " + message.value().getObjectType().toString() + " with " +
+        LOGGER.info("Lucene received values of type " + message.value().getObjectType().toString() + " with " +
             "properties:");
         message.value().getProperties().forEach((key, value) ->
-            System.out.println(key + " - " + value));
+            LOGGER.info(key + " - " + value));
 
         StupidStreamObject streamObject = message.value();
         Long uuid = message.offset();
@@ -37,7 +40,7 @@ public class LuceneStorageSystem implements KafkaConsumerObserver<Long, StupidSt
                 break;
             case SEARCH_MESSAGES:
                 // this.luceneWrapper.searchMessage(new SearchMessageRequest(streamObject));
-                System.out.println("Warning: Search via log is not implemented");
+                LOGGER.info("Warning: Search via log is not implemented");
                 break;
             default:
                 throw new RuntimeException("Unknown stream object type");

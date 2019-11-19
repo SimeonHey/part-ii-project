@@ -1,3 +1,4 @@
+import kafka.log.Log;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -21,11 +22,14 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 /**
  * Proxy for Lucene transactions
  */
 public class LuceneWrapper {
+    private static final Logger LOGGER = Logger.getLogger(LuceneWrapper.class.getName());
+    
     private static final String DEFAULT_INDEX_DEST = "./luceneindex/index_output";
 
     // TODO : Separate as dependencies
@@ -34,7 +38,7 @@ public class LuceneWrapper {
 
     public void postMessage(PostMessageRequest postMessageRequest, Long uuid) {
         final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-        System.out.println("Lucene posts message: " + postMessageRequest);
+        LOGGER.info("Lucene posts message: " + postMessageRequest);
 
         Directory luceneIndexDir;
         try {
@@ -60,7 +64,7 @@ public class LuceneWrapper {
             doc.add(new StoredField("uuid", uuid));
 
             indexWriter.addDocument(doc);
-            System.out.println("Successfully added message " + postMessageRequest.toString());
+            LOGGER.info("Successfully added message " + postMessageRequest.toString());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -111,7 +115,7 @@ public class LuceneWrapper {
             }
         });
 
-        System.out.println("Lucene search for message " + searchMessageRequest + " and got " + response);
+        LOGGER.info("Lucene search for message " + searchMessageRequest + " and got " + response);
         return response;
     }
 }

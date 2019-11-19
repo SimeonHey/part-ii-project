@@ -2,8 +2,11 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.logging.Logger;
 
 public class PsqlWrapper {
+    private static final Logger LOGGER = Logger.getLogger(PsqlWrapper.class.getName());
+    
     private Connection connection;
 
     public PsqlWrapper(Connection connection) {
@@ -17,7 +20,7 @@ public class PsqlWrapper {
             sender,
             messageText,
             uuid);
-        System.out.println(query);
+        LOGGER.info(query);
 
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.executeUpdate();
@@ -25,7 +28,7 @@ public class PsqlWrapper {
     }
 
     public void postMessage(PostMessageRequest postMessageRequest, Long uuid) {
-        System.out.println("PSQL posts message " + postMessageRequest + " with uuid " + uuid);
+        LOGGER.info("PSQL posts message " + postMessageRequest + " with uuid " + uuid);
         try {
             insertMessage(postMessageRequest.getSender(), postMessageRequest.getMessageText(), uuid);
         } catch (SQLException e) {
@@ -34,7 +37,7 @@ public class PsqlWrapper {
     }
 
     public String getMessageDetails(MessageDetailsRequest messageDetailsRequest) {
-        System.out.println("Psql has to get details for message " + messageDetailsRequest.getUuid());
+        LOGGER.info("Psql has to get details for message " + messageDetailsRequest.getUuid());
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(String.format("SELECT * FROM messages WHERE uuid " +

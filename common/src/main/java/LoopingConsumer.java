@@ -1,11 +1,11 @@
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.logging.Logger;
 
 public class LoopingConsumer<K, V> extends SubscribableConsumer<K, V>{
+    private static final Logger LOGGER = Logger.getLogger(LoopingConsumer.class.getName());
+    
     public LoopingConsumer(Consumer<K, V> kafkaConsumer) {
         super(kafkaConsumer);
     }
@@ -26,10 +26,10 @@ public class LoopingConsumer<K, V> extends SubscribableConsumer<K, V>{
             }
             //print each record.
             consumerRecords.forEach(record -> {
-                System.out.println("Record Key " + record.key());
-                System.out.println("Record value " + record.value());
-                System.out.println("Record partition " + record.partition());
-                System.out.println("Record offset " + record.offset());
+                LOGGER.info("Record Key " + record.key());
+                LOGGER.info("Record value " + record.value());
+                LOGGER.info("Record partition " + record.partition());
+                LOGGER.info("Record offset " + record.offset());
 
                 subscribers.forEach(subscriber -> subscriber.messageReceived(record));
             });

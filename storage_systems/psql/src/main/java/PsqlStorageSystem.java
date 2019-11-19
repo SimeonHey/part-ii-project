@@ -1,12 +1,16 @@
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import kafka.log.Log;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Logger;
 
 public class PsqlStorageSystem implements KafkaConsumerObserver<Long, StupidStreamObject> {
+    private static final Logger LOGGER = Logger.getLogger(PsqlStorageSystem.class.getName());
+    
     private PsqlWrapper psqlWrapper;
     private Gson gson;
 
@@ -24,10 +28,10 @@ public class PsqlStorageSystem implements KafkaConsumerObserver<Long, StupidStre
 
     @Override
     public void messageReceived(ConsumerRecord<Long, StupidStreamObject> message) {
-        System.out.println("Psql received values of type " + message.value().getObjectType().toString() + " with " +
+        LOGGER.info("Psql received values of type " + message.value().getObjectType().toString() + " with " +
             "properties:");
         message.value().getProperties().forEach((key, value) ->
-            System.out.println(key + " - " + value));
+            LOGGER.info(key + " - " + value));
 
         StupidStreamObject streamObject = message.value();
         Long uuid = message.offset();

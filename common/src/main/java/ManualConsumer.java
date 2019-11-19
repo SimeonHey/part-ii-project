@@ -1,7 +1,11 @@
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 
+import java.util.logging.Logger;
+
 public class ManualConsumer<K, V> extends SubscribableConsumer<K, V> {
+    private static final Logger logger = Logger.getLogger(ManualConsumer.class.getName());
+    
     public ManualConsumer(Consumer<K, V> kafkaConsumer) {
         super(kafkaConsumer);
     }
@@ -11,10 +15,10 @@ public class ManualConsumer<K, V> extends SubscribableConsumer<K, V> {
 
         //print each record.
         consumerRecords.forEach(record -> {
-            System.out.println("Record Key " + record.key());
-            System.out.println("Record value " + record.value());
-            System.out.println("Record partition " + record.partition());
-            System.out.println("Record offset " + record.offset()); // TODO: Could use this as uuid (mathes the order)
+            logger.info("Record Key " + record.key());
+            logger.info("Record value " + record.value());
+            logger.info("Record partition " + record.partition());
+            logger.info("Record offset " + record.offset());
 
             this.subscribers.forEach(subscriber -> subscriber.messageReceived(record));
         });
