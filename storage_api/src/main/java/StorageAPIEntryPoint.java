@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
@@ -17,7 +18,8 @@ public class StorageAPIEntryPoint {
                                                         String endpoint,
                                                         String params) throws IOException {
         String url = String.format("%s/%s?%s", base, endpoint, params);
-        LOGGER.info("URL is " + url);
+        LOGGER.info("Sending an HTTP request to " + url);
+
         HttpURLConnection httpURLConnection =
             (HttpURLConnection) new URL(url).openConnection();
         httpURLConnection.setRequestMethod("GET");
@@ -37,12 +39,10 @@ public class StorageAPIEntryPoint {
         ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(IKafkaConstants.TOPIC_NAME, toSend);
         try {
             RecordMetadata metadata = producer.send(record).get();
-            /*LOGGER.info("Record sent with key " + index + " to partition " + metadata.partition()
-                + " with offset " + metadata.offset());*/
+            LOGGER.info("Produced message of type " + toSend.getObjectType()
+                + " with Kafka offset = " + metadata.offset());
         }
         catch (ExecutionException | InterruptedException e) {
-            LOGGER.info("Error in sending record");
-            LOGGER.info(e.toString());
             throw new RuntimeException(e);
         }
     }
@@ -52,32 +52,42 @@ public class StorageAPIEntryPoint {
         String argLuceneAddress = args[0];
         String argPsqlAddress = args[1];
 
-        // Setup connection with Kafka, possibly storage systems too
-        Producer<Long, StupidStreamObject> producer = KafkaUtils.createProducer();
+        LOGGER.info("Starting StorageAPI with params " + Arrays.toString(args));
 
+        // Setup connections
+        LOGGER.info("Initializing a Kafka producer...");
+        Producer<Long, StupidStreamObject> producer = KafkaUtils.createProducer();
+        LOGGER.info("Success");
+
+        LOGGER.info("Connecting to Lucene...");
         HttpURLConnection conLucene =
             sendHttpGetRequest(argLuceneAddress, "lucene/discover", "");
         if (conLucene.getResponseCode() != 200) {
             throw new RuntimeException("Couldn't discover lucene");
         }
-        LOGGER.info("Connected to Lucene");
+        LOGGER.info("Success");
 
+        LOGGER.info("Connecting to PSQL...");
         HttpURLConnection conPsql =
             sendHttpGetRequest(argPsqlAddress, "psql/discover", "");
         if (conPsql.getResponseCode() != 200) {
             throw new RuntimeException("Couldn't discover lucene");
         }
-        LOGGER.info("Connected to PSQL");
+        LOGGER.info("Success");
 
-        // Start listening for queries
-        // Produce queries to Kafka topics
-        // Possibly listen for answers
+        // Take user commands and perform actions
         Scanner scanner = new Scanner(System.in);
-        long uuid = 0; // TODO: come up with a real uuid
-
         while (true) {
             System.out.println("Enter query:");
-            String[] line = scanner.nextLine().split(" ");
+            String[] line;
+
+            try {
+                line = scanner.nextLine().split(" ");
+            } catch (NoSuchElementException e) {
+                LOGGER.info("End of user input.. breaking out of the loop");
+                break;
+            }
+
             LOGGER.info("Got " + Arrays.toString(line));
 
             switch (line[0]) {

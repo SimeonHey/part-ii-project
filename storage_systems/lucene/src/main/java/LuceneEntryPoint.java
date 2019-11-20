@@ -4,7 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-public class EntryPoint {
+public class LuceneEntryPoint {
     public static void main(String[] args) throws IOException {
         // Consume program line arguments
         int argListeningPort = Integer.parseInt(args[0]);

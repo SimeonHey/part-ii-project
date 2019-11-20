@@ -7,22 +7,23 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.Logger;
 
-public class LuceneStorageSystem implements KafkaConsumerObserver<Long, StupidStreamObject> {
+public class LuceneStorageSystem extends HttpStorageSystem implements KafkaConsumerObserver<Long, StupidStreamObject> {
     private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystem.class.getName());
     
     private LuceneWrapper luceneWrapper;
     private Gson gson;
 
-    public LuceneStorageSystem(LoopingConsumer<Long, StupidStreamObject> consumer,
-                               HttpServer httpServer,
-                               LuceneWrapper luceneWrapper,
-                               Gson gson) {
+    LuceneStorageSystem(LoopingConsumer<Long, StupidStreamObject> consumer,
+                        HttpServer httpServer,
+                        LuceneWrapper luceneWrapper,
+                        Gson gson) {
+        super("lucene", httpServer);
+
         this.luceneWrapper = luceneWrapper;
         this.gson = gson;
 
         consumer.subscribe(this);
         httpServer.createContext("/lucene/search", this::handleSearch);
-        httpServer.createContext("/lucene/discover", this::handleDiscover);
     }
 
     @Override
@@ -59,11 +60,6 @@ public class LuceneStorageSystem implements KafkaConsumerObserver<Long, StupidSt
         os.write(serialized.getBytes());
         os.close();
 
-        httpExchange.close();
-    }
-
-    private void handleDiscover(HttpExchange httpExchange) throws IOException {
-        httpExchange.sendResponseHeaders(200, 0);
         httpExchange.close();
     }
 }

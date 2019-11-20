@@ -1,28 +1,28 @@
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import kafka.log.Log;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.Logger;
 
-public class PsqlStorageSystem implements KafkaConsumerObserver<Long, StupidStreamObject> {
+public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsumerObserver<Long, StupidStreamObject> {
     private static final Logger LOGGER = Logger.getLogger(PsqlStorageSystem.class.getName());
     
     private PsqlWrapper psqlWrapper;
     private Gson gson;
 
-    public PsqlStorageSystem(LoopingConsumer<Long, StupidStreamObject> consumer,
-                             HttpServer httpServer,
-                             PsqlWrapper psqlWrapper,
-                             Gson gson) {
+    PsqlStorageSystem(LoopingConsumer<Long, StupidStreamObject> consumer,
+                      HttpServer httpServer,
+                      PsqlWrapper psqlWrapper,
+                      Gson gson) {
+        super("psql", httpServer);
+
         this.psqlWrapper = psqlWrapper;
         this.gson = gson;
 
         consumer.subscribe(this);
-        httpServer.createContext("/psql/discover", this::handleDiscover);
         httpServer.createContext("/psql/messageDetails", this::handleGetMessageDetails);
     }
 
@@ -43,11 +43,6 @@ public class PsqlStorageSystem implements KafkaConsumerObserver<Long, StupidStre
             default:
                 throw new RuntimeException("Unknown stream object type");
         }
-    }
-
-    private void handleDiscover(HttpExchange httpExchange) throws IOException {
-        httpExchange.sendResponseHeaders(200, 0);
-        httpExchange.close();
     }
 
     private void handleGetMessageDetails(HttpExchange httpExchange) throws IOException {
