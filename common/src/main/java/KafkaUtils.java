@@ -12,9 +12,10 @@ import java.util.Collections;
 import java.util.Properties;
 
 public class KafkaUtils {
+    private static final Logger LOGGER = Logger.getLogger(KafkaUtils.class.getName());
+
     public static Consumer<Long, StupidStreamObject> createConsumer(String consumerGroup) {
-        Logger logger = Logger.getLogger(KafkaUtils.class.getName());
-        logger.info("Creating a consumer for consumerGroup " + consumerGroup);
+        LOGGER.info("Creating a consumer for consumerGroup " + consumerGroup);
 
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, IKafkaConstants.KAFKA_BROKERS);

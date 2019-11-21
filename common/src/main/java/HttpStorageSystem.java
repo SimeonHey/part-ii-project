@@ -4,8 +4,8 @@ import java.io.OutputStream;
 import java.util.function.Function;
 
 public class HttpStorageSystem {
-    private HttpServer httpServer;
-    private String storageSystemName;
+    private final HttpServer httpServer;
+    private final String storageSystemName;
 
     public HttpStorageSystem(String storageSystemName, HttpServer httpServer) {
         this.httpServer = httpServer;

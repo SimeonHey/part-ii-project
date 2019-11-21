@@ -16,14 +16,13 @@ public class LuceneEntryPoint {
         LuceneWrapper luceneWrapper = new LuceneWrapper();
         Gson gson = new Gson();
 
-        LuceneStorageSystem luceneStorageSystem = new LuceneStorageSystem(consumer, httpServer, luceneWrapper, gson);
+        LuceneStorageSystem luceneStorageSystem =
+            new LuceneStorageSystem(consumer, httpServer, luceneWrapper, gson);
 
         // Listen for requests & consume from Kafka topic
         httpServer.setExecutor(null); // creates a default executor
         httpServer.start();
 
         consumer.listenBlockingly();
-
-        // Send results back to the storage api
     }
 }

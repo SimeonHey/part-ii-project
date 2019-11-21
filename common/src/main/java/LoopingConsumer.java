@@ -5,38 +5,32 @@ import java.util.logging.Logger;
 
 public class LoopingConsumer<K, V> extends SubscribableConsumer<K, V>{
     private static final Logger LOGGER = Logger.getLogger(LoopingConsumer.class.getName());
-    
+    private final long sleepMs;
+
+    public LoopingConsumer(Consumer<K, V> kafkaConsumer, int sleepMs) {
+        super(kafkaConsumer, sleepMs);
+        this.sleepMs = sleepMs;
+    }
+
     public LoopingConsumer(Consumer<K, V> kafkaConsumer) {
         super(kafkaConsumer);
+        this.sleepMs = DEFAULT_BLOCK_MS;
     }
 
     public void listenBlockingly() {
-        int noMessageFound = 0;
+        LOGGER.info("Indefinitely listening for Kafka messages...");
 
         while (true) {
-            ConsumerRecords<K, V> consumerRecords = kafkaConsumer.poll(1000);
-            // 1000 is the time in milliseconds consumer will wait if no record is found at broker.
-            if (consumerRecords.count() == 0) {
-                noMessageFound++;
-                if (noMessageFound > IKafkaConstants.MAX_NO_MESSAGE_FOUND_COUNT)
-                    // If no message found count is reached to threshold exit loop.
-                    break;
-                else
-                    continue;
+            ConsumerRecords<K, V> consumerRecords = this.consumeRecords();
+            consumerRecords.forEach(record ->
+                subscribers.forEach(subscriber -> subscriber.messageReceived(record)));
+
+            try {
+                Thread.sleep(sleepMs);
+            } catch (InterruptedException e) {
+                this.close();
+                throw new RuntimeException(e);
             }
-            //print each record.
-            consumerRecords.forEach(record -> {
-                LOGGER.info("Record Key " + record.key());
-                LOGGER.info("Record value " + record.value());
-                LOGGER.info("Record partition " + record.partition());
-                LOGGER.info("Record offset " + record.offset());
-
-                subscribers.forEach(subscriber -> subscriber.messageReceived(record));
-            });
-            // commits the offset of record to broker.
-            kafkaConsumer.commitAsync();
         }
-
-        kafkaConsumer.close();
     }
 }

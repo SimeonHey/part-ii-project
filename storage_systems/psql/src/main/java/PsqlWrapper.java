@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 public class PsqlWrapper {
     private static final Logger LOGGER = Logger.getLogger(PsqlWrapper.class.getName());
     
-    private Connection connection;
+    private final Connection connection;
 
     public PsqlWrapper(Connection connection) {
         this.connection = connection;
@@ -27,21 +27,21 @@ public class PsqlWrapper {
         connection.commit();
     }
 
-    public void postMessage(PostMessageRequest postMessageRequest, Long uuid) {
-        LOGGER.info("PSQL posts message " + postMessageRequest + " with uuid " + uuid);
+    public void postMessage(RequestPostMessage requestPostMessage, Long uuid) {
+        LOGGER.info("PSQL posts message " + requestPostMessage + " with uuid " + uuid);
         try {
-            insertMessage(postMessageRequest.getSender(), postMessageRequest.getMessageText(), uuid);
+            insertMessage(requestPostMessage.getSender(), requestPostMessage.getMessageText(), uuid);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public String getMessageDetails(MessageDetailsRequest messageDetailsRequest) {
-        LOGGER.info("Psql has to get details for message " + messageDetailsRequest.getUuid());
+    public String getMessageDetails(RequestMessageDetails requestMessageDetails) {
+        LOGGER.info("Psql has to get details for message " + requestMessageDetails.getUuid());
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(String.format("SELECT * FROM messages WHERE uuid " +
-                "= %d", messageDetailsRequest.getUuid()));
+                "= %d", requestMessageDetails.getUuid()));
             ResultSet resultSet = preparedStatement.executeQuery();
             StringBuilder sbBig = new StringBuilder();
 

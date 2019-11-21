@@ -28,14 +28,13 @@ public class PsqlEntryPoint {
 
         Gson gson = new Gson();
 
-        PsqlStorageSystem luceneStorageSystem = new PsqlStorageSystem(consumer, httpServer, psqlWrapper, gson);
+        PsqlStorageSystem luceneStorageSystem =
+            new PsqlStorageSystem(consumer, httpServer, psqlWrapper, gson);
 
         // Listen for requests & consume from Kafka topic
         httpServer.setExecutor(null); // creates a default executor
         httpServer.start();
 
         consumer.listenBlockingly();
-
-        // Send results back to the storage api
     }
 }

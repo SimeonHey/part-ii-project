@@ -3,7 +3,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-public class ParameterStringBuilder {
+public class ZZUNUSEDParameterStringBuilder {
     public static String getParamsString(Map<String, String> params)
         throws UnsupportedEncodingException {
         StringBuilder result = new StringBuilder();

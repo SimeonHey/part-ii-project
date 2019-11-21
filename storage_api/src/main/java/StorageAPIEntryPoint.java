@@ -74,6 +74,7 @@ public class StorageAPIEntryPoint {
         // Setup connections
         LOGGER.info("Initializing a Kafka producer...");
         Producer<Long, StupidStreamObject> producer = KafkaUtils.createProducer();
+        produceMessage(producer, RequestNOP.toStupidStreamObject());
         LOGGER.info("Success");
 
         LOGGER.info("Connecting to Lucene...");
@@ -101,7 +102,7 @@ public class StorageAPIEntryPoint {
 
             switch (line[0]) {
                 case "post":
-                    produceMessage(producer, PostMessageRequest.toStupidStreamObject(line[1], line[2]));
+                    produceMessage(producer, RequestPostMessage.toStupidStreamObject(line[1], line[2]));
                     break;
                 case "search":
                     String resp1 = httpRequestResponse(argLuceneAddress, "search", line[1]);

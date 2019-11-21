@@ -1,4 +1,3 @@
-import kafka.log.Log;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
@@ -27,24 +26,22 @@ import java.util.logging.Logger;
 /**
  * Proxy for Lucene transactions
  */
-public class LuceneWrapper {
+class LuceneWrapper {
     private static final Logger LOGGER = Logger.getLogger(LuceneWrapper.class.getName());
     
     private static final String DEFAULT_INDEX_DEST = "./luceneindex/index_output";
 
-    // TODO : Separate as dependencies
     private final Path indexPath = Paths.get(DEFAULT_INDEX_DEST);
     private final Analyzer analyzer = new StandardAnalyzer();
 
-    public void postMessage(PostMessageRequest postMessageRequest, Long uuid) {
+    void postMessage(RequestPostMessage requestPostMessage, Long uuid) {
         final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-        LOGGER.info("Lucene posts message: " + postMessageRequest);
+        LOGGER.info("Lucene posts message: " + requestPostMessage);
 
         Directory luceneIndexDir;
         try {
             luceneIndexDir = FSDirectory.open(indexPath);
         } catch (IOException e) {
-            // TODO LOGGING
             throw new RuntimeException(e);
         }
 
@@ -59,12 +56,12 @@ public class LuceneWrapper {
 
         try {
             Document doc = new Document();
-            doc.add(new StringField("sender", postMessageRequest.getSender(), Field.Store.YES));
-            doc.add(new TextField("message", postMessageRequest.getMessageText(), Field.Store.NO));
+            doc.add(new StringField("sender", requestPostMessage.getSender(), Field.Store.YES));
+            doc.add(new TextField("message", requestPostMessage.getMessageText(), Field.Store.NO));
             doc.add(new StoredField("uuid", uuid));
 
             indexWriter.addDocument(doc);
-            LOGGER.info("Successfully added message " + postMessageRequest.toString());
+            LOGGER.info("Successfully added message " + requestPostMessage.toString());
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -77,7 +74,7 @@ public class LuceneWrapper {
         }
     }
 
-    public SearchMessageResponse searchMessage(SearchMessageRequest searchMessageRequest) {
+    ResponseSearchMessage searchMessage(RequestSearchMessage requestSearchMessage) {
         IndexReader indexReader;
         try {
             indexReader = DirectoryReader.open(FSDirectory.open(indexPath));
@@ -92,9 +89,9 @@ public class LuceneWrapper {
         QueryParser queryParser = new QueryParser(searchField, analyzer);
         Query query;
         try {
-            query = queryParser.parse(searchMessageRequest.getSearchText());
+            query = queryParser.parse(requestSearchMessage.getSearchText());
         } catch (ParseException e) {
-            throw new RuntimeException(e); // TODO
+            throw new RuntimeException(e);
         }
 
         TopDocs searchResults;
@@ -104,7 +101,7 @@ public class LuceneWrapper {
             throw new RuntimeException(e);
         }
 
-        SearchMessageResponse response = new SearchMessageResponse();
+        ResponseSearchMessage response = new ResponseSearchMessage();
 
         Arrays.stream(searchResults.scoreDocs).forEach(scoreDoc -> {
             try {
@@ -115,7 +112,7 @@ public class LuceneWrapper {
             }
         });
 
-        LOGGER.info("Lucene search for message " + searchMessageRequest + " and got " + response);
+        LOGGER.info("Lucene search for message " + requestSearchMessage + " and got " + response);
         return response;
     }
 }

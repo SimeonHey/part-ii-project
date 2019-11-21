@@ -4,11 +4,12 @@ import java.util.HashMap;
 public class StupidStreamObject implements Serializable {
     public enum ObjectType {
         POST_MESSAGE,
-        SEARCH_MESSAGES
+        SEARCH_MESSAGES,
+        NOP
     }
 
-    private ObjectType objectType;
-    private HashMap<String, String> properties;
+    private final ObjectType objectType;
+    private final HashMap<String, String> properties;
 
     public StupidStreamObject(ObjectType objectType) {
         this.properties = new HashMap<>();

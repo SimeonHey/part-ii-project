@@ -4,28 +4,21 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import java.util.logging.Logger;
 
 public class ManualConsumer<K, V> extends SubscribableConsumer<K, V> {
-    private static final Logger logger = Logger.getLogger(ManualConsumer.class.getName());
-    
+    private static final Logger LOGGER = Logger.getLogger(ManualConsumer.class.getName());
+
     public ManualConsumer(Consumer<K, V> kafkaConsumer) {
         super(kafkaConsumer);
     }
 
     public int consumeAvailableRecords() {
-        ConsumerRecords<K, V> consumerRecords = kafkaConsumer.poll(1000);
+        ConsumerRecords<K, V> consumerRecords = this.consumeRecords();
 
-        //print each record.
+        LOGGER.info("Consumed " + consumerRecords.count() + " records. Pinging the subscribers...");
         consumerRecords.forEach(record -> {
-            logger.info("Record Key " + record.key());
-            logger.info("Record value " + record.value());
-            logger.info("Record partition " + record.partition());
-            logger.info("Record offset " + record.offset());
-
             this.subscribers.forEach(subscriber -> subscriber.messageReceived(record));
         });
-        // commits the offset of record to broker.
-        this.kafkaConsumer.commitAsync();
 
-        this.kafkaConsumer.close();
+        LOGGER.info("Successfully consumed " + consumerRecords.count() + " records.");
         return consumerRecords.count();
     }
 }

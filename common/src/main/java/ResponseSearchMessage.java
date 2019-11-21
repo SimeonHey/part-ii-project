@@ -1,16 +1,15 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class SearchMessageResponse {
+public class ResponseSearchMessage {
     private final List<Long> occurrences;
 
-    public SearchMessageResponse() {
+    public ResponseSearchMessage() {
         this.occurrences = new ArrayList<>();
     }
 
-    public SearchMessageResponse addOccurrence(Long uuid) {
+    public void addOccurrence(Long uuid) {
         this.occurrences.add(uuid);
-        return this;
     }
 
     public List<Long> getOccurrences() {

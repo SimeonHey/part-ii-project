@@ -1,11 +1,11 @@
-public class PostMessageRequest {
+public class RequestPostMessage {
     private static final String KEY_SENDER = "sender";
     private static final String KEY_MESSAGE_TEXT = "messageText";
 
     private final String sender;
     private final String messageText;
 
-    public PostMessageRequest (StupidStreamObject stupidStreamObject) {
+    public RequestPostMessage(StupidStreamObject stupidStreamObject) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.POST_MESSAGE) {
             throw new RuntimeException("Incorrect object type");
         }
@@ -15,10 +15,9 @@ public class PostMessageRequest {
     }
 
     public static StupidStreamObject toStupidStreamObject(String sender, String messageText) {
-        StupidStreamObject stupidStreamObject = new StupidStreamObject(StupidStreamObject.ObjectType.POST_MESSAGE);
-        stupidStreamObject.setProperty(KEY_SENDER, sender);
-        stupidStreamObject.setProperty(KEY_MESSAGE_TEXT, messageText);
-        return stupidStreamObject;
+        return new StupidStreamObject(StupidStreamObject.ObjectType.POST_MESSAGE)
+            .setProperty(KEY_SENDER, sender)
+            .setProperty(KEY_MESSAGE_TEXT, messageText);
     }
 
     public String getSender() {
