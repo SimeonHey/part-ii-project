@@ -14,26 +14,27 @@ import java.util.Properties;
 public class KafkaUtils {
     private static final Logger LOGGER = Logger.getLogger(KafkaUtils.class.getName());
 
-    public static Consumer<Long, StupidStreamObject> createConsumer(String consumerGroup) {
+    public static Consumer<Long, StupidStreamObject> createConsumer(String consumerGroup, String kafkaAddress,
+                                                                    String kafkaTopic) {
         LOGGER.info("Creating a consumer for consumerGroup " + consumerGroup);
 
         Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, IKafkaConstants.KAFKA_BROKERS);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAddress);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, consumerGroup);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StupidStreamObjectDes.class.getName());
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, IKafkaConstants.MAX_POLL_RECORDS);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, IKafkaConstants.OFFSET_RESET_EARLIER);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+
         Consumer<Long, StupidStreamObject> consumer = new KafkaConsumer<>(props);
-        consumer.subscribe(Collections.singletonList(IKafkaConstants.TOPIC_NAME));
+        consumer.subscribe(Collections.singletonList(kafkaTopic));
         return consumer;
     }
 
-    public static Producer<Long, StupidStreamObject> createProducer() {
+    public static Producer<Long, StupidStreamObject> createProducer(String kafkaAddress, String clientId) {
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, IKafkaConstants.KAFKA_BROKERS);
-        props.put(ProducerConfig.CLIENT_ID_CONFIG, IKafkaConstants.CLIENT_ID);
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAddress);
+        props.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, LongSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StupidStreamObjectSer.class.getName());
 

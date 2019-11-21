@@ -21,8 +21,9 @@ include 'playing:kafka'
 include 'playing:lucene'
 include 'playing:psql'
 
-include ':common'
-include ':storage_systems:psql'
-include ':storage_systems:lucene'
-include ':storage_api'
+include 'simple_olep'
+include 'simple_olep:common'
+include 'simple_olep:storage_systems:psql'
+include 'simple_olep:storage_systems:lucene'
+include 'simple_olep:storage_api'
 

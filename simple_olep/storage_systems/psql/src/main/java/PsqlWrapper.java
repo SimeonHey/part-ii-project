@@ -27,7 +27,7 @@ class PsqlWrapper {
         connection.commit();
     }
 
-    public void postMessage(RequestPostMessage requestPostMessage, Long uuid) {
+    void postMessage(RequestPostMessage requestPostMessage, Long uuid) {
         LOGGER.info("PSQL posts message " + requestPostMessage + " with uuid " + uuid);
         try {
             insertMessage(requestPostMessage.getSender(), requestPostMessage.getMessageText(), uuid);

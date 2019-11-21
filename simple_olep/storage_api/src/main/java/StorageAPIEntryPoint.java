@@ -58,8 +58,9 @@ public class StorageAPIEntryPoint {
     }
 
     private static void produceMessage(Producer<Long, StupidStreamObject> producer,
+                                       String topic,
                                        StupidStreamObject toSend) {
-        ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(IKafkaConstants.TOPIC_NAME, toSend);
+        ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(topic, toSend);
         try {
             RecordMetadata metadata = producer.send(record).get();
             LOGGER.info("Produced message of type " + toSend.getObjectType()
@@ -75,13 +76,16 @@ public class StorageAPIEntryPoint {
         // Consume command line arguments
         String argLuceneAddress = args[0];
         String argPsqlAddress = args[1];
+        String argKafkaAddress = args[2];
+        String argTransactionsTopic = args[3];
 
         LOGGER.info("Starting StorageAPI with params " + Arrays.toString(args));
 
         // Setup connections
         LOGGER.info("Initializing a Kafka producer...");
-        Producer<Long, StupidStreamObject> producer = KafkaUtils.createProducer();
-        produceMessage(producer, RequestNOP.toStupidStreamObject());
+        Producer<Long, StupidStreamObject> producer =
+            KafkaUtils.createProducer(argKafkaAddress, "storageAPI");
+        produceMessage(producer, argTransactionsTopic, RequestNOP.toStupidStreamObject());
         LOGGER.info("Success");
 
         LOGGER.info("Connecting to Lucene...");
@@ -109,7 +113,9 @@ public class StorageAPIEntryPoint {
 
             switch (line[0]) {
                 case "post":
-                    produceMessage(producer, RequestPostMessage.toStupidStreamObject(line[1], line[2]));
+                    produceMessage(producer,
+                        argTransactionsTopic,
+                        RequestPostMessage.toStupidStreamObject(line[1], line[2]));
                     break;
                 case "search":
                     String resp1 = httpRequestResponse(argLuceneAddress, "search", line[1]);

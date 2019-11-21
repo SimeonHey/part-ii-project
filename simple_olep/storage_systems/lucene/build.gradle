@@ -18,5 +18,5 @@ dependencies {
 //    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
 //    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.29'
 
-    implementation project(path: ':common')
+    implementation project(path: ':simple_olep:common')
 }

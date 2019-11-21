@@ -1,5 +1,6 @@
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
+import org.apache.kafka.clients.consumer.Consumer;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -14,10 +15,17 @@ public class PsqlEntryPoint {
         int argListeningPort = Integer.parseInt(args[0]);
         String argPsqlAddress = args[1];
         String[] argUserPass = args[2].split(":");
+        String argKafkaAddress = args[3];
+        String argTransactionsTopic = args[4];
 
-        // Connect to Kafka & PSQL(
-        LoopingConsumer<Long, StupidStreamObject> consumer =
-            new LoopingConsumer<>(KafkaUtils.createConsumer("psql"));
+        // Connect to Kafka & PSQL
+        Consumer<Long, StupidStreamObject> kafkaConsumer = KafkaUtils.createConsumer(
+            "psql",
+            argKafkaAddress,
+            argTransactionsTopic);
+        LoopingConsumer<Long, StupidStreamObject> loopingConsumer =
+            new LoopingConsumer<>(kafkaConsumer);
+
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(argListeningPort), 0);
 
         Properties props = new Properties();
@@ -29,12 +37,12 @@ public class PsqlEntryPoint {
         Gson gson = new Gson();
 
         PsqlStorageSystem luceneStorageSystem =
-            new PsqlStorageSystem(consumer, httpServer, psqlWrapper, gson);
+            new PsqlStorageSystem(loopingConsumer, httpServer, psqlWrapper, gson);
 
         // Listen for requests & consume from Kafka topic
         httpServer.setExecutor(null); // creates a default executor
         httpServer.start();
 
-        consumer.listenBlockingly();
+        loopingConsumer.listenBlockingly();
     }
 }

@@ -16,12 +16,12 @@ public class StupidStreamObject implements Serializable {
         this.objectType = objectType;
     }
 
-    public StupidStreamObject setProperty(String name, String property) {
+    StupidStreamObject setProperty(String name, String property) {
         properties.put(name, property);
         return this;
     }
 
-    public String getProperty(String name) {
+    String getProperty(String name) {
         return properties.get(name);
     }
 
