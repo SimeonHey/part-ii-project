@@ -66,6 +66,7 @@ public class StorageAPIEntryPoint {
                 + " with Kafka offset = " + metadata.offset());
         }
         catch (ExecutionException | InterruptedException e) {
+            LOGGER.warning("Error when producting message");
             throw new RuntimeException(e);
         }
     }

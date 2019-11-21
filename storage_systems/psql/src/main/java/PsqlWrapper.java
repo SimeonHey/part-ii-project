@@ -4,12 +4,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-public class PsqlWrapper {
+class PsqlWrapper {
     private static final Logger LOGGER = Logger.getLogger(PsqlWrapper.class.getName());
     
     private final Connection connection;
 
-    public PsqlWrapper(Connection connection) {
+    PsqlWrapper(Connection connection) {
         this.connection = connection;
     }
 
@@ -32,11 +32,12 @@ public class PsqlWrapper {
         try {
             insertMessage(requestPostMessage.getSender(), requestPostMessage.getMessageText(), uuid);
         } catch (SQLException e) {
+            LOGGER.warning("Error when inserting message: " + e);
             throw new RuntimeException(e);
         }
     }
 
-    public String getMessageDetails(RequestMessageDetails requestMessageDetails) {
+    String getMessageDetails(RequestMessageDetails requestMessageDetails) {
         LOGGER.info("Psql has to get details for message " + requestMessageDetails.getUuid());
 
         try {
@@ -64,6 +65,7 @@ public class PsqlWrapper {
             return sbBig.toString();
 
         } catch (SQLException e) {
+            LOGGER.warning("SQL exception when doing sql stuff: " + e);
             throw new RuntimeException(e);
         }
     }

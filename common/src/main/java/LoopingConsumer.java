@@ -29,6 +29,7 @@ public class LoopingConsumer<K, V> extends SubscribableConsumer<K, V>{
                 Thread.sleep(sleepMs);
             } catch (InterruptedException e) {
                 this.close();
+                LOGGER.warning("Interrupt exception in consumer: " + e);
                 throw new RuntimeException(e);
             }
         }

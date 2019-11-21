@@ -41,6 +41,7 @@ public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsume
                 LOGGER.info("PSQL received a NOP request. Skipping...");
                 break;
             default:
+                LOGGER.warning("PSQL Unknown message type");
                 throw new RuntimeException("Unknown stream object type");
         }
     }

@@ -1,9 +1,13 @@
+import java.util.logging.Logger;
+
 public class RequestSearchMessage {
+    private static final Logger LOGGER = Logger.getLogger(RequestSearchMessage.class.getName());
     private static final String KEY_SEARCH_TEXT = "searchText";
     private final String searchText;
 
     public RequestSearchMessage(StupidStreamObject stupidStreamObject) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.SEARCH_MESSAGES) {
+            LOGGER.warning("StupidStreamObject doesn't have the correct object type");
             throw new RuntimeException("Incorrect object type");
         }
 

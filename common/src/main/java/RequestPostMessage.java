@@ -1,4 +1,8 @@
+import java.util.logging.Logger;
+
 public class RequestPostMessage {
+    private static final Logger LOGGER = Logger.getLogger(RequestPostMessage.class.getName());
+
     private static final String KEY_SENDER = "sender";
     private static final String KEY_MESSAGE_TEXT = "messageText";
 
@@ -7,6 +11,7 @@ public class RequestPostMessage {
 
     public RequestPostMessage(StupidStreamObject stupidStreamObject) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.POST_MESSAGE) {
+            LOGGER.warning("Stupid Stream Object has the incorrect object type");
             throw new RuntimeException("Incorrect object type");
         }
 

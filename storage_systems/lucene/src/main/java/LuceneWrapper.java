@@ -42,6 +42,7 @@ class LuceneWrapper {
         try {
             luceneIndexDir = FSDirectory.open(indexPath);
         } catch (IOException e) {
+            LOGGER.info("Error when trying to open lucene dir: " + e);
             throw new RuntimeException(e);
         }
 
@@ -51,6 +52,7 @@ class LuceneWrapper {
         try {
             indexWriter = new IndexWriter(luceneIndexDir, iwc);
         } catch (IOException e) {
+            LOGGER.warning("Error in Lucene when trying to open indexWriter: " + e);
             throw new RuntimeException(e);
         }
 

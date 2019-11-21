@@ -45,6 +45,7 @@ public class LuceneStorageSystem extends HttpStorageSystem implements KafkaConsu
                 LOGGER.info("Lucene received a NOP request. Skipping...");
                 break;
             default:
+                LOGGER.warning("Received unkown message type in Lucene");
                 throw new RuntimeException("Unknown stream object type");
         }
     }
