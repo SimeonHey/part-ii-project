@@ -50,8 +50,12 @@ public class LuceneStorageSystem extends HttpStorageSystem implements KafkaConsu
     }
 
     private byte[] handleSearch(String query) {
+        LOGGER.info(String.format("Handling search query %s", query));
+
         ResponseSearchMessage searchResult = this.luceneWrapper.searchMessage(new RequestSearchMessage(query));
         String serialized = gson.toJson(searchResult);
+
+        LOGGER.info(String.format("Serialized results of the search are: %s", serialized));
 
         return serialized.getBytes();
     }

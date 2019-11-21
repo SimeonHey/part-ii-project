@@ -5,6 +5,8 @@ import org.apache.kafka.clients.producer.RecordMetadata;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
@@ -17,7 +19,11 @@ public class StorageAPIEntryPoint {
     private static HttpURLConnection sendHttpGetRequest(String base,
                                                         String endpoint,
                                                         String params) throws IOException {
-        String url = String.format("%s/%s?%s", base, endpoint, params);
+        String url = String.format("%s/%s?%s",
+            base,
+            endpoint,
+            URLEncoder.encode(params, StandardCharsets.UTF_8));
+
         LOGGER.info("Sending an HTTP request to " + url);
 
         HttpURLConnection httpURLConnection =
