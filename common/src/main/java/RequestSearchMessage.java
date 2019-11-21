@@ -22,7 +22,7 @@ public class RequestSearchMessage {
     @Override
     public String toString() {
         return "SearchMessageRequest{" +
-            "searchText='" + searchText + '\'' +
+            "searchText='" + getSearchText() + '\'' +
             '}';
     }
 

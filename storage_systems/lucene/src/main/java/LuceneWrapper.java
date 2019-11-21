@@ -56,8 +56,14 @@ class LuceneWrapper {
 
         try {
             Document doc = new Document();
-            doc.add(new StringField("sender", requestPostMessage.getSender(), Field.Store.YES));
-            doc.add(new TextField("message", requestPostMessage.getMessageText(), Field.Store.NO));
+
+            String escapedSender = QueryParser.escape(requestPostMessage.getSender());
+            String escapedMessage = QueryParser.escape(requestPostMessage.getMessageText());
+
+            LOGGER.info("Escaped sender: " + escapedSender + "; escaped message: " + escapedMessage);
+
+            doc.add(new StringField("sender", escapedSender, Field.Store.YES));
+            doc.add(new TextField("message", escapedMessage, Field.Store.NO));
             doc.add(new StoredField("uuid", uuid));
 
             indexWriter.addDocument(doc);
@@ -75,10 +81,13 @@ class LuceneWrapper {
     }
 
     ResponseSearchMessage searchMessage(RequestSearchMessage requestSearchMessage) {
+        LOGGER.info("Searching for " + requestSearchMessage);
+
         IndexReader indexReader;
         try {
             indexReader = DirectoryReader.open(FSDirectory.open(indexPath));
         } catch (IOException e) {
+            LOGGER.info("Exception " + e + " when building indexReader");
             throw new RuntimeException(e);
         }
         IndexSearcher indexSearcher = new IndexSearcher(indexReader);
@@ -89,8 +98,12 @@ class LuceneWrapper {
         QueryParser queryParser = new QueryParser(searchField, analyzer);
         Query query;
         try {
-            query = queryParser.parse(requestSearchMessage.getSearchText());
+            String escaped = QueryParser.escape(requestSearchMessage.getSearchText());
+            LOGGER.info("Escaped search query: " + escaped);
+
+            query = queryParser.parse(escaped);
         } catch (ParseException e) {
+            LOGGER.info("Exception " + e + " when building query");
             throw new RuntimeException(e);
         }
 
@@ -98,6 +111,7 @@ class LuceneWrapper {
         try {
             searchResults = indexSearcher.search(query, 100);
         } catch (IOException e) {
+            LOGGER.info("Exception " + e + " when searching for query");
             throw new RuntimeException(e);
         }
 
@@ -108,6 +122,7 @@ class LuceneWrapper {
                 String res = indexSearcher.doc(scoreDoc.doc).get("uuid");
                 response.addOccurrence(Long.valueOf(res));
             } catch (IOException e) {
+                LOGGER.info("Exception " + e + " when analysing search result");
                 throw new RuntimeException(e);
             }
         });
