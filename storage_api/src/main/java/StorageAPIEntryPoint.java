@@ -34,6 +34,23 @@ public class StorageAPIEntryPoint {
         return new String(conn.getInputStream().readAllBytes());
     }
 
+    private static void discoverEndpoint(String endpoint) throws InterruptedException {
+        while (true) {
+            String url = String.format("%s/discover", endpoint);
+            try {
+                HttpURLConnection conn =
+                    sendHttpGetRequest(endpoint, "discover", "");
+                if (conn.getResponseCode() != 200) {
+                    throw new IOException();
+                }
+                break;
+            } catch (IOException e) {
+                LOGGER.warning("Couldn't connect to " + url + ". Retrying...");
+                Thread.sleep(1000);
+            }
+        }
+    }
+
     private static void produceMessage(Producer<Long, StupidStreamObject> producer,
                                        StupidStreamObject toSend) {
         ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(IKafkaConstants.TOPIC_NAME, toSend);
@@ -47,7 +64,7 @@ public class StorageAPIEntryPoint {
         }
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, InterruptedException {
         // Consume command line arguments
         String argLuceneAddress = args[0];
         String argPsqlAddress = args[1];
@@ -60,19 +77,11 @@ public class StorageAPIEntryPoint {
         LOGGER.info("Success");
 
         LOGGER.info("Connecting to Lucene...");
-        HttpURLConnection conLucene =
-            sendHttpGetRequest(argLuceneAddress, "lucene/discover", "");
-        if (conLucene.getResponseCode() != 200) {
-            throw new RuntimeException("Couldn't discover lucene");
-        }
+        discoverEndpoint(argLuceneAddress);
         LOGGER.info("Success");
 
         LOGGER.info("Connecting to PSQL...");
-        HttpURLConnection conPsql =
-            sendHttpGetRequest(argPsqlAddress, "psql/discover", "");
-        if (conPsql.getResponseCode() != 200) {
-            throw new RuntimeException("Couldn't discover lucene");
-        }
+        discoverEndpoint(argPsqlAddress);
         LOGGER.info("Success");
 
         // Take user commands and perform actions
@@ -95,11 +104,11 @@ public class StorageAPIEntryPoint {
                     produceMessage(producer, PostMessageRequest.toStupidStreamObject(line[1], line[2]));
                     break;
                 case "search":
-                    String resp1 = httpRequestResponse(argLuceneAddress, "lucene/search", line[1]);
+                    String resp1 = httpRequestResponse(argLuceneAddress, "search", line[1]);
                     System.out.println("Search response: " + resp1);
                     break;
                 case "details":
-                    String resp2 = httpRequestResponse(argPsqlAddress, "psql/messageDetails", line[1]);
+                    String resp2 = httpRequestResponse(argPsqlAddress, "messageDetails", line[1]);
                     System.out.println("Message details: " + resp2);
                     break;
                 default:

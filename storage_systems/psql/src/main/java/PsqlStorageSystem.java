@@ -1,10 +1,7 @@
 import com.google.gson.Gson;
-import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.logging.Logger;
 
 public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsumerObserver<Long, StupidStreamObject> {
@@ -23,7 +20,7 @@ public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsume
         this.gson = gson;
 
         consumer.subscribe(this);
-        httpServer.createContext("/psql/messageDetails", this::handleGetMessageDetails);
+        this.registerHandler("messageDetails", this::handleGetMessageDetails);
     }
 
     @Override
@@ -45,20 +42,13 @@ public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsume
         }
     }
 
-    private void handleGetMessageDetails(HttpExchange httpExchange) throws IOException {
-        String query = httpExchange.getRequestURI().getQuery();
+    private byte[] handleGetMessageDetails(String query) {
         // TODO : Add sanitization
         MessageDetailsRequest request = new MessageDetailsRequest(Long.valueOf(query));
 
         String reqResult = this.psqlWrapper.getMessageDetails(request);
         String serialized = gson.toJson(reqResult);
 
-        httpExchange.sendResponseHeaders(200, serialized.getBytes().length);
-
-        OutputStream os = httpExchange.getResponseBody();
-        os.write(serialized.getBytes());
-        os.close();
-
-        httpExchange.close();
+        return serialized.getBytes();
     }
 }

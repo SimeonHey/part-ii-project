@@ -1,15 +1,36 @@
-import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
-import java.io.IOException;
+import java.io.OutputStream;
+import java.util.function.Function;
 
 public class HttpStorageSystem {
+    private HttpServer httpServer;
+    private String storageSystemName;
+
     public HttpStorageSystem(String storageSystemName, HttpServer httpServer) {
-        httpServer.createContext(String.format("/%s/discover", storageSystemName), this::handleDiscover);
+        this.httpServer = httpServer;
+        this.storageSystemName = storageSystemName;
+
+        this.registerHandler("discover", this::handleDiscover);
     }
 
-    private void handleDiscover(HttpExchange httpExchange) throws IOException {
-        httpExchange.sendResponseHeaders(200, 0);
-        httpExchange.close();
+    private byte[] handleDiscover(String query) {
+        return new byte[0];
+    }
+
+    protected void registerHandler(String endpoint, Function<String, byte[]> handler) {
+        this.httpServer.createContext(String.format("/%s/%s", this.storageSystemName, endpoint),
+            (httpExchange) -> {
+                String query = httpExchange.getRequestURI().getQuery();
+                byte[] bytes = handler.apply(query);
+
+                httpExchange.sendResponseHeaders(200, bytes.length);
+
+                OutputStream os = httpExchange.getResponseBody();
+                os.write(bytes);
+                os.close();
+
+                httpExchange.close();
+            });
     }
 }

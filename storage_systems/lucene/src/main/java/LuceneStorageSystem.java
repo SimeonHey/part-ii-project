@@ -1,10 +1,7 @@
 import com.google.gson.Gson;
-import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.logging.Logger;
 
 public class LuceneStorageSystem extends HttpStorageSystem implements KafkaConsumerObserver<Long, StupidStreamObject> {
@@ -23,7 +20,8 @@ public class LuceneStorageSystem extends HttpStorageSystem implements KafkaConsu
         this.gson = gson;
 
         consumer.subscribe(this);
-        httpServer.createContext("/lucene/search", this::handleSearch);
+
+        this.registerHandler("search", this::handleSearch);
     }
 
     @Override
@@ -48,18 +46,10 @@ public class LuceneStorageSystem extends HttpStorageSystem implements KafkaConsu
         }
     }
 
-    private void handleSearch(HttpExchange httpExchange) throws IOException {
-        String query = httpExchange.getRequestURI().getQuery();
-
+    private byte[] handleSearch(String query) {
         SearchMessageResponse searchResult = this.luceneWrapper.searchMessage(new SearchMessageRequest(query));
         String serialized = gson.toJson(searchResult);
 
-        httpExchange.sendResponseHeaders(200, serialized.getBytes().length);
-
-        OutputStream os = httpExchange.getResponseBody();
-        os.write(serialized.getBytes());
-        os.close();
-
-        httpExchange.close();
+        return serialized.getBytes();
     }
 }
