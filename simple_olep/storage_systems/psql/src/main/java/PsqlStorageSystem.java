@@ -10,7 +10,7 @@ public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsume
     private final PsqlWrapper psqlWrapper;
     private final Gson gson;
 
-    PsqlStorageSystem(LoopingConsumer<Long, StupidStreamObject> consumer,
+    PsqlStorageSystem(SubscribableConsumer<Long, StupidStreamObject> consumer,
                       HttpServer httpServer,
                       PsqlWrapper psqlWrapper,
                       Gson gson) {

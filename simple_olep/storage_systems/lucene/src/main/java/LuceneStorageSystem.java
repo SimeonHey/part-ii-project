@@ -10,7 +10,7 @@ public class LuceneStorageSystem extends HttpStorageSystem implements KafkaConsu
     private final LuceneWrapper luceneWrapper;
     private final Gson gson;
 
-    LuceneStorageSystem(LoopingConsumer<Long, StupidStreamObject> consumer,
+    LuceneStorageSystem(SubscribableConsumer<Long, StupidStreamObject> consumer,
                         HttpServer httpServer,
                         LuceneWrapper luceneWrapper,
                         Gson gson) {

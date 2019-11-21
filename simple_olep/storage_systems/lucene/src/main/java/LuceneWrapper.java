@@ -46,7 +46,7 @@ class LuceneWrapper {
             throw new RuntimeException(e);
         }
 
-        iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+        iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 
         IndexWriter indexWriter;
         try {

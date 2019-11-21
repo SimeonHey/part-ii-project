@@ -1,5 +1,4 @@
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
@@ -14,17 +13,12 @@ class PsqlWrapper {
     }
 
     private void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
-        connection.setAutoCommit(false);
-
         String query = String.format("INSERT INTO messages (sender, messageText, uuid) VALUES ('%s', '%s', %d)",
             sender,
             messageText,
             uuid);
         LOGGER.info(query);
-
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.executeUpdate();
-        connection.commit();
+        SqlUtils.executeStatement(query, this.connection);
     }
 
     void postMessage(RequestPostMessage requestPostMessage, Long uuid) {
@@ -41,9 +35,10 @@ class PsqlWrapper {
         LOGGER.info("Psql has to get details for message " + requestMessageDetails.getUuid());
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement(String.format("SELECT * FROM messages WHERE uuid " +
-                "= %d", requestMessageDetails.getUuid()));
-            ResultSet resultSet = preparedStatement.executeQuery();
+            String statement = String.format("SELECT * FROM messages WHERE uuid = %d",
+                requestMessageDetails.getUuid());
+            ResultSet resultSet = SqlUtils.executeStatementForResult(statement, this.connection);
+
             StringBuilder sbBig = new StringBuilder();
 
             int columnCount = resultSet.getMetaData().getColumnCount();
@@ -58,9 +53,9 @@ class PsqlWrapper {
                         sbSmall.append(resultSet.getLong(i)).append(" ");
                     }
                 }
-                sbBig.append(sbSmall.toString()).append(" ");
+                sbBig.append(sbSmall.toString());
             }
-            preparedStatement.close();
+            resultSet.close();
 
             return sbBig.toString();
 

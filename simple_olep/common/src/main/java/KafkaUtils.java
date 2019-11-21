@@ -4,8 +4,12 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
+
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 import java.util.Collections;
@@ -39,5 +43,20 @@ public class KafkaUtils {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StupidStreamObjectSer.class.getName());
 
         return new KafkaProducer<>(props);
+    }
+
+    static void produceMessage(Producer<Long, StupidStreamObject> producer,
+                               String topic,
+                               StupidStreamObject toSend) {
+        ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(topic, toSend);
+        try {
+            RecordMetadata metadata = producer.send(record).get();
+            LOGGER.info("Produced message of type " + toSend.getObjectType()
+                + " with Kafka offset = " + metadata.offset());
+        }
+        catch (ExecutionException | InterruptedException e) {
+            LOGGER.warning("Error when producing message");
+            throw new RuntimeException(e);
+        }
     }
 }

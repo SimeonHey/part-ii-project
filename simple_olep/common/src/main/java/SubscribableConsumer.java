@@ -8,7 +8,7 @@ public class SubscribableConsumer<K, V> {
     static final long DEFAULT_BLOCK_MS = 10000;
 
     List<KafkaConsumerObserver<K, V>> subscribers;
-    private Consumer<K, V> kafkaConsumer;
+    protected Consumer<K, V> kafkaConsumer;
     private final long blockMs;
 
     SubscribableConsumer(Consumer<K, V> kafkaConsumer, long blockMs) {
