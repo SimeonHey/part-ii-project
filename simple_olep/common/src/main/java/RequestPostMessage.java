@@ -6,8 +6,7 @@ public class RequestPostMessage {
     private static final String KEY_SENDER = "sender";
     private static final String KEY_MESSAGE_TEXT = "messageText";
 
-    private final String sender;
-    private final String messageText;
+    private final Message message;
 
     public RequestPostMessage(StupidStreamObject stupidStreamObject) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.POST_MESSAGE) {
@@ -15,29 +14,28 @@ public class RequestPostMessage {
             throw new RuntimeException("Incorrect object type");
         }
 
-        this.sender = stupidStreamObject.getProperty(KEY_SENDER);
-        this.messageText = stupidStreamObject.getProperty(KEY_MESSAGE_TEXT);
+        this.message = new Message(stupidStreamObject.getProperty(KEY_SENDER),
+            stupidStreamObject.getProperty(KEY_MESSAGE_TEXT));
     }
 
-    public static StupidStreamObject toStupidStreamObject(String sender, String messageText) {
+    public RequestPostMessage(Message message) {
+        this.message = message;
+    }
+
+    public StupidStreamObject toStupidStreamObject() {
         return new StupidStreamObject(StupidStreamObject.ObjectType.POST_MESSAGE)
-            .setProperty(KEY_SENDER, sender)
-            .setProperty(KEY_MESSAGE_TEXT, messageText);
+            .setProperty(KEY_SENDER, getMessage().getSender())
+            .setProperty(KEY_MESSAGE_TEXT, getMessage().getMessageText());
     }
 
-    public String getSender() {
-        return sender;
-    }
-
-    public String getMessageText() {
-        return messageText;
+    public Message getMessage() {
+        return this.message;
     }
 
     @Override
     public String toString() {
-        return "PostMessageRequest{" +
-            "sender='" + sender + '\'' +
-            ", messageText='" + messageText + '\'' +
+        return "RequestPostMessage{" +
+            "message=" + message +
             '}';
     }
 }

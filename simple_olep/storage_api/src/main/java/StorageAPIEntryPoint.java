@@ -1,3 +1,4 @@
+import com.google.gson.Gson;
 import org.apache.kafka.clients.producer.Producer;
 
 import java.io.IOException;
@@ -33,6 +34,9 @@ public class StorageAPIEntryPoint {
         HttpUtils.discoverEndpoint(argPsqlAddress);
         LOGGER.info("Success");
 
+        StorageAPI storageAPI =
+            new StorageAPI(new Gson(), producer, argLuceneAddress, argPsqlAddress, argTransactionsTopic);
+
         // Take user commands and perform actions
         Scanner scanner = new Scanner(System.in);
         while (true) {
@@ -50,17 +54,17 @@ public class StorageAPIEntryPoint {
 
             switch (line[0]) {
                 case "post":
-                    KafkaUtils.produceMessage(producer,
-                        argTransactionsTopic,
-                        RequestPostMessage.toStupidStreamObject(line[1], line[2]));
+                    storageAPI.postMessage(new Message(line[1], line[2]));
                     break;
                 case "search":
-                    String resp1 = HttpUtils.httpRequestResponse(argLuceneAddress, "search", line[1]);
-                    System.out.println("Search response: " + resp1);
+                    ResponseSearchMessage responseSearchMessage =
+                        storageAPI.searchMessage(line[1]);
+                    System.out.println("Search response: " + responseSearchMessage);
                     break;
                 case "details":
-                    String resp2 = HttpUtils.httpRequestResponse(argPsqlAddress, "messageDetails", line[1]);
-                    System.out.println("Message details: " + resp2);
+                    ResponseMessageDetails responseMessageDetails =
+                        storageAPI.messageDetails(Long.valueOf(line[1]));
+                    System.out.println("Message details: " + responseMessageDetails);
                     break;
                 default:
                     System.out.println("Couldn't catch that");

@@ -59,8 +59,8 @@ class LuceneWrapper {
         try {
             Document doc = new Document();
 
-            String escapedSender = QueryParser.escape(requestPostMessage.getSender());
-            String escapedMessage = QueryParser.escape(requestPostMessage.getMessageText());
+            String escapedSender = QueryParser.escape(requestPostMessage.getMessage().getSender());
+            String escapedMessage = QueryParser.escape(requestPostMessage.getMessage().getMessageText());
 
             LOGGER.info("Escaped sender: " + escapedSender + "; escaped message: " + escapedMessage);
 

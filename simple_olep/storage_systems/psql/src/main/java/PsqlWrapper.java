@@ -24,14 +24,15 @@ class PsqlWrapper {
     void postMessage(RequestPostMessage requestPostMessage, Long uuid) {
         LOGGER.info("PSQL posts message " + requestPostMessage + " with uuid " + uuid);
         try {
-            insertMessage(requestPostMessage.getSender(), requestPostMessage.getMessageText(), uuid);
+            insertMessage(requestPostMessage.getMessage().getSender(),
+                requestPostMessage.getMessage().getMessageText(), uuid);
         } catch (SQLException e) {
             LOGGER.warning("Error when inserting message: " + e);
             throw new RuntimeException(e);
         }
     }
 
-    String getMessageDetails(RequestMessageDetails requestMessageDetails) {
+    ResponseMessageDetails getMessageDetails(RequestMessageDetails requestMessageDetails) {
         LOGGER.info("Psql has to get details for message " + requestMessageDetails.getUuid());
 
         try {
@@ -39,25 +40,17 @@ class PsqlWrapper {
                 requestMessageDetails.getUuid());
             ResultSet resultSet = SqlUtils.executeStatementForResult(statement, this.connection);
 
-            StringBuilder sbBig = new StringBuilder();
-
-            int columnCount = resultSet.getMetaData().getColumnCount();
-
-            // TODO: Ugly
-            while (resultSet.next()) {
-                StringBuilder sbSmall = new StringBuilder();
-                for (int i=1; i<=columnCount; i++) {
-                    if (i < columnCount) {
-                        sbSmall.append(resultSet.getString(i)).append(" ");
-                    } else {
-                        sbSmall.append(resultSet.getLong(i)).append(" ");
-                    }
-                }
-                sbBig.append(sbSmall.toString());
+            boolean hasMore = resultSet.next();
+            if (!hasMore) {
+                return null;
             }
+
+            ResponseMessageDetails response = new ResponseMessageDetails(
+                new Message(resultSet.getString(1), resultSet.getString(2)),
+                resultSet.getLong(3));
             resultSet.close();
 
-            return sbBig.toString();
+            return response;
 
         } catch (SQLException e) {
             LOGGER.warning("SQL exception when doing sql stuff: " + e);

@@ -50,7 +50,7 @@ public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsume
         // TODO : Add sanitization
         RequestMessageDetails request = new RequestMessageDetails(Long.valueOf(query));
 
-        String reqResult = this.psqlWrapper.getMessageDetails(request);
+        ResponseMessageDetails reqResult = this.psqlWrapper.getMessageDetails(request);
         String serialized = gson.toJson(reqResult);
 
         return serialized.getBytes();
