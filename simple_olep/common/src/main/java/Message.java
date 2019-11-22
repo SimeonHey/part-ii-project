@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class Message {
     private final String sender;
     private final String messageText;
@@ -21,5 +23,19 @@ public class Message {
             "sender='" + sender + '\'' +
             ", messageText='" + messageText + '\'' +
             '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Message message = (Message) o;
+        return getSender().equals(message.getSender()) &&
+            getMessageText().equals(message.getMessageText());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getSender(), getMessageText());
     }
 }

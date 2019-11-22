@@ -47,8 +47,9 @@ public class ConsistencyTests {
         PsqlStorageSystem psqlStorageSystem =
             new PsqlStorageSystem(consumerPsql, mockedHttpServer, psqlWrapper, gson);
 
-        KafkaUtils.produceMessage(producer, "transactions",
-            RequestPostMessage.toStupidStreamObject("simeon", "hello bud"));
+        Message message = new Message("simeon", "hello bud");
+        RequestPostMessage requestPostMessage = new RequestPostMessage(message);
+        KafkaUtils.produceMessage(producer, "transactions", requestPostMessage.toStupidStreamObject());
         assertEquals(1, consumerLucene.consumeAvailableRecords());
 
         ResponseSearchMessage response =
@@ -58,12 +59,14 @@ public class ConsistencyTests {
         long id = response.getOccurrences().get(0);
 
         // Uncomment the line below to fix test
-        // consumerPsql.consumeAvailableRecords();
+//        consumerPsql.consumeAvailableRecords();
 
         consumerLucene.close();
         consumerPsql.close();
 
-        String details = psqlWrapper.getMessageDetails(new RequestMessageDetails(id));
-        assertEquals(String.format("simeon hello bud %d ", id), details);
+        ResponseMessageDetails details =
+            psqlWrapper.getMessageDetails(new RequestMessageDetails(id));
+        assertEquals(details,
+            new ResponseMessageDetails(new Message("simeon", "hello bud"), id));
     }
 }

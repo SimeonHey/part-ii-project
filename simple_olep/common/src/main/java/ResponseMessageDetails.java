@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class ResponseMessageDetails {
     private final Message message;
     private final long uuid;
@@ -21,5 +23,19 @@ public class ResponseMessageDetails {
             "message=" + message +
             ", uuid=" + uuid +
             '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ResponseMessageDetails that = (ResponseMessageDetails) o;
+        return getUuid() == that.getUuid() &&
+            getMessage().equals(that.getMessage());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getMessage(), getUuid());
     }
 }
