@@ -9,13 +9,13 @@ public class SqlUtils {
 
     public static void executeStatement(String sql, Connection connection) throws SQLException {
         LOGGER.info("Executing statement: " + sql);
-        connection.setAutoCommit(false);
+        connection.setAutoCommit(true);
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         preparedStatement.executeUpdate();
-        connection.commit();
     }
     public static ResultSet executeStatementForResult(String sql, Connection connection) throws SQLException {
         LOGGER.info("Executing statement for result: " + sql);
+        connection.setAutoCommit(true);
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         return preparedStatement.executeQuery();
     }

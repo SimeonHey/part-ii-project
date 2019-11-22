@@ -1,6 +1,3 @@
-import com.google.gson.Gson;
-import org.apache.kafka.clients.producer.Producer;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
@@ -11,31 +8,8 @@ public class StorageAPIEntryPoint {
     private static final Logger LOGGER = Logger.getLogger(StorageAPIEntryPoint.class.getName());
 
     public static void main(String[] args) throws IOException, InterruptedException {
-        // Consume command line arguments
-        String argLuceneAddress = args[0];
-        String argPsqlAddress = args[1];
-        String argKafkaAddress = args[2];
-        String argTransactionsTopic = args[3];
-
         LOGGER.info("Starting StorageAPI with params " + Arrays.toString(args));
-
-        // Setup connections
-        LOGGER.info("Initializing a Kafka producer...");
-        Producer<Long, StupidStreamObject> producer =
-            KafkaUtils.createProducer(argKafkaAddress, "storageAPI");
-        KafkaUtils.produceMessage(producer, argTransactionsTopic, RequestNOP.toStupidStreamObject());
-        LOGGER.info("Success");
-
-        LOGGER.info("Connecting to Lucene...");
-        HttpUtils.discoverEndpoint(argLuceneAddress);
-        LOGGER.info("Success");
-
-        LOGGER.info("Connecting to PSQL...");
-        HttpUtils.discoverEndpoint(argPsqlAddress);
-        LOGGER.info("Success");
-
-        StorageAPI storageAPI =
-            new StorageAPI(new Gson(), producer, argLuceneAddress, argPsqlAddress, argTransactionsTopic);
+        StorageAPI storageAPI = StorageAPIUtils.initFromArgs(args[0], args[1], args[2], args[3]);
 
         // Take user commands and perform actions
         Scanner scanner = new Scanner(System.in);

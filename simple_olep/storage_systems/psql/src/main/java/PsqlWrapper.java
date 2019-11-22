@@ -13,7 +13,8 @@ class PsqlWrapper {
     }
 
     private void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
-        String query = String.format("INSERT INTO messages (sender, messageText, uuid) VALUES ('%s', '%s', %d)",
+
+        String query = String.format("INSERT INTO messages (sender, messageText, uuid) VALUES ($$%s$$, $$%s$$, %d)",
             sender,
             messageText,
             uuid);
@@ -91,4 +92,3 @@ class PsqlWrapper {
         }
     }
 }
-// TODO: Junit

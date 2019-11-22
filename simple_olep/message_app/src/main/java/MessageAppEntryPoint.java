@@ -1,20 +1,41 @@
-import com.google.gson.Gson;
-import org.apache.kafka.clients.producer.Producer;
+import java.awt.*;
+import java.io.IOException;
+import java.util.logging.Logger;
 
 public class MessageAppEntryPoint {
-    public static void main(String[] args) {
-        String kafkaAddress = "localhost:9092";
-        String luceneAddress = "localhost:8001";
-        String psqlAddress = "localhost:8002";
-        String transactionsTopic = "transactions_app";
+    private static final Logger LOGGER = Logger.getLogger(MessageAppEntryPoint.class.getName());
 
-        Gson gson = new Gson();
-        Producer<Long, StupidStreamObject> producer =
-            KafkaUtils.createProducer(kafkaAddress, "message_app");
+    public static void main(String[] args) throws InterruptedException {
         StorageAPI storageAPI =
-            new StorageAPI(gson, producer, luceneAddress, psqlAddress, transactionsTopic);
+            StorageAPIUtils.initFromArgs(args[0], args[1], args[2], args[3]);
 
+        EventQueue.invokeLater(() -> {
+            var simeon = new FrontEnd("Simeon");
+            var martin = new FrontEnd("Martin");
 
+            simeon.addPostCallback(storageAPI::postMessage);
+            simeon.addRefreshCallback(() -> {
+                ResponseAllMessages allMessages;
+                try {
+                    allMessages = storageAPI.allMessages();
+                } catch (IOException e) {
+                    LOGGER.info("Error when getting all messages: " + e);
+                    throw new RuntimeException(e);
+                }
+                simeon.setMessages(allMessages.getMessages());
+            });
+
+            martin.addPostCallback(storageAPI::postMessage);
+            martin.addRefreshCallback(() -> {
+                ResponseAllMessages allMessages;
+                try {
+                    allMessages = storageAPI.allMessages();
+                } catch (IOException e) {
+                    LOGGER.info("Error when getting all messages: " + e);
+                    throw new RuntimeException(e);
+                }
+                martin.setMessages(allMessages.getMessages());
+            });
+        });
     }
 }
-
