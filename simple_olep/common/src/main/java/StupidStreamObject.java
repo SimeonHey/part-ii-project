@@ -5,6 +5,7 @@ public class StupidStreamObject implements Serializable {
     public enum ObjectType {
         POST_MESSAGE,
         SEARCH_MESSAGES,
+        DELETE_ALL_MESSAGES,
         NOP
     }
 

@@ -21,6 +21,7 @@ public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsume
 
         consumer.subscribe(this);
         this.registerHandler("messageDetails", this::handleGetMessageDetails);
+        this.registerHandler("allMessages", this::handleGetAllMessages);
     }
 
     @Override
@@ -37,6 +38,9 @@ public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsume
             case POST_MESSAGE:
                 this.psqlWrapper.postMessage(new RequestPostMessage(streamObject), uuid);
                 break;
+            case DELETE_ALL_MESSAGES:
+                this.psqlWrapper.deleteAllMessages();
+                break;
             case NOP:
                 LOGGER.info("PSQL received a NOP request. Skipping...");
                 break;
@@ -51,6 +55,14 @@ public class PsqlStorageSystem extends HttpStorageSystem implements KafkaConsume
         RequestMessageDetails request = new RequestMessageDetails(Long.valueOf(query));
 
         ResponseMessageDetails reqResult = this.psqlWrapper.getMessageDetails(request);
+        String serialized = gson.toJson(reqResult);
+
+        return serialized.getBytes();
+    }
+
+    private byte[] handleGetAllMessages(String query) {
+        RequestAllMessages requestAllMessages = new RequestAllMessages();
+        ResponseAllMessages reqResult = this.psqlWrapper.getAllMessages(requestAllMessages);
         String serialized = gson.toJson(reqResult);
 
         return serialized.getBytes();

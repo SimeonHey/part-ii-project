@@ -41,6 +41,9 @@ public class LuceneStorageSystem extends HttpStorageSystem implements KafkaConsu
                 // this.luceneWrapper.searchMessage(new SearchMessageRequest(streamObject));
                 LOGGER.warning("Warning: Search via log is not implemented");
                 break;
+            case DELETE_ALL_MESSAGES:
+                LOGGER.info("Lucene received a DELETE_ALL_MESSAGES request");
+                this.luceneWrapper.deleteAllMessages();
             case NOP:
                 LOGGER.info("Lucene received a NOP request. Skipping...");
                 break;

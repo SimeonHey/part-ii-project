@@ -71,13 +71,15 @@ class LuceneWrapper {
             indexWriter.addDocument(doc);
             LOGGER.info("Successfully added message " + requestPostMessage.toString());
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.warning("Error when trying to add a new doc");
+            throw new RuntimeException(e);
         }
 
         try {
             indexWriter.flush();
             indexWriter.close();
         } catch (IOException e) {
+            LOGGER.warning("Error when trying to flush and close the indexWRiter");
             throw new RuntimeException(e);
         }
     }
@@ -131,5 +133,36 @@ class LuceneWrapper {
 
         LOGGER.info("Lucene search for message " + requestSearchMessage + " and got " + response);
         return response;
+    }
+
+    void deleteAllMessages() {
+        final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+        LOGGER.info("Lucene deletes all messages");
+
+        Directory luceneIndexDir;
+        try {
+            luceneIndexDir = FSDirectory.open(indexPath);
+        } catch (IOException e) {
+            LOGGER.info("Error when trying to open lucene dir: " + e);
+            throw new RuntimeException(e);
+        }
+
+        iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+
+        IndexWriter indexWriter;
+        try {
+            indexWriter = new IndexWriter(luceneIndexDir, iwc);
+        } catch (IOException e) {
+            LOGGER.warning("Error in Lucene when trying to open indexWriter: " + e);
+            throw new RuntimeException(e);
+        }
+
+        try {
+            indexWriter.flush();
+            indexWriter.close();
+        } catch (IOException e) {
+            LOGGER.warning("Error when trying to flush and close the indexWRiter");
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -19,4 +19,12 @@ public class SqlUtils {
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
         return preparedStatement.executeQuery();
     }
+
+    public static Message extractMessageFromResultSet(ResultSet resultSet) throws SQLException {
+        return new Message(resultSet.getString(1), resultSet.getString(2));
+    }
+
+    public static long extractUuidFromResultSet(ResultSet resultSet) throws SQLException {
+        return resultSet.getLong(3);
+    }
 }

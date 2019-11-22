@@ -46,14 +46,47 @@ class PsqlWrapper {
             }
 
             ResponseMessageDetails response = new ResponseMessageDetails(
-                new Message(resultSet.getString(1), resultSet.getString(2)),
-                resultSet.getLong(3));
+                SqlUtils.extractMessageFromResultSet(resultSet),
+                SqlUtils.extractUuidFromResultSet(resultSet));
+
             resultSet.close();
 
             return response;
 
         } catch (SQLException e) {
-            LOGGER.warning("SQL exception when doing sql stuff: " + e);
+            LOGGER.warning("SQL exception when doing sql stuff in getMessageDetails: " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    ResponseAllMessages getAllMessages(RequestAllMessages requestAllMessages) {
+        LOGGER.info("Psql has to get ALL messages: " + requestAllMessages);
+        ResponseAllMessages responseAllMessages = new ResponseAllMessages();
+
+        try {
+            String statement = "SELECT * FROM messages";
+            ResultSet resultSet = SqlUtils.executeStatementForResult(statement, this.connection);
+
+            while (resultSet.next()) {
+                responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
+            }
+
+            LOGGER.info("Psql extracted the following: " + responseAllMessages);
+
+            resultSet.close();
+            return responseAllMessages;
+        } catch (SQLException e) {
+            LOGGER.warning("SQL exception when doing sql stuff in getAllMessages: " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    void deleteAllMessages() {
+        LOGGER.info("Psql is deleting ALL messages");
+        try {
+            SqlUtils.executeStatement("DELETE FROM messages", this.connection);
+        } catch (SQLException e) {
+            LOGGER.warning("SQL exception when doing sql stuff in delete all messages: " + e);
             throw new RuntimeException(e);
         }
     }
