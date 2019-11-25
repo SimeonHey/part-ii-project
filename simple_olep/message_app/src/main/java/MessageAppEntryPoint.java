@@ -1,41 +1,23 @@
 import java.awt.*;
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 public class MessageAppEntryPoint {
     private static final Logger LOGGER = Logger.getLogger(MessageAppEntryPoint.class.getName());
 
     public static void main(String[] args) throws InterruptedException {
+        LOGGER.info("Initializing a storage api with arguments " + Arrays.toString(args));
+
         StorageAPI storageAPI =
             StorageAPIUtils.initFromArgs(args[0], args[1], args[2], args[3]);
 
+        LOGGER.info("Deleting all previous messages");
+        storageAPI.deleteAllMessages();
+
+        LOGGER.info("Initializing the UIs...");
         EventQueue.invokeLater(() -> {
-            var simeon = new FrontEnd("Simeon");
-            var martin = new FrontEnd("Martin");
-
-            simeon.addPostCallback(storageAPI::postMessage);
-            simeon.addRefreshCallback(() -> {
-                ResponseAllMessages allMessages;
-                try {
-                    allMessages = storageAPI.allMessages();
-                } catch (IOException e) {
-                    LOGGER.info("Error when getting all messages: " + e);
-                    throw new RuntimeException(e);
-                }
-                simeon.setMessages(allMessages.getMessages());
-            });
-
-            martin.addPostCallback(storageAPI::postMessage);
-            martin.addRefreshCallback(() -> {
-                ResponseAllMessages allMessages;
-                try {
-                    allMessages = storageAPI.allMessages();
-                } catch (IOException e) {
-                    LOGGER.info("Error when getting all messages: " + e);
-                    throw new RuntimeException(e);
-                }
-                martin.setMessages(allMessages.getMessages());
-            });
+            new FrontEnd("Simeon", storageAPI);
+            new FrontEnd("Martin", storageAPI);
         });
     }
 }

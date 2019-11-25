@@ -17,6 +17,7 @@ public class SqlUtils {
         LOGGER.info("Executing statement for result: " + sql);
         connection.setAutoCommit(true);
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
         return preparedStatement.executeQuery();
     }
 

@@ -1,30 +1,26 @@
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 class FrontEnd extends JFrame {
     private static final Logger LOGGER = Logger.getLogger(FrontEnd.class.getName());
-    private Consumer<Message> messageConsumer;
-    private TextField messageField;
-    private JTextArea messageDisplay;
+    private StorageAPI storageAPI;
+
     private String sender;
-    private Runnable refreshCallback;
 
-    FrontEnd(String sender) {
+    private JTextArea messageDisplay;
+
+    private TextField messageField;
+
+    private TextField searchField;
+
+    FrontEnd(String sender, StorageAPI storageAPI) {
         this.sender = sender;
-        this.messageConsumer = null;
+        this.storageAPI = storageAPI;
+
         initUI();
-    }
-
-    void addPostCallback(Consumer<Message> messageConsumer) {
-        this.messageConsumer = messageConsumer;
-        this.setVisible(true);
-    }
-
-    void addRefreshCallback(Runnable refreshCallback) {
-        this.refreshCallback = refreshCallback;
     }
 
     private void addMessage(Message message) {
@@ -34,18 +30,34 @@ class FrontEnd extends JFrame {
         this.messageDisplay.setText(newText);
     }
 
-    void setMessages(List<Message> messages) {
+    private void setMessages(List<Message> messages) {
         this.messageDisplay.setText("");
         messages.forEach(this::addMessage);
     }
 
     private void sendCurrentMessage() {
-        LOGGER.info("The button was pressed, and the text is " +
+        LOGGER.info("Sending message was triggered, and the text is " +
             messageField.getText());
 
         Message message = new Message(this.sender, messageField.getText());
-        this.messageConsumer.accept(message);
+        this.storageAPI.postMessage(message);
         this.messageField.setText("");
+    }
+
+    private void searchCurrentToken() {
+        String token = searchField.getText();
+        LOGGER.info("Searching was triggered, and the token is " + token);
+
+        ResponseSearchMessage response;
+        try {
+            response = storageAPI.searchMessage(token);
+        } catch (IOException e) {
+            LOGGER.warning("Error when searching for message: " + e);
+            throw new RuntimeException(e);
+        }
+        LOGGER.info("Search completed. Occurrences: " + response.getOccurrences());
+
+        EventQueue.invokeLater(() -> new SearchPopup(storageAPI, response));
     }
 
     private JPanel initMessageControls() {
@@ -64,6 +76,32 @@ class FrontEnd extends JFrame {
         return jPanel;
     }
 
+    private JPanel initSearchControls() {
+        JPanel jPanel = new JPanel();
+        jPanel.setLayout(new BorderLayout());
+
+        this.searchField = new TextField();
+        this.searchField.addActionListener(e -> searchCurrentToken());
+
+        jPanel.add(searchField, BorderLayout.CENTER);
+
+        var searchButton = new JButton("Search for token");
+        searchButton.addActionListener((event) -> searchCurrentToken());
+        jPanel.add(searchButton, BorderLayout.EAST);
+
+        return jPanel;
+    }
+
+    private JPanel initBottomControls() {
+        JPanel jPanel = new JPanel();
+        jPanel.setLayout(new BorderLayout());
+
+        jPanel.add(initMessageControls(), BorderLayout.NORTH);
+        jPanel.add(initSearchControls(), BorderLayout.SOUTH);
+
+        return jPanel;
+    }
+
     private void initUI() {
         this.setLayout(new BorderLayout());
 
@@ -73,16 +111,25 @@ class FrontEnd extends JFrame {
         JScrollPane scrollMessageDisplay = new JScrollPane(this.messageDisplay);
         this.add(scrollMessageDisplay, BorderLayout.CENTER);
 
-        JPanel messageControls = initMessageControls();
-        this.add(messageControls, BorderLayout.SOUTH);
+        JPanel bottomControls = initBottomControls();
+        this.add(bottomControls, BorderLayout.SOUTH);
 
         JButton refreshButton = new JButton("Refresh thread");
-        refreshButton.addActionListener(e -> this.refreshCallback.run());
+        refreshButton.addActionListener(e -> {
+            try {
+                setMessages(storageAPI.allMessages().getMessages());
+            } catch (IOException ex) {
+                LOGGER.warning("Error when getting all messages: " + e);
+                throw new RuntimeException(ex);
+            }
+        });
         this.add(refreshButton, BorderLayout.NORTH);
 
         setTitle("Simple OLEP - " + this.sender);
         setSize(900, 500);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        this.setVisible(true);
     }
 }

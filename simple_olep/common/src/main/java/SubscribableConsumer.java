@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SubscribableConsumer<K, V> {
-    static final long DEFAULT_BLOCK_MS = 10000;
+    static final long DEFAULT_BLOCK_MS = 100; // TODO: Check
 
     List<KafkaConsumerObserver<K, V>> subscribers;
     protected Consumer<K, V> kafkaConsumer;
