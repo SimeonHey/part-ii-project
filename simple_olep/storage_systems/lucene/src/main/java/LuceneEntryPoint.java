@@ -18,7 +18,7 @@ public class LuceneEntryPoint {
             argKafkaAddress,
             argTransactionsTopic);
         LoopingConsumer<Long, StupidStreamObject> loopingConsumer =
-            new LoopingConsumer<>(kafkaConsumer);
+            new LoopingConsumer<>(kafkaConsumer, 100);
 
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(argListeningPort), 0);
         LuceneWrapper luceneWrapper = new LuceneWrapper();

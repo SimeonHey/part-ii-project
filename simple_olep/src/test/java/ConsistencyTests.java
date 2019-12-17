@@ -14,59 +14,71 @@ import static org.junit.Assert.assertEquals;
 public class ConsistencyTests {
     @Test
     public void shouldWork() throws SQLException {
+        String kafkaTopic = "transactions";
+
+        String messageSender = "simeon";
+        String messageText = "hello bud";
+
+        // Initialization part
+
+        // Manual consumers for lucene and psql
+        // Using a dummy implementation of Kafak
         ManualConsumer<Long, StupidStreamObject> consumerLucene =
-            new ManualConsumer<>(KafkaUtils.createConsumer(
-                "lucene",
-                "localhost:9092",
-                "transactions"));
+            new ManualConsumer<>(new DummyConsumer());
         ManualConsumer<Long, StupidStreamObject> consumerPsql =
-            new ManualConsumer<>(KafkaUtils.createConsumer(
-                "psql",
-                "localhost:9092",
-                "transactions"));
+            new ManualConsumer<>(new DummyConsumer());
 
         consumerLucene.moveAllToLatest();
         consumerPsql.moveAllToLatest();
 
-        Producer<Long, StupidStreamObject> producer =
-            KafkaUtils.createProducer("localhost:9092", "mainThing");
+        // Manual producer
+        Producer<Long, StupidStreamObject> producer = new DummyProducer();
 
-        HttpServer mockedHttpServer = Mockito.mock(HttpServer.class);
-
+        // Initialize Lucene
         LuceneWrapper luceneWrapper = new LuceneWrapper();
         Gson gson = new Gson();
-        LuceneStorageSystem luceneStorageSystem =
-            new LuceneStorageSystem(consumerLucene, mockedHttpServer, luceneWrapper, gson);
+        new LuceneStorageSystem(consumerLucene, Mockito.mock(HttpServer.class), luceneWrapper, gson);
 
+        // Initialize PostgreSQL
+        // TODO: *Consider* mocking it
         Properties props = new Properties();
         props.setProperty("user", "postgres");
         props.setProperty("password", "default");
         Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost/simple_olep_test", props);
-        SqlUtils.executeStatement("DELETE FROM messages", conn);
+
         PsqlWrapper psqlWrapper = new PsqlWrapper(conn);
-        PsqlStorageSystem psqlStorageSystem =
-            new PsqlStorageSystem(consumerPsql, mockedHttpServer, psqlWrapper, gson);
+        new PsqlStorageSystem(consumerPsql, Mockito.mock(HttpServer.class), psqlWrapper, gson);
 
-        Message message = new Message("simeon", "hello bud");
+        // Behaviour part starts below
+
+        // Reset what we have
+        luceneWrapper.deleteAllMessages();
+        psqlWrapper.deleteAllMessages();
+
+        // Produce a message
+        Message message = new Message(messageSender, messageText);
         RequestPostMessage requestPostMessage = new RequestPostMessage(message);
-        KafkaUtils.produceMessage(producer, "transactions", requestPostMessage.toStupidStreamObject());
-        assertEquals(1, consumerLucene.consumeAvailableRecords());
+        KafkaUtils.produceMessage(producer, kafkaTopic, requestPostMessage.toStupidStreamObject());
 
+        // Consume the message manually with Lucene
+        assertEquals(1, consumerLucene.consumeAvailableRecords());
         ResponseSearchMessage response =
-            luceneWrapper.searchMessage(new RequestSearchMessage("hello bud"));
+            luceneWrapper.searchMessage(new RequestSearchMessage(messageText));
         assertEquals(1, response.getOccurrences().size());
 
         long id = response.getOccurrences().get(0);
 
         // Uncomment the line below to fix test
-//        consumerPsql.consumeAvailableRecords();
+        consumerPsql.consumeAvailableRecords();
 
         consumerLucene.close();
         consumerPsql.close();
 
+        // Assertion part
+
         ResponseMessageDetails details =
             psqlWrapper.getMessageDetails(new RequestMessageDetails(id));
         assertEquals(details,
-            new ResponseMessageDetails(new Message("simeon", "hello bud"), id));
+            new ResponseMessageDetails(new Message(messageSender, messageText), id));
     }
 }

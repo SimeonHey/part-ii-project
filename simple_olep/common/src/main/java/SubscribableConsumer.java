@@ -3,9 +3,12 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class SubscribableConsumer<K, V> {
-    static final long DEFAULT_BLOCK_MS = 100; // TODO: Check
+    private final static Logger LOGGER = Logger.getLogger(SubscribableConsumer.class.getName());
+
+    static final long DEFAULT_BLOCK_MS = 10 * 1000; // TODO: Check
 
     List<KafkaConsumerObserver<K, V>> subscribers;
     protected Consumer<K, V> kafkaConsumer;
@@ -30,6 +33,7 @@ public class SubscribableConsumer<K, V> {
     ConsumerRecords<K, V> consumeRecords() {
         ConsumerRecords<K, V> consumerRecords = this.kafkaConsumer.poll(java.time.Duration.ofMillis(blockMs));
         this.kafkaConsumer.commitSync();
+        LOGGER.info("Consumed " + consumerRecords.count() + " records");
         return consumerRecords;
     }
 

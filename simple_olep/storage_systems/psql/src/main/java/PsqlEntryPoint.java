@@ -24,7 +24,7 @@ public class PsqlEntryPoint {
             argKafkaAddress,
             argTransactionsTopic);
         LoopingConsumer<Long, StupidStreamObject> loopingConsumer =
-            new LoopingConsumer<>(kafkaConsumer);
+            new LoopingConsumer<>(kafkaConsumer, 10 * 1000);
 
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(argListeningPort), 0);
 
