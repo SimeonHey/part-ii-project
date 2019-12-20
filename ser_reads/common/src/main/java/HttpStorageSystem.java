@@ -24,6 +24,7 @@ public class HttpStorageSystem {
     protected void registerHandler(String endpoint, Function<String, byte[]> handler) {
         this.httpServer.createContext(String.format("/%s/%s", this.storageSystemName, endpoint),
             (httpExchange) -> {
+            LOGGER.info(storageSystemName + "handles request at endpoint " + endpoint);
                 String query = httpExchange.getRequestURI().getQuery();
 
                 byte[] bytes = handler.apply(query);

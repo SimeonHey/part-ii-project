@@ -27,6 +27,7 @@ public class PsqlEntryPoint {
             new LoopingConsumer<>(kafkaConsumer, 10 * 1000);
 
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(argListeningPort), 0);
+        HttpStorageSystem httpStorageSystem = new HttpStorageSystem("psql", httpServer);
 
         Properties props = new Properties();
         props.setProperty("user", argUserPass[0]);
@@ -37,7 +38,7 @@ public class PsqlEntryPoint {
         Gson gson = new Gson();
 
         PsqlStorageSystem luceneStorageSystem =
-            new PsqlStorageSystem(loopingConsumer, httpServer, psqlWrapper, gson);
+            new PsqlStorageSystem(loopingConsumer, httpStorageSystem, psqlWrapper, gson);
 
         // Listen for requests & consume from Kafka topic
         httpServer.setExecutor(null); // creates a default executor

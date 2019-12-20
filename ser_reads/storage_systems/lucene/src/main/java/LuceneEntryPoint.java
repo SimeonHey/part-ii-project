@@ -1,18 +1,14 @@
 import com.google.gson.Gson;
-import com.sun.net.httpserver.HttpServer;
 import org.apache.kafka.clients.consumer.Consumer;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-
 public class LuceneEntryPoint {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws InterruptedException {
         // Consume program line arguments
-        int argListeningPort = Integer.parseInt(args[0]);
-        String argKafkaAddress = args[1];
-        String argTransactionsTopic = args[2];
+        String argKafkaAddress = args[0];
+        String argTransactionsTopic = args[1];
+        String argServerAddress = args[2];
 
-        // Connect to Kafka & possibly the storage api
+        // Connect to Kafka
         Consumer<Long, StupidStreamObject> kafkaConsumer = KafkaUtils.createConsumer(
             "lucene",
             argKafkaAddress,
@@ -20,16 +16,13 @@ public class LuceneEntryPoint {
         LoopingConsumer<Long, StupidStreamObject> loopingConsumer =
             new LoopingConsumer<>(kafkaConsumer, 100);
 
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(argListeningPort), 0);
+        // Connect to the Storage API
+//        HttpUtils.discoverEndpoint(argServerAddress);
+
         LuceneWrapper luceneWrapper = new LuceneWrapper();
         Gson gson = new Gson();
 
-        LuceneStorageSystem luceneStorageSystem =
-            new LuceneStorageSystem(loopingConsumer, httpServer, luceneWrapper, gson);
-
-        // Listen for requests & consume from Kafka topic
-        httpServer.setExecutor(null); // creates a default executor
-        httpServer.start();
+        new LuceneStorageSystem(loopingConsumer, luceneWrapper, gson, argServerAddress);
 
         loopingConsumer.listenBlockingly();
     }

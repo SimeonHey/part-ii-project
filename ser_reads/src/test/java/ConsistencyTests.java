@@ -37,7 +37,7 @@ public class ConsistencyTests {
         // Initialize Lucene
         LuceneWrapper luceneWrapper = new LuceneWrapper();
         Gson gson = new Gson();
-        new LuceneStorageSystem(consumerLucene, Mockito.mock(HttpServer.class), luceneWrapper, gson);
+        new LuceneStorageSystem(consumerLucene, Mockito.mock(HttpServer.class), luceneWrapper, gson, serverAddress);
 
         // Initialize PostgreSQL
         // TODO: *Consider* mocking it
@@ -63,7 +63,7 @@ public class ConsistencyTests {
         // Consume the message manually with Lucene
         assertEquals(1, consumerLucene.consumeAvailableRecords());
         ResponseSearchMessage response =
-            luceneWrapper.searchMessage(new RequestSearchMessage(messageText));
+            luceneWrapper.searchMessage(new RequestSearchMessage(messageText, responseEndpoint));
         assertEquals(1, response.getOccurrences().size());
 
         long id = response.getOccurrences().get(0);

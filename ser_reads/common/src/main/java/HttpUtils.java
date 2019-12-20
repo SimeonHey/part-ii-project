@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 public class HttpUtils {
     private final static Logger LOGGER = Logger.getLogger(HttpUtils.class.getName());
 
-    private static HttpURLConnection sendHttpGetRequest(String base,
+    static HttpURLConnection sendHttpGetRequest(String base,
                                                         String endpoint,
                                                         String params) throws IOException {
         String url = String.format("%s/%s?%s",

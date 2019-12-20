@@ -8,21 +8,26 @@ public class StorageAPI {
     private static final Logger LOGGER = Logger.getLogger(StorageAPI.class.getName());
 
     private final Producer<Long, StupidStreamObject> producer;
-    private final String addressLucene;
     private final String addressPsql;
     private final String transactionsTopic;
     private final Gson gson;
 
-    public StorageAPI(Gson gson,
-                      Producer<Long, StupidStreamObject> producer,
-                      String addressLucene,
-                      String addressPsql,
-                      String transactionsTopic) {
+    StorageAPI(Gson gson,
+               Producer<Long, StupidStreamObject> producer,
+               HttpStorageSystem httpStorageSystem,
+               String addressPsql,
+               String transactionsTopic) {
         this.gson = gson;
         this.producer = producer;
-        this.addressLucene = addressLucene;
         this.addressPsql = addressPsql;
         this.transactionsTopic = transactionsTopic;
+
+        httpStorageSystem.registerHandler("response", this::receiveResponse);
+    }
+
+    private byte[] receiveResponse(String query) {
+        LOGGER.info(String.format("Received response %s", query));
+        return null;
     }
 
     public void postMessage(Message message) {
@@ -34,10 +39,16 @@ public class StorageAPI {
     }
 
     public ResponseSearchMessage searchMessage(String searchText) throws IOException {
-        return gson.fromJson(
-            HttpUtils.httpRequestResponse(addressLucene, "search", searchText),
-            ResponseSearchMessage.class
-        );
+//        return gson.fromJson(
+//            HttpUtils.httpRequestResponse(addressLucene, "search", searchText),
+//            ResponseSearchMessage.class
+//        );
+
+        KafkaUtils.produceMessage(
+            this.producer,
+            this.transactionsTopic,
+            new RequestSearchMessage(searchText, "response").toStupidStreamObject());
+        return new ResponseSearchMessage();
     }
 
     public ResponseMessageDetails messageDetails(Long uuid) throws IOException {
@@ -65,9 +76,10 @@ public class StorageAPI {
     @Override
     public String toString() {
         return "StorageAPI{" +
-            "addressLucene='" + addressLucene + '\'' +
+            "producer=" + producer +
             ", addressPsql='" + addressPsql + '\'' +
             ", transactionsTopic='" + transactionsTopic + '\'' +
+            ", gson=" + gson +
             '}';
     }
 }

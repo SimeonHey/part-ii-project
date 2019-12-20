@@ -33,7 +33,7 @@ public class SubscribableConsumer<K, V> {
     ConsumerRecords<K, V> consumeRecords() {
         ConsumerRecords<K, V> consumerRecords = this.kafkaConsumer.poll(java.time.Duration.ofMillis(blockMs));
         this.kafkaConsumer.commitSync();
-        LOGGER.info("Consumed " + consumerRecords.count() + " records");
+//        LOGGER.info("Consumed " + consumerRecords.count() + " records");
         return consumerRecords;
     }
 
