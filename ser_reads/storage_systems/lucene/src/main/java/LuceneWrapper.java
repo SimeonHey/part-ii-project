@@ -20,7 +20,9 @@ import org.apache.lucene.store.FSDirectory;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -34,9 +36,9 @@ class LuceneWrapper {
     private final Path indexPath = Paths.get(DEFAULT_INDEX_DEST);
     private final Analyzer analyzer = new StandardAnalyzer();
 
-    void postMessage(RequestPostMessage requestPostMessage, Long uuid) {
+    void postMessage(Message message, Long uuid) {
         final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-        LOGGER.info("Lucene posts message: " + requestPostMessage);
+        LOGGER.info("Lucene posts message: " + message);
 
         Directory luceneIndexDir;
         try {
@@ -59,8 +61,8 @@ class LuceneWrapper {
         try {
             Document doc = new Document();
 
-            String escapedSender = QueryParser.escape(requestPostMessage.getMessage().getSender());
-            String escapedMessage = QueryParser.escape(requestPostMessage.getMessage().getMessageText());
+            String escapedSender = QueryParser.escape(message.getSender());
+            String escapedMessage = QueryParser.escape(message.getMessageText());
 
             LOGGER.info("Escaped sender: " + escapedSender + "; escaped message: " + escapedMessage);
 
@@ -69,7 +71,7 @@ class LuceneWrapper {
             doc.add(new StoredField("uuid", uuid));
 
             indexWriter.addDocument(doc);
-            LOGGER.info("Successfully added message " + requestPostMessage.toString());
+            LOGGER.info("Successfully added message " + message);
         } catch (IOException e) {
             LOGGER.warning("Error when trying to add a new doc");
             throw new RuntimeException(e);
@@ -84,8 +86,8 @@ class LuceneWrapper {
         }
     }
 
-    ResponseSearchMessage searchMessage(RequestSearchMessage requestSearchMessage) {
-        LOGGER.info("Searching for " + requestSearchMessage);
+    List<Long> searchMessage(String searchText) {
+        LOGGER.info("Searching for search text" + searchText);
 
         IndexReader indexReader;
         try {
@@ -102,7 +104,7 @@ class LuceneWrapper {
         QueryParser queryParser = new QueryParser(searchField, analyzer);
         Query query;
         try {
-            String escaped = QueryParser.escape(requestSearchMessage.getSearchText());
+            String escaped = QueryParser.escape(searchText);
             LOGGER.info("Escaped search query: " + escaped);
 
             query = queryParser.parse(escaped);
@@ -119,20 +121,20 @@ class LuceneWrapper {
             throw new RuntimeException(e);
         }
 
-        ResponseSearchMessage response = new ResponseSearchMessage();
+        List<Long> occurrences = new ArrayList<>();
 
         Arrays.stream(searchResults.scoreDocs).forEach(scoreDoc -> {
             try {
                 String res = indexSearcher.doc(scoreDoc.doc).get("uuid");
-                response.addOccurrence(Long.valueOf(res));
+                occurrences.add(Long.valueOf(res));
             } catch (IOException e) {
                 LOGGER.info("Exception " + e + " when analysing search result");
                 throw new RuntimeException(e);
             }
         });
 
-        LOGGER.info("Lucene search for message " + requestSearchMessage + " and got " + response);
-        return response;
+        LOGGER.info("Lucene search for text " + searchText + " and got " + occurrences);
+        return occurrences;
     }
 
     void deleteAllMessages() {

@@ -19,6 +19,7 @@ public abstract class KafkaStorageSystem implements KafkaConsumerObserver<Long, 
 
         StupidStreamObject streamObject = message.value();
         long uuid = message.offset();
+
         switch (streamObject.getObjectType()) {
             case POST_MESSAGE:
                 this.postMessage(new RequestPostMessage(streamObject), uuid);
@@ -29,7 +30,7 @@ public abstract class KafkaStorageSystem implements KafkaConsumerObserver<Long, 
                 LOGGER.info("Received a NOP. Skipping...");
                 break;
             case SEARCH_MESSAGES:
-                this.searchMessage(new RequestSearchMessage(streamObject));
+                this.searchMessage(new RequestSearchMessage(streamObject), uuid);
                 break;
             default:
                 LOGGER.warning("Received unkown message type");
@@ -46,7 +47,7 @@ public abstract class KafkaStorageSystem implements KafkaConsumerObserver<Long, 
         }
     }
 
-    public abstract void searchMessage(RequestSearchMessage requestSearchMessage);
+    public abstract void searchMessage(RequestSearchMessage requestSearchMessage, long uuid);
     public abstract void postMessage(RequestPostMessage postMessage, long uuid);
     public abstract void deleteAllMessages();
 }

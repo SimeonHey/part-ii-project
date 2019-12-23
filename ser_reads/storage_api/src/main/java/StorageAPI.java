@@ -2,7 +2,6 @@ import com.google.gson.Gson;
 import org.apache.kafka.clients.producer.Producer;
 
 import java.io.IOException;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Logger;
 
 public class StorageAPI {
@@ -13,7 +12,7 @@ public class StorageAPI {
     private final String transactionsTopic;
     private final Gson gson;
 
-    private final ArrayBlockingQueue<String> responsesQueue;
+    private final MultithreadedCommunication multithreadedCommunication;
 
     StorageAPI(Gson gson,
                Producer<Long, StupidStreamObject> producer,
@@ -27,13 +26,7 @@ public class StorageAPI {
 
         httpStorageSystem.registerHandler("response", this::receiveResponse);
 
-        this.responsesQueue = new ArrayBlockingQueue<>(1); // Outstanding unprocessed responses
-    }
-
-    private byte[] receiveResponse(String query) {
-        LOGGER.info(String.format("Received response %s", query));
-        this.responsesQueue.add(query);
-        return ("Received response " + query).getBytes();
+        this.multithreadedCommunication = new MultithreadedCommunication();
     }
 
     public void postMessage(Message message) {
@@ -44,19 +37,27 @@ public class StorageAPI {
         );
     }
 
-    public ResponseSearchMessage searchMessage(String searchText) throws InterruptedException {
-//        return gson.fromJson(
-//            HttpUtils.httpRequestResponse(addressLucene, "search", searchText),
-//            ResponseSearchMessage.class
-//        );
+    private byte[] receiveResponse(String query) {
+        LOGGER.info(String.format("Received response %s", query));
 
-        KafkaUtils.produceMessage(
+        MultithreadedResponse multithreadedResponse =
+            gson.fromJson(query, MultithreadedResponse.class);
+
+        this.multithreadedCommunication.registerResponse(multithreadedResponse);
+        return ("Received response " + query).getBytes();
+    }
+
+    public ResponseSearchMessage searchMessage(String searchText) throws InterruptedException {
+        long offset = KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,
             new RequestSearchMessage(searchText, "response").toStupidStreamObject());
 
-        String resp = this.responsesQueue.take();
-        return gson.fromJson(resp, ResponseSearchMessage.class);
+        LOGGER.info("Waiting for search response on channel with uuid " + offset);
+
+        // Will block until a response is received
+        String serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
+        return gson.fromJson(serializedResponse, ResponseSearchMessage.class);
     }
 
     public ResponseMessageDetails messageDetails(Long uuid) throws IOException {

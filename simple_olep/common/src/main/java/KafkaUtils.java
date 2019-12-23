@@ -45,7 +45,7 @@ public class KafkaUtils {
         return new KafkaProducer<>(props);
     }
 
-    static long produceMessage(Producer<Long, StupidStreamObject> producer,
+    static void produceMessage(Producer<Long, StupidStreamObject> producer,
                                String topic,
                                StupidStreamObject toSend) {
         ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(topic, toSend);
@@ -53,8 +53,6 @@ public class KafkaUtils {
             RecordMetadata metadata = producer.send(record).get();
             LOGGER.info("Produced message of type " + toSend.getObjectType()
                 + " with Kafka offset = " + metadata.offset());
-
-            return metadata.offset();
         }
         catch (ExecutionException | InterruptedException e) {
             LOGGER.warning("Error when producing message");

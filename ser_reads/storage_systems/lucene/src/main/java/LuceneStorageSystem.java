@@ -1,5 +1,6 @@
 import com.google.gson.Gson;
 
+import java.util.List;
 import java.util.logging.Logger;
 
 public class LuceneStorageSystem extends KafkaStorageSystem {
@@ -21,11 +22,15 @@ public class LuceneStorageSystem extends KafkaStorageSystem {
     }
 
     @Override
-    public void searchMessage(RequestSearchMessage requestSearchMessage) {
+    public void searchMessage(RequestSearchMessage requestSearchMessage, long uuid) {
         LOGGER.info(String.format("Handling search request through log %s", requestSearchMessage));
 
-        ResponseSearchMessage searchResult = this.luceneWrapper.searchMessage(requestSearchMessage);
-        String serialized = gson.toJson(searchResult);
+        List<Long> occurrences =
+            this.luceneWrapper.searchMessage(requestSearchMessage.getSearchText());
+        ResponseSearchMessage searchResult = new ResponseSearchMessage(occurrences);
+        MultithreadedResponse fullResponse = new MultithreadedResponse(uuid, searchResult);
+
+        String serialized = gson.toJson(fullResponse);
 
         LOGGER.info(String.format("Serialized results of the search are: %s", serialized));
 
@@ -34,7 +39,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem {
 
     @Override
     public void postMessage(RequestPostMessage postMessage, long uuid) {
-        this.luceneWrapper.postMessage(postMessage, uuid);
+        this.luceneWrapper.postMessage(postMessage.getMessage(), uuid);
     }
 
     @Override

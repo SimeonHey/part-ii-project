@@ -22,7 +22,7 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
     }
 
     @Override
-    public void searchMessage(RequestSearchMessage requestSearchMessage) {
+    public void searchMessage(RequestSearchMessage requestSearchMessage, long uuid) {
         LOGGER.info("PSQL received a search message request and ignores it");
     }
 
