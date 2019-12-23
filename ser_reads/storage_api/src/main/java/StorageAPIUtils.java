@@ -22,10 +22,6 @@ class StorageAPIUtils {
         KafkaUtils.produceMessage(producer, argTransactionsTopic, RequestNOP.toStupidStreamObject());
         LOGGER.info("Success");
 
-        LOGGER.info("Connecting to PSQL...");
-        HttpUtils.discoverEndpoint(argPsqlAddress);
-        LOGGER.info("Success");
-
         LOGGER.info("Initializing an HTTP server on port " + argListeningPort);
         HttpStorageSystem httpStorageSystem = new HttpStorageSystem("server",
             HttpUtils.initHttpServer(argListeningPort));

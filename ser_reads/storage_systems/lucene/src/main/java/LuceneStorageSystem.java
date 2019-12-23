@@ -1,5 +1,3 @@
-import com.google.gson.Gson;
-
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -7,39 +5,40 @@ public class LuceneStorageSystem extends KafkaStorageSystem {
     private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystem.class.getName());
     
     private final LuceneWrapper luceneWrapper;
-    private final Gson gson;
-    private String serverAddress;
 
     LuceneStorageSystem(SubscribableConsumer<Long, StupidStreamObject> consumer,
                         LuceneWrapper luceneWrapper,
-                        Gson gson,
                         String serverAddress) {
-        super(consumer);
+        super(consumer, serverAddress);
 
         this.luceneWrapper = luceneWrapper;
-        this.gson = gson;
-        this.serverAddress = serverAddress;
     }
 
     @Override
-    public void searchMessage(RequestSearchMessage requestSearchMessage, long uuid) {
+    public void getMessageDetails(RequestMessageDetails requestMessageDetails) {
+        LOGGER.info("Lucene received a get message details request and ignores it");
+    }
+
+    @Override
+    public void getAllMessages(RequestAllMessages requestAllMessages) {
+        LOGGER.info("Lucene received a get all messages request and ignores it");
+    }
+
+    @Override
+    public void searchMessage(RequestSearchMessage requestSearchMessage) {
         LOGGER.info(String.format("Handling search request through log %s", requestSearchMessage));
 
         List<Long> occurrences =
             this.luceneWrapper.searchMessage(requestSearchMessage.getSearchText());
+        LOGGER.info("Got occurrences " + occurrences);
+
         ResponseSearchMessage searchResult = new ResponseSearchMessage(occurrences);
-        MultithreadedResponse fullResponse = new MultithreadedResponse(uuid, searchResult);
-
-        String serialized = gson.toJson(fullResponse);
-
-        LOGGER.info(String.format("Serialized results of the search are: %s", serialized));
-
-        this.sendResponse(serverAddress, requestSearchMessage.getResponseEndpoint(), serialized);
+        this.sendResponse(requestSearchMessage, searchResult);
     }
 
     @Override
-    public void postMessage(RequestPostMessage postMessage, long uuid) {
-        this.luceneWrapper.postMessage(postMessage.getMessage(), uuid);
+    public void postMessage(RequestPostMessage postMessage) {
+        this.luceneWrapper.postMessage(postMessage.getMessage(), postMessage.getUuid());
     }
 
     @Override

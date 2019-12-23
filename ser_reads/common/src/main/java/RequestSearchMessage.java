@@ -1,26 +1,26 @@
 import java.util.logging.Logger;
 
-public class RequestSearchMessage {
+public class RequestSearchMessage extends RequestWithResponse {
     private static final Logger LOGGER = Logger.getLogger(RequestSearchMessage.class.getName());
     private static final String KEY_SEARCH_TEXT = "searchText";
-    private static final String KEY_RESPONSE_ENDPOINT = "responseEndpoint";
 
     private final String searchText;
-    private final String responseEndpoint;
 
-    public RequestSearchMessage(StupidStreamObject stupidStreamObject) {
+    public static RequestSearchMessage fromStupidStreamObject(StupidStreamObject stupidStreamObject, long uuid) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.SEARCH_MESSAGES) {
             LOGGER.warning("StupidStreamObject doesn't have the correct object type");
             throw new RuntimeException("Incorrect object type");
         }
 
-        this.searchText = stupidStreamObject.getProperty(KEY_SEARCH_TEXT);
-        this.responseEndpoint = stupidStreamObject.getProperty(KEY_RESPONSE_ENDPOINT);
+        String searchText = stupidStreamObject.getProperty(KEY_SEARCH_TEXT);
+        String responseEndpoint = stupidStreamObject.getProperty(KEY_RESPONSE_ENDPOINT);
+
+        return new RequestSearchMessage(searchText, responseEndpoint, uuid);
     }
 
-    public RequestSearchMessage(String searchText, String responseEndpoint) {
+    public RequestSearchMessage(String searchText, String responseEndpoint, long uuid) {
+        super(responseEndpoint, uuid);
         this.searchText = searchText;
-        this.responseEndpoint = responseEndpoint;
     }
 
     public StupidStreamObject toStupidStreamObject() {
@@ -39,10 +39,6 @@ public class RequestSearchMessage {
 
     public String getSearchText() {
         return searchText;
-    }
-
-    public String getResponseEndpoint() {
-        return responseEndpoint;
     }
 }
 ;

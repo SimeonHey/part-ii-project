@@ -33,25 +33,22 @@ public class StorageAPI {
         LOGGER.info("Posting message " + message);
         KafkaUtils.produceMessage(this.producer,
             this.transactionsTopic,
-            new RequestPostMessage(message).toStupidStreamObject()
+            new RequestPostMessage(message, -1).toStupidStreamObject()
         );
     }
 
-    private byte[] receiveResponse(String query) {
-        LOGGER.info(String.format("Received response %s", query));
+    private byte[] receiveResponse(String serializedResponse) {
+        LOGGER.info(String.format("Received response %s", serializedResponse));
 
-        MultithreadedResponse multithreadedResponse =
-            gson.fromJson(query, MultithreadedResponse.class);
-
-        this.multithreadedCommunication.registerResponse(multithreadedResponse);
-        return ("Received response " + query).getBytes();
+        this.multithreadedCommunication.registerResponse(serializedResponse);
+        return ("Received response " + serializedResponse).getBytes();
     }
 
     public ResponseSearchMessage searchMessage(String searchText) throws InterruptedException {
         long offset = KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,
-            new RequestSearchMessage(searchText, "response").toStupidStreamObject());
+            new RequestSearchMessage(searchText, "response", -1).toStupidStreamObject());
 
         LOGGER.info("Waiting for search response on channel with uuid " + offset);
 

@@ -22,11 +22,11 @@ class PsqlWrapper {
         SqlUtils.executeStatement(query, this.connection);
     }
 
-    void postMessage(RequestPostMessage requestPostMessage, Long uuid) {
-        LOGGER.info("PSQL posts message " + requestPostMessage + " with uuid " + uuid);
+    void postMessage(RequestPostMessage requestPostMessage) {
+        LOGGER.info("PSQL posts message " + requestPostMessage);
         try {
             insertMessage(requestPostMessage.getMessage().getSender(),
-                requestPostMessage.getMessage().getMessageText(), uuid);
+                requestPostMessage.getMessage().getMessageText(), requestPostMessage.getUuid());
         } catch (SQLException e) {
             LOGGER.warning("Error when inserting message: " + e);
             throw new RuntimeException(e);
@@ -34,11 +34,11 @@ class PsqlWrapper {
     }
 
     ResponseMessageDetails getMessageDetails(RequestMessageDetails requestMessageDetails) {
-        LOGGER.info("Psql has to get details for message " + requestMessageDetails.getUuid());
+        LOGGER.info("Psql has to get details for message " + requestMessageDetails.getMessageUUID());
 
         try {
             String statement = String.format("SELECT * FROM messages WHERE uuid = %d",
-                requestMessageDetails.getUuid());
+                requestMessageDetails.getMessageUUID());
             ResultSet resultSet = SqlUtils.executeStatementForResult(statement, this.connection);
 
             boolean hasMore = resultSet.next();
@@ -60,8 +60,8 @@ class PsqlWrapper {
         }
     }
 
-    ResponseAllMessages getAllMessages(RequestAllMessages requestAllMessages) {
-        LOGGER.info("Psql has to get ALL messages: " + requestAllMessages);
+    ResponseAllMessages getAllMessages() {
+        LOGGER.info("Psql has to get ALL messages");
         ResponseAllMessages responseAllMessages = new ResponseAllMessages();
 
         try {

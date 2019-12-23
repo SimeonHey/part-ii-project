@@ -9,26 +9,23 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
     private final Gson gson;
 
     PsqlStorageSystem(SubscribableConsumer<Long, StupidStreamObject> consumer,
-                      HttpStorageSystem httpStorageSystem,
                       PsqlWrapper psqlWrapper,
+                      String serverAddress,
                       Gson gson) {
-        super(consumer);
+        super(consumer, serverAddress);
 
         this.psqlWrapper = psqlWrapper;
         this.gson = gson;
-
-        httpStorageSystem.registerHandler("messageDetails", this::httpGetMessageDetails);
-        httpStorageSystem.registerHandler("allMessages", this::httpGetAllMessages);
     }
 
     @Override
-    public void searchMessage(RequestSearchMessage requestSearchMessage, long uuid) {
+    public void searchMessage(RequestSearchMessage requestSearchMessage) {
         LOGGER.info("PSQL received a search message request and ignores it");
     }
 
     @Override
-    public void postMessage(RequestPostMessage postMessage, long uuid) {
-        this.psqlWrapper.postMessage(postMessage, uuid);
+    public void postMessage(RequestPostMessage postMessage) {
+        this.psqlWrapper.postMessage(postMessage);
     }
 
     @Override
@@ -36,21 +33,15 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
         this.psqlWrapper.deleteAllMessages();
     }
 
-    private byte[] httpGetMessageDetails(String query) {
-        // TODO : Add sanitization
-        RequestMessageDetails request = new RequestMessageDetails(Long.valueOf(query));
-
-        ResponseMessageDetails reqResult = this.psqlWrapper.getMessageDetails(request);
-        String serialized = gson.toJson(reqResult);
-
-        return serialized.getBytes();
+    @Override
+    public void getMessageDetails(RequestMessageDetails requestMessageDetails) {
+        ResponseMessageDetails reqResult = this.psqlWrapper.getMessageDetails(requestMessageDetails);
+        this.sendResponse(requestMessageDetails, reqResult);
     }
 
-    private byte[] httpGetAllMessages(String query) {
-        RequestAllMessages requestAllMessages = new RequestAllMessages();
-        ResponseAllMessages reqResult = this.psqlWrapper.getAllMessages(requestAllMessages);
-        String serialized = gson.toJson(reqResult);
-
-        return serialized.getBytes();
+    @Override
+    public void getAllMessages(RequestAllMessages requestAllMessages) {
+        ResponseAllMessages reqResult = this.psqlWrapper.getAllMessages();
+        this.sendResponse(requestAllMessages, reqResult);
     }
 }

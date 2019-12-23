@@ -23,8 +23,8 @@ public class LuceneEntryPoint {
         Gson gson = new Gson();
 
         LuceneStorageSystem luceneStorageSystem =
-            new LuceneStorageSystem(loopingConsumer, luceneWrapper, gson,
-            argServerAddress);
+            new LuceneStorageSystem(loopingConsumer, luceneWrapper,
+                argServerAddress);
 
         luceneStorageSystem.deleteAllMessages();
 

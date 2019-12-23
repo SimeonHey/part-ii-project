@@ -6,7 +6,9 @@ public class StupidStreamObject implements Serializable {
         POST_MESSAGE,
         SEARCH_MESSAGES,
         DELETE_ALL_MESSAGES,
-        NOP
+        NOP,
+        GET_MESSAGE_DETAILS,
+        GET_ALL_MESSAGES
     }
 
     private final ObjectType objectType;

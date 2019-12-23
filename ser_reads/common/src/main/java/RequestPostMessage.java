@@ -1,6 +1,6 @@
 import java.util.logging.Logger;
 
-public class RequestPostMessage {
+public class RequestPostMessage extends BaseRequest{
     private static final Logger LOGGER = Logger.getLogger(RequestPostMessage.class.getName());
 
     private static final String KEY_SENDER = "sender";
@@ -8,17 +8,19 @@ public class RequestPostMessage {
 
     private final Message message;
 
-    public RequestPostMessage(StupidStreamObject stupidStreamObject) {
+    public static RequestPostMessage fromStupidStreamObject(StupidStreamObject stupidStreamObject, long uuid) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.POST_MESSAGE) {
             LOGGER.warning("Stupid Stream Object has the incorrect object type");
             throw new RuntimeException("Incorrect object type");
         }
 
-        this.message = new Message(stupidStreamObject.getProperty(KEY_SENDER),
+        Message message = new Message(stupidStreamObject.getProperty(KEY_SENDER),
             stupidStreamObject.getProperty(KEY_MESSAGE_TEXT));
+        return new RequestPostMessage(message, uuid);
     }
 
-    public RequestPostMessage(Message message) {
+    public RequestPostMessage(Message message, long uuid) {
+        super(uuid);
         this.message = message;
     }
 
