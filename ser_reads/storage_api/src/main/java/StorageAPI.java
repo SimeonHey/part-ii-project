@@ -1,11 +1,11 @@
 import com.google.gson.Gson;
 import org.apache.kafka.clients.producer.Producer;
 
-import java.io.IOException;
 import java.util.logging.Logger;
 
 public class StorageAPI {
     private static final Logger LOGGER = Logger.getLogger(StorageAPI.class.getName());
+    private static final String ENDPOINT_RESPONSE = "response";
 
     private final Producer<Long, StupidStreamObject> producer;
     private final String addressPsql;
@@ -24,7 +24,7 @@ public class StorageAPI {
         this.addressPsql = addressPsql;
         this.transactionsTopic = transactionsTopic;
 
-        httpStorageSystem.registerHandler("response", this::receiveResponse);
+        httpStorageSystem.registerHandler(ENDPOINT_RESPONSE, this::receiveResponse);
 
         this.multithreadedCommunication = new MultithreadedCommunication();
     }
@@ -37,6 +37,18 @@ public class StorageAPI {
         );
     }
 
+    private String kafkaRequestResponse(StupidStreamObject request) throws InterruptedException {
+        long offset = KafkaUtils.produceMessage(
+            this.producer,
+            this.transactionsTopic,
+            request);
+
+        LOGGER.info("Waiting for search response on channel with uuid " + offset);
+
+        // Will block until a response is received
+        return this.multithreadedCommunication.consumeAndDestroy(offset);
+    }
+
     private byte[] receiveResponse(String serializedResponse) {
         LOGGER.info(String.format("Received response %s", serializedResponse));
 
@@ -45,30 +57,23 @@ public class StorageAPI {
     }
 
     public ResponseSearchMessage searchMessage(String searchText) throws InterruptedException {
-        long offset = KafkaUtils.produceMessage(
-            this.producer,
-            this.transactionsTopic,
-            new RequestSearchMessage(searchText, "response", -1).toStupidStreamObject());
-
-        LOGGER.info("Waiting for search response on channel with uuid " + offset);
-
-        // Will block until a response is received
-        String serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
+        String serializedResponse = kafkaRequestResponse(
+            RequestSearchMessage.getStupidStreamObject(searchText, ENDPOINT_RESPONSE));
         return gson.fromJson(serializedResponse, ResponseSearchMessage.class);
     }
 
-    public ResponseMessageDetails messageDetails(Long uuid) throws IOException {
-        return gson.fromJson(
-            HttpUtils.httpRequestResponse(addressPsql, "messageDetails", uuid.toString()),
-            ResponseMessageDetails.class
+    public ResponseMessageDetails messageDetails(Long uuid) throws InterruptedException {
+        String serializedResponse = kafkaRequestResponse(
+            RequestMessageDetails.getStupidStreamObject(uuid, ENDPOINT_RESPONSE)
         );
+        return gson.fromJson(serializedResponse, ResponseMessageDetails.class);
     }
 
-    public ResponseAllMessages allMessages() throws IOException {
-        return gson.fromJson(
-            HttpUtils.httpRequestResponse(addressPsql, "allMessages", ""),
-            ResponseAllMessages.class
+    public ResponseAllMessages allMessages() throws InterruptedException {
+        String serializedResponse = kafkaRequestResponse(
+            RequestAllMessages.getStupidStreamObject(ENDPOINT_RESPONSE)
         );
+        return gson.fromJson(serializedResponse, ResponseAllMessages.class);
     }
 
     public void deleteAllMessages() {

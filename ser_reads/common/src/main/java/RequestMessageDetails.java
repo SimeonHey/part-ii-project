@@ -12,7 +12,7 @@ public class RequestMessageDetails extends RequestWithResponse {
         this.messageUUID = messageUUID;
     }
 
-    public static RequestMessageDetails fromStupidStreamObject(StupidStreamObject stupidStreamObject, long uuid) {
+    static RequestMessageDetails fromStupidStreamObject(StupidStreamObject stupidStreamObject, long uuid) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS) {
             LOGGER.warning("Stupid Stream Object has the incorrect object type");
             throw new RuntimeException("Incorrect object type");
@@ -22,6 +22,12 @@ public class RequestMessageDetails extends RequestWithResponse {
         String responseEndpoint = stupidStreamObject.getProperty(KEY_RESPONSE_ENDPOINT);
 
         return new RequestMessageDetails(messageUUID, responseEndpoint, uuid);
+    }
+
+    public static StupidStreamObject getStupidStreamObject(Long messageUUID, String responseEndpoint) {
+        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS)
+            .setProperty(KEY_MESSAGE_UUID, String.valueOf(messageUUID))
+            .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
     }
 
     public Long getMessageUUID() {

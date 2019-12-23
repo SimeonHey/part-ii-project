@@ -23,10 +23,10 @@ public class RequestSearchMessage extends RequestWithResponse {
         this.searchText = searchText;
     }
 
-    public StupidStreamObject toStupidStreamObject() {
+    public static StupidStreamObject getStupidStreamObject(String searchText, String responseEndpoint) {
         return new StupidStreamObject(StupidStreamObject.ObjectType.SEARCH_MESSAGES)
-            .setProperty(KEY_SEARCH_TEXT, this.searchText)
-            .setProperty(KEY_RESPONSE_ENDPOINT, this.responseEndpoint);
+            .setProperty(KEY_SEARCH_TEXT, searchText)
+            .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
     }
 
     @Override

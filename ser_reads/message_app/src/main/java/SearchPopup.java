@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -13,7 +12,7 @@ class SearchPopup extends JFrame {
         List<Message> messageList = responseSearchMessage.getOccurrences().stream().map(occurrence -> {
             try {
                 return storageAPI.messageDetails(occurrence).getMessage();
-            } catch (IOException e) {
+            } catch (InterruptedException e) {
                 LOGGER.warning("Error when getting search results details");
                 throw new RuntimeException(e);
             }

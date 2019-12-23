@@ -7,7 +7,7 @@ public class RequestAllMessages extends RequestWithResponse {
         super(responseEndpoint, uuid);
     }
 
-    public static RequestAllMessages fromStupidStreamObject(StupidStreamObject stupidStreamObject, long uuid) {
+    static RequestAllMessages fromStupidStreamObject(StupidStreamObject stupidStreamObject, long uuid) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.GET_ALL_MESSAGES) {
             LOGGER.warning("StupidStreamObject doesn't have the correct object type");
             throw new RuntimeException("Incorrect object type");
@@ -16,5 +16,10 @@ public class RequestAllMessages extends RequestWithResponse {
         String responseEndpoint = stupidStreamObject.getProperty(KEY_RESPONSE_ENDPOINT);
 
         return new RequestAllMessages(responseEndpoint, uuid);
+    }
+
+    public static StupidStreamObject getStupidStreamObject(String responseEndpoint) {
+        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES)
+            .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
     }
 }

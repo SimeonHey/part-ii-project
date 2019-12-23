@@ -1,6 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -51,7 +50,7 @@ class FrontEnd extends JFrame {
         ResponseSearchMessage response;
         try {
             response = storageAPI.searchMessage(token);
-        } catch (IOException e) {
+        } catch (InterruptedException e) {
             LOGGER.warning("Error when searching for message: " + e);
             throw new RuntimeException(e);
         }
@@ -118,7 +117,7 @@ class FrontEnd extends JFrame {
         refreshButton.addActionListener(e -> {
             try {
                 setMessages(storageAPI.allMessages().getMessages());
-            } catch (IOException ex) {
+            } catch (InterruptedException ex) {
                 LOGGER.warning("Error when getting all messages: " + e);
                 throw new RuntimeException(ex);
             }

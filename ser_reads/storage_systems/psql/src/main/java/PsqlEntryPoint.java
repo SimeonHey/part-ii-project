@@ -23,16 +23,15 @@ public class PsqlEntryPoint {
         LoopingConsumer<Long, StupidStreamObject> loopingConsumer =
             new LoopingConsumer<>(kafkaConsumer, 100);
 
+        // Initialize Database connection
         Properties props = new Properties();
         props.setProperty("user", argUserPass[0]);
         props.setProperty("password", argUserPass[1]);
         Connection conn = DriverManager.getConnection(argPsqlAddress, props);
         PsqlWrapper psqlWrapper = new PsqlWrapper(conn);
 
-        Gson gson = new Gson();
-
         PsqlStorageSystem psqlStorageSystem =
-            new PsqlStorageSystem(loopingConsumer, psqlWrapper, argServerAddress, gson);
+            new PsqlStorageSystem(loopingConsumer, psqlWrapper, argServerAddress, new Gson());
         psqlStorageSystem.deleteAllMessages();
 
         loopingConsumer.listenBlockingly();
