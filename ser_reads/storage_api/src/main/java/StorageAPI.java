@@ -2,6 +2,7 @@ import com.google.gson.Gson;
 import org.apache.kafka.clients.producer.Producer;
 
 import java.io.IOException;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.logging.Logger;
 
 public class StorageAPI {
@@ -11,6 +12,8 @@ public class StorageAPI {
     private final String addressPsql;
     private final String transactionsTopic;
     private final Gson gson;
+
+    private final ArrayBlockingQueue<String> responsesQueue;
 
     StorageAPI(Gson gson,
                Producer<Long, StupidStreamObject> producer,
@@ -23,11 +26,14 @@ public class StorageAPI {
         this.transactionsTopic = transactionsTopic;
 
         httpStorageSystem.registerHandler("response", this::receiveResponse);
+
+        this.responsesQueue = new ArrayBlockingQueue<>(1); // Outstanding unprocessed responses
     }
 
     private byte[] receiveResponse(String query) {
         LOGGER.info(String.format("Received response %s", query));
-        return null;
+        this.responsesQueue.add(query);
+        return ("Received response " + query).getBytes();
     }
 
     public void postMessage(Message message) {
@@ -38,7 +44,7 @@ public class StorageAPI {
         );
     }
 
-    public ResponseSearchMessage searchMessage(String searchText) throws IOException {
+    public ResponseSearchMessage searchMessage(String searchText) throws InterruptedException {
 //        return gson.fromJson(
 //            HttpUtils.httpRequestResponse(addressLucene, "search", searchText),
 //            ResponseSearchMessage.class
@@ -48,7 +54,9 @@ public class StorageAPI {
             this.producer,
             this.transactionsTopic,
             new RequestSearchMessage(searchText, "response").toStupidStreamObject());
-        return new ResponseSearchMessage();
+
+        String resp = this.responsesQueue.take();
+        return gson.fromJson(resp, ResponseSearchMessage.class);
     }
 
     public ResponseMessageDetails messageDetails(Long uuid) throws IOException {

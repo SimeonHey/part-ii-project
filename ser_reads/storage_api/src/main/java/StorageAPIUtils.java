@@ -26,8 +26,9 @@ class StorageAPIUtils {
         HttpUtils.discoverEndpoint(argPsqlAddress);
         LOGGER.info("Success");
 
-        HttpServer httpServer = HttpServer.create(new InetSocketAddress(argListeningPort), 0);
-        HttpStorageSystem httpStorageSystem = new HttpStorageSystem("server", httpServer);
+        LOGGER.info("Initializing an HTTP server on port " + argListeningPort);
+        HttpStorageSystem httpStorageSystem = new HttpStorageSystem("server",
+            HttpUtils.initHttpServer(argListeningPort));
 
         StorageAPI ret =
             new StorageAPI(new Gson(), producer, httpStorageSystem, argPsqlAddress, argTransactionsTopic);

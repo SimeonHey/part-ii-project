@@ -39,7 +39,7 @@ public abstract class KafkaStorageSystem implements KafkaConsumerObserver<Long, 
 
     public void sendResponse(String base, String endpoint, String resp) {
         try {
-            HttpUtils.sendHttpGetRequest(base, endpoint, resp);
+            HttpUtils.httpRequestResponse(base, endpoint, resp);
         } catch (IOException e) {
             LOGGER.warning("Failed to send a response back");
             throw new RuntimeException(e);

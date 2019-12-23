@@ -1,5 +1,8 @@
+import com.sun.net.httpserver.HttpServer;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -7,6 +10,7 @@ import java.util.logging.Logger;
 
 public class HttpUtils {
     private final static Logger LOGGER = Logger.getLogger(HttpUtils.class.getName());
+    private final static int TIMEOUT_MS = 5 * 1000;
 
     static HttpURLConnection sendHttpGetRequest(String base,
                                                         String endpoint,
@@ -21,6 +25,7 @@ public class HttpUtils {
         HttpURLConnection httpURLConnection =
             (HttpURLConnection) new URL(url).openConnection();
         httpURLConnection.setRequestMethod("GET");
+        httpURLConnection.setConnectTimeout(TIMEOUT_MS);
 
         return httpURLConnection;
     }
@@ -47,5 +52,14 @@ public class HttpUtils {
                 Thread.sleep(1000);
             }
         }
+    }
+
+    static HttpServer initHttpServer(int onPort) throws IOException {
+        HttpServer httpServer =
+            HttpServer.create(new InetSocketAddress(onPort), 0);
+        httpServer.setExecutor(null);
+        httpServer.start();
+
+        return httpServer;
     }
 }
