@@ -1,7 +1,8 @@
+import java.io.IOException;
 import java.sql.SQLException;
 
 public class PsqlEntryPoint {
-    public static void main(String[] args) throws SQLException {
+    public static void main(String[] args) throws SQLException, IOException {
         PsqlUtils.PsqlInitArgs initArgs = new PsqlUtils.PsqlInitArgs(args);
 
         LoopingConsumer<Long, StupidStreamObject> consumer =

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNull;
 
 public class FullSystemTest {
     @Test
@@ -97,6 +98,42 @@ public class FullSystemTest {
 
             List<Message> messages = responseSearchMessage.getMessages();
             assertEquals(toSend, messages);
+        }
+    }
+
+    @Test
+    public void searchAndDetailsNoOccurrences() throws Exception {
+        try (Utils.Trinity trinity = Utils.basicInitialization()) {
+            StorageAPI storageAPI = trinity.storageAPI;
+
+            Utils.letThatSinkIn(() -> {
+                storageAPI.postMessage(new Message("Simeon", "Hey"));
+                storageAPI.postMessage(new Message("Simeon", "What's up"));
+            });
+
+            ResponseMessageDetails responseMessageDetails =
+                storageAPI.searchAndDetails("non-existent");
+
+            assertNull(responseMessageDetails.getMessage());
+        }
+    }
+
+    @Test
+    public void searchAndDetails1Occurrence() throws Exception {
+        try (Utils.Trinity trinity = Utils.basicInitialization()) {
+            StorageAPI storageAPI = trinity.storageAPI;
+
+            Message simeonHey = new Message("Simeon", "Hey");
+
+            Utils.letThatSinkIn(() -> {
+                storageAPI.postMessage(simeonHey);
+                storageAPI.postMessage(new Message("Simeon", "What's up"));
+            });
+
+            ResponseMessageDetails responseMessageDetails =
+                storageAPI.searchAndDetails("Hey");
+
+            assertEquals(simeonHey, responseMessageDetails.getMessage());
         }
     }
 }

@@ -1,5 +1,6 @@
 import org.apache.kafka.clients.consumer.Consumer;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -12,6 +13,7 @@ public class PsqlUtils {
         public final String argKafkaAddress;
         public final String argTransactionsTopic;
         public final String argServerAddress;
+        public final String argListeningPort;
 
         public PsqlInitArgs(String[] args) {
             this.argPsqlAddress = args[0];
@@ -19,22 +21,25 @@ public class PsqlUtils {
             this.argKafkaAddress = args[2];
             this.argTransactionsTopic = args[3];
             this.argServerAddress = args[4];
+            this.argListeningPort = args[5];
         }
 
         public PsqlInitArgs(String argPsqlAddress,
                             String[] argUserPass,
                             String argKafkaAddress,
                             String argTransactionsTopic,
-                            String argServerAddress) {
+                            String argServerAddress,
+                            String argListeningPort) {
             this.argPsqlAddress = argPsqlAddress;
             this.argUserPass = argUserPass;
             this.argKafkaAddress = argKafkaAddress;
             this.argTransactionsTopic = argTransactionsTopic;
             this.argServerAddress = argServerAddress;
+            this.argListeningPort = argListeningPort;
         }
     }
 
-    public static PsqlStorageSystem getStorageSystem(PsqlInitArgs initArgs) throws SQLException {
+    public static PsqlStorageSystem getStorageSystem(PsqlInitArgs initArgs) throws SQLException, IOException {
         // Initialize Database connection
         Properties props = new Properties();
         props.setProperty("user", initArgs.argUserPass[0]);
@@ -42,8 +47,13 @@ public class PsqlUtils {
         Connection conn = DriverManager.getConnection(initArgs.argPsqlAddress, props);
         PsqlWrapper psqlWrapper = new PsqlWrapper(conn);
 
+        // Initialize the http server
+        HttpStorageSystem httpStorageSystem =
+            new HttpStorageSystem("psql",
+                HttpUtils.initHttpServer(Integer.parseInt(initArgs.argListeningPort)));
+
         PsqlStorageSystem psqlStorageSystem =
-            new PsqlStorageSystem(psqlWrapper, initArgs.argServerAddress);
+            new PsqlStorageSystem(psqlWrapper, initArgs.argServerAddress, httpStorageSystem);
         psqlStorageSystem.deleteAllMessages();
 
         return psqlStorageSystem;

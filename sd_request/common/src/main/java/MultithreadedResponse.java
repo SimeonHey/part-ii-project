@@ -1,17 +1,17 @@
 import com.google.gson.Gson;
 
 public class MultithreadedResponse {
-    private final long uuid;
+    private final long channelUuid;
     private final String serializedResponse;
 
-    public MultithreadedResponse(long uuid, Object response) {
-        this.uuid = uuid;
+    public MultithreadedResponse(long channelUuid, Object response) {
+        this.channelUuid = channelUuid;
         Gson gson = new Gson();
         this.serializedResponse = gson.toJson(response);
     }
 
-    public long getUuid() {
-        return uuid;
+    public long getChannelUuid() {
+        return channelUuid;
     }
 
     public String getSerializedResponse() {
@@ -21,7 +21,7 @@ public class MultithreadedResponse {
     @Override
     public String toString() {
         return "MultithreadedResponse{" +
-            "uuid=" + uuid +
+            "uuid=" + channelUuid +
             ", serializedResponse=" + serializedResponse +
             '}';
     }

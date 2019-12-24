@@ -31,7 +31,8 @@ class Utils {
             Constants.PSQL_USER_PASS,
             Constants.KAFKA_ADDRESS,
             Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_ADDRESS);
+            Constants.STORAGEAPI_ADDRESS,
+            Constants.PSQL_LISTEN_PORT);
 
         PsqlStorageSystem psqlStorageSystem = PsqlUtils.getStorageSystem(psqlInitArgs);
         LoopingConsumer<Long, StupidStreamObject> loopingConsumerPsql =
@@ -41,7 +42,8 @@ class Utils {
         LuceneUtils.LuceneInitArgs luceneInitArgs = new LuceneUtils.LuceneInitArgs(
             Constants.KAFKA_ADDRESS,
             Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_ADDRESS);
+            Constants.STORAGEAPI_ADDRESS,
+            Constants.LUCENE_PSQL_CONTACT_ENDPOINT);
 
         LuceneStorageSystem luceneStorageSystem = LuceneUtils.getStorageSystem(luceneInitArgs);
         LoopingConsumer<Long, StupidStreamObject> loopingConsumerLucene =

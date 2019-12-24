@@ -42,7 +42,9 @@ public abstract class KafkaStorageSystem implements KafkaConsumerObserver<Long, 
             case GET_MESSAGE_DETAILS:
                 this.getMessageDetails(RequestMessageDetails.fromStupidStreamObject(streamObject, requestUUID));
                 break;
-
+            case SEARCH_AND_DETAILS:
+                this.searchAndDetails(RequestSearchAndDetails.fromStupidStreamObject(streamObject, requestUUID));
+                break;
             default:
                 LOGGER.warning("Received unkown message type");
                 throw new RuntimeException("Unknown stream object type");
@@ -64,6 +66,7 @@ public abstract class KafkaStorageSystem implements KafkaConsumerObserver<Long, 
         }
     }
 
+    public abstract void searchAndDetails(RequestSearchAndDetails requestSearchAndDetails);
     public abstract void getMessageDetails(RequestMessageDetails requestMessageDetails);
     public abstract void getAllMessages(RequestAllMessages requestAllMessages);
     public abstract void searchMessage(RequestSearchMessage requestSearchMessage);

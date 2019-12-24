@@ -55,6 +55,12 @@ public class StorageAPI implements AutoCloseable {
         return ("Received response " + serializedResponse).getBytes();
     }
 
+    public ResponseMessageDetails searchAndDetails(String searchText) throws InterruptedException {
+        String serializedResponse = kafkaRequestResponse(
+            RequestSearchAndDetails.getStupidStreamObject(searchText, ENDPOINT_RESPONSE));
+        return gson.fromJson(serializedResponse, ResponseMessageDetails.class);
+    }
+
     public ResponseSearchMessage searchMessage(String searchText) throws InterruptedException {
         String serializedResponse = kafkaRequestResponse(
             RequestSearchMessage.getStupidStreamObject(searchText, ENDPOINT_RESPONSE));

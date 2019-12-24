@@ -1,15 +1,43 @@
+import com.google.gson.Gson;
+
 import java.util.logging.Logger;
 
 public class PsqlStorageSystem extends KafkaStorageSystem {
     private static final Logger LOGGER = Logger.getLogger(PsqlStorageSystem.class.getName());
-    
+
     private final PsqlWrapper psqlWrapper;
 
-    PsqlStorageSystem(PsqlWrapper psqlWrapper,
-                      String serverAddress) {
-        super(serverAddress);
+    private final MultithreadedCommunication multithreadedCommunication = new MultithreadedCommunication();
 
+    private final Gson gson = new Gson();
+
+    PsqlStorageSystem(PsqlWrapper psqlWrapper,
+                      String serverAddress,
+                      HttpStorageSystem httpStorageSystem) {
+        super(serverAddress);
         this.psqlWrapper = psqlWrapper;
+
+        httpStorageSystem.registerHandler("luceneContact", this::handleLuceneContact);
+    }
+
+    private byte[] handleLuceneContact(String query) {
+        multithreadedCommunication.registerResponse(query);
+        return ("Received " + query).getBytes();
+    }
+
+    @Override
+    public void searchAndDetails(RequestSearchAndDetails requestSearchAndDetails) {
+        try {
+            String serialized =
+                multithreadedCommunication.consumeAndDestroy(requestSearchAndDetails.getUuid());
+
+            RequestMessageDetails requestMessageDetails = gson.fromJson(serialized, RequestMessageDetails.class);
+            getMessageDetails(requestMessageDetails);
+        } catch (InterruptedException e) {
+            LOGGER.warning("Error when waiting on Lucene to contact us at uuid " +
+                requestSearchAndDetails.getUuid());
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

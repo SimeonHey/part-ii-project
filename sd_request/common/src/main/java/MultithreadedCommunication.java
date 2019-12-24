@@ -20,9 +20,9 @@ public class MultithreadedCommunication {
     public void registerResponse(String serializedResponse) {
         MultithreadedResponse response = gson.fromJson(serializedResponse, MultithreadedResponse.class);
 
-        createChannelIfAbsent(response.getUuid());
+        createChannelIfAbsent(response.getChannelUuid());
 
-        channels.get(response.getUuid()).add(response.getSerializedResponse());
+        channels.get(response.getChannelUuid()).add(response.getSerializedResponse());
     }
 
     public String consumeAndDestroy(long uuid) throws InterruptedException {

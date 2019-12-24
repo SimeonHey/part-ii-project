@@ -8,7 +8,8 @@ public class StupidStreamObject implements Serializable {
         DELETE_ALL_MESSAGES,
         NOP,
         GET_MESSAGE_DETAILS,
-        GET_ALL_MESSAGES
+        GET_ALL_MESSAGES,
+        SEARCH_AND_DETAILS
     }
 
     private final ObjectType objectType;

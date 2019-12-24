@@ -10,11 +10,8 @@ public class HttpUtils {
     private final static Logger LOGGER = Logger.getLogger(HttpUtils.class.getName());
     private final static int TIMEOUT_MS = 5 * 1000;
 
-    static HttpURLConnection sendHttpRequest(String base,
-                                             String endpoint,
+    static HttpURLConnection sendHttpRequest(String url,
                                              String params) throws IOException {
-        String url = String.format("%s/%s", base, endpoint);
-
         LOGGER.info("Sending an HTTP request to " + url + " with body " + params);
 
         HttpURLConnection httpURLConnection =
@@ -30,10 +27,22 @@ public class HttpUtils {
         return httpURLConnection;
     }
 
+    static HttpURLConnection sendHttpRequest(String base,
+                                             String endpoint,
+                                             String params) throws IOException {
+        String url = String.format("%s/%s", base, endpoint);
+        return sendHttpRequest(url, params);
+    }
+
     static String httpRequestResponse(String base,
                                       String endpoint,
                                       String params) throws IOException {
         HttpURLConnection conn = sendHttpRequest(base, endpoint, params);
+        return new String(conn.getInputStream().readAllBytes());
+    }
+
+    static String httpRequestResponse(String full, String params) throws IOException {
+        HttpURLConnection conn = sendHttpRequest(full, params);
         return new String(conn.getInputStream().readAllBytes());
     }
 

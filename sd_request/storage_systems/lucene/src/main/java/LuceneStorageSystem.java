@@ -1,3 +1,6 @@
+import com.google.gson.Gson;
+
+import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -5,11 +8,46 @@ public class LuceneStorageSystem extends KafkaStorageSystem implements AutoClose
     private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystem.class.getName());
     
     private final LuceneWrapper luceneWrapper;
+    private final String psqlContactAddress;
+
+    private final Gson gson = new Gson();
 
     LuceneStorageSystem(LuceneWrapper luceneWrapper,
-                        String serverAddress) {
+                        String serverAddress,
+                        String psqlContactAddress) {
         super(serverAddress);
         this.luceneWrapper = luceneWrapper;
+        this.psqlContactAddress = psqlContactAddress;
+    }
+
+    @Override
+    public void searchAndDetails(RequestSearchAndDetails requestSearchAndDetails) {
+        LOGGER.info(String.format("Handling search and details request through log %s", requestSearchAndDetails));
+
+        List<Long> occurrences =
+            this.luceneWrapper.searchMessage(requestSearchAndDetails.getSearchText());
+
+        if (occurrences.size() == 0) {
+            LOGGER.info("No occurrences were found; sending an empty details response");
+
+            this.sendResponse(requestSearchAndDetails,
+                new ResponseMessageDetails(null, requestSearchAndDetails.getUuid()));
+            return;
+        }
+
+        LOGGER.info("Got occurrences " + occurrences);
+
+        RequestMessageDetails requestMessageDetails = new RequestMessageDetails(occurrences.get(0),
+            requestSearchAndDetails.responseEndpoint, requestSearchAndDetails.getUuid());
+        MultithreadedResponse fullResponse = new MultithreadedResponse(requestSearchAndDetails.getUuid(),
+            requestMessageDetails);
+
+        try {
+            HttpUtils.httpRequestResponse(this.psqlContactAddress, gson.toJson(fullResponse));
+        } catch (IOException e) {
+            LOGGER.warning("Error when conctacting PSQL with the search results");
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
