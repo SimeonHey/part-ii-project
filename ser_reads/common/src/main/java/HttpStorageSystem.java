@@ -4,7 +4,7 @@ import java.io.OutputStream;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-public class HttpStorageSystem {
+public class HttpStorageSystem implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(HttpStorageSystem.class.getName());
     public static final String DISCOVER_PHRASE = "I'm here";
 
@@ -29,10 +29,12 @@ public class HttpStorageSystem {
 
         this.httpServer.createContext(fullEndpoint,
             (httpExchange) -> {
-            LOGGER.info(storageSystemName + " handles request at endpoint " + endpoint);
-                String query = httpExchange.getRequestURI().getQuery();
+                LOGGER.info(storageSystemName + " handles request at endpoint " + endpoint);
 
-                byte[] bytes = handler.apply(query);
+                String bodyQuery = new String(httpExchange.getRequestBody().readAllBytes());
+                LOGGER.info("Post data is " + bodyQuery);
+
+                byte[] bytes = handler.apply(bodyQuery);
 
                 httpExchange.sendResponseHeaders(200, bytes.length);
 
@@ -42,5 +44,11 @@ public class HttpStorageSystem {
 
                 httpExchange.close();
             });
+    }
+
+    @Override
+    public void close() throws Exception {
+        LOGGER.info("Stopping the HTTP server");
+        httpServer.stop(0);
     }
 }

@@ -10,17 +10,14 @@ public abstract class KafkaStorageSystem implements KafkaConsumerObserver<Long, 
 
     private final String serverAddress;
 
-    public KafkaStorageSystem(SubscribableConsumer<Long, StupidStreamObject> consumer,
-                              String serverAddress) {
+    public KafkaStorageSystem(String serverAddress) {
         this.serverAddress = serverAddress;
-
-        consumer.subscribe(this);
     }
 
     @Override
     public void messageReceived(ConsumerRecord<Long, StupidStreamObject> message) {
-        LOGGER.info("Lucene received values of type " + message.value().getObjectType().toString() + " with " +
-            "properties:");
+        LOGGER.info("A storage system has received values of type " + message.value().getObjectType().toString() + " " +
+            "with properties:");
         message.value().getProperties().forEach((key, value) ->
             LOGGER.info(key + " - " + value));
 

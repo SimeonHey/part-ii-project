@@ -37,6 +37,10 @@ public class SubscribableConsumer<K, V> {
         return consumerRecords;
     }
 
+    public void moveAllToLatest() {
+        this.kafkaConsumer.seekToEnd(this.kafkaConsumer.assignment());
+    }
+
     void close() {
         this.kafkaConsumer.close();
     }

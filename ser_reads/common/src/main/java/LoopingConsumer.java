@@ -8,13 +8,13 @@ public class LoopingConsumer<K, V> extends SubscribableConsumer<K, V>{
     private final long sleepMs;
 
     public LoopingConsumer(Consumer<K, V> kafkaConsumer, int sleepMs) {
-        super(kafkaConsumer, sleepMs);
+        super(kafkaConsumer);
         this.sleepMs = sleepMs;
     }
 
     public LoopingConsumer(Consumer<K, V> kafkaConsumer) {
         super(kafkaConsumer);
-        this.sleepMs = DEFAULT_BLOCK_MS;
+        this.sleepMs = Constants.KAFKA_CONSUME_DELAY_MS;
     }
 
     public void listenBlockingly() {

@@ -22,8 +22,4 @@ public class ManualConsumer<K, V> extends SubscribableConsumer<K, V> {
         LOGGER.info("Successfully consumed " + consumerRecords.count() + " records.");
         return consumerRecords.count();
     }
-
-    public void moveAllToLatest() {
-        this.kafkaConsumer.seekToEnd(this.kafkaConsumer.assignment());
-    }
 }

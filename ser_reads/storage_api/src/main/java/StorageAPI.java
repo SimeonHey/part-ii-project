@@ -3,28 +3,27 @@ import org.apache.kafka.clients.producer.Producer;
 
 import java.util.logging.Logger;
 
-public class StorageAPI {
+public class StorageAPI implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(StorageAPI.class.getName());
     private static final String ENDPOINT_RESPONSE = "response";
 
     private final Producer<Long, StupidStreamObject> producer;
-    private final String addressPsql;
     private final String transactionsTopic;
     private final Gson gson;
 
     private final MultithreadedCommunication multithreadedCommunication;
+    private final HttpStorageSystem httpStorageSystem;
 
     StorageAPI(Gson gson,
                Producer<Long, StupidStreamObject> producer,
                HttpStorageSystem httpStorageSystem,
-               String addressPsql,
                String transactionsTopic) {
         this.gson = gson;
         this.producer = producer;
-        this.addressPsql = addressPsql;
         this.transactionsTopic = transactionsTopic;
+        this.httpStorageSystem = httpStorageSystem;
 
-        httpStorageSystem.registerHandler(ENDPOINT_RESPONSE, this::receiveResponse);
+        this.httpStorageSystem.registerHandler(ENDPOINT_RESPONSE, this::receiveResponse);
 
         this.multithreadedCommunication = new MultithreadedCommunication();
     }
@@ -88,9 +87,13 @@ public class StorageAPI {
     public String toString() {
         return "StorageAPI{" +
             "producer=" + producer +
-            ", addressPsql='" + addressPsql + '\'' +
             ", transactionsTopic='" + transactionsTopic + '\'' +
             ", gson=" + gson +
             '}';
+    }
+
+    @Override
+    public void close() throws Exception {
+        httpStorageSystem.close();
     }
 }

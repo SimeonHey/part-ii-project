@@ -9,8 +9,10 @@ public class MessageAppEntryPoint {
     public static void main(String[] args) throws InterruptedException, IOException {
         LOGGER.info("Initializing a storage api with arguments " + Arrays.toString(args));
 
+        StorageAPIUtils.StorageAPIInitArgs initArgs = new StorageAPIUtils.StorageAPIInitArgs(args);
+
         StorageAPI storageAPI =
-            StorageAPIUtils.initFromArgs(args[0], args[1], args[2], Integer.parseInt(args[3]));
+            StorageAPIUtils.initFromArgs(initArgs);
 
         LOGGER.info("Deleting all previous messages");
         storageAPI.deleteAllMessages();

@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 /**
  * Proxy for Lucene transactions
  */
-class LuceneWrapper {
+class LuceneWrapper implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(LuceneWrapper.class.getName());
     
     private static final String DEFAULT_INDEX_DEST = "./luceneindex/index_output";
@@ -82,6 +82,13 @@ class LuceneWrapper {
             indexWriter.close();
         } catch (IOException e) {
             LOGGER.warning("Error when trying to flush and close the indexWRiter");
+            throw new RuntimeException(e);
+        }
+
+        try {
+            luceneIndexDir.close();
+        } catch (IOException e) {
+            LOGGER.warning("Error when trying to close the lucene index dir");
             throw new RuntimeException(e);
         }
     }
@@ -166,5 +173,10 @@ class LuceneWrapper {
             LOGGER.warning("Error when trying to flush and close the indexWRiter");
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void close() throws Exception {
+//        analyzer.close();
     }
 }

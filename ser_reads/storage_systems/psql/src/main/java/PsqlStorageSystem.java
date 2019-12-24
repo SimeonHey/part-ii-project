@@ -1,21 +1,15 @@
-import com.google.gson.Gson;
-
 import java.util.logging.Logger;
 
 public class PsqlStorageSystem extends KafkaStorageSystem {
     private static final Logger LOGGER = Logger.getLogger(PsqlStorageSystem.class.getName());
     
     private final PsqlWrapper psqlWrapper;
-    private final Gson gson;
 
-    PsqlStorageSystem(SubscribableConsumer<Long, StupidStreamObject> consumer,
-                      PsqlWrapper psqlWrapper,
-                      String serverAddress,
-                      Gson gson) {
-        super(consumer, serverAddress);
+    PsqlStorageSystem(PsqlWrapper psqlWrapper,
+                      String serverAddress) {
+        super(serverAddress);
 
         this.psqlWrapper = psqlWrapper;
-        this.gson = gson;
     }
 
     @Override

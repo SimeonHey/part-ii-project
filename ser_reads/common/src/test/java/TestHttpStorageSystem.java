@@ -9,8 +9,7 @@ public class TestHttpStorageSystem {
 
     @Test
     public void testDiscover() throws IOException {
-        HttpStorageSystem httpStorageSystem =
-            new HttpStorageSystem("test", HttpUtils.initHttpServer(FREE_PORT));
+        new HttpStorageSystem("test", HttpUtils.initHttpServer(FREE_PORT));
 
         String resp =
             HttpUtils.httpRequestResponse("http://localhost:" + FREE_PORT, "test/discover", "");
@@ -20,13 +19,15 @@ public class TestHttpStorageSystem {
 
     @Test
     public void testRegisterHandler() throws IOException {
+        String phrase = "Simeon'ski!@\\x";
+
         HttpStorageSystem httpStorageSystem =
             new HttpStorageSystem("test", HttpUtils.initHttpServer(FREE_PORT));
 
         httpStorageSystem.registerHandler("sayHi", (query) -> ("Hi " + query).getBytes());
 
-        String resp =
-            HttpUtils.httpRequestResponse("http://localhost:" + FREE_PORT, "test/sayHi", "Simeon");
-        assertEquals("Hi Simeon", resp);
+        String resp =HttpUtils.httpRequestResponse("http://localhost:" + FREE_PORT, "test/sayHi",
+            phrase);
+        assertEquals("Hi " + phrase, resp);
     }
 }

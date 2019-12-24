@@ -1,16 +1,14 @@
 import java.util.List;
 import java.util.logging.Logger;
 
-public class LuceneStorageSystem extends KafkaStorageSystem {
+public class LuceneStorageSystem extends KafkaStorageSystem implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystem.class.getName());
     
     private final LuceneWrapper luceneWrapper;
 
-    LuceneStorageSystem(SubscribableConsumer<Long, StupidStreamObject> consumer,
-                        LuceneWrapper luceneWrapper,
+    LuceneStorageSystem(LuceneWrapper luceneWrapper,
                         String serverAddress) {
-        super(consumer, serverAddress);
-
+        super(serverAddress);
         this.luceneWrapper = luceneWrapper;
     }
 
@@ -44,5 +42,10 @@ public class LuceneStorageSystem extends KafkaStorageSystem {
     @Override
     public void deleteAllMessages() {
         this.luceneWrapper.deleteAllMessages();
+    }
+
+    @Override
+    public void close() throws Exception {
+        luceneWrapper.close();
     }
 }
