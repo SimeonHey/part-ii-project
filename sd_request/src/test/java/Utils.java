@@ -21,7 +21,7 @@ class Utils {
         }
     }
 
-    static Trinity basicInitialization() throws IOException, SQLException {
+    static Trinity basicInitialization() throws IOException, SQLException, InterruptedException {
         if (savedInstance != null) {
             return savedInstance;
         }
@@ -58,8 +58,11 @@ class Utils {
 
         loopingConsumerPsql.moveAllToLatest();
         loopingConsumerLucene.moveAllToLatest();
+
         new Thread(loopingConsumerPsql::listenBlockingly).start();
         new Thread(loopingConsumerLucene::listenBlockingly).start();
+
+        Thread.sleep(1000);
 
         savedInstance = new Trinity(psqlStorageSystem, luceneStorageSystem, storageAPI);
         return savedInstance;

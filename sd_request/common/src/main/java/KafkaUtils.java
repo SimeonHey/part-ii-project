@@ -6,6 +6,7 @@ import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.LongDeserializer;
 import org.apache.kafka.common.serialization.LongSerializer;
 
@@ -31,7 +32,8 @@ public class KafkaUtils {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
 
         Consumer<Long, StupidStreamObject> consumer = new KafkaConsumer<>(props);
-        consumer.subscribe(Collections.singletonList(kafkaTopic));
+        consumer.assign(Collections.singletonList(new TopicPartition(kafkaTopic, Constants.KAFKA_DEFAULT_PARTITION)));
+//        consumer.subscribe(Collections.singletonList(kafkaTopic));
         return consumer;
     }
 
@@ -48,7 +50,9 @@ public class KafkaUtils {
     static long produceMessage(Producer<Long, StupidStreamObject> producer,
                                String topic,
                                StupidStreamObject toSend) {
-        ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(topic, toSend);
+        ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(topic,
+            Constants.KAFKA_DEFAULT_PARTITION, null, toSend);
+
         try {
             RecordMetadata metadata = producer.send(record).get();
             LOGGER.info("Produced message of type " + toSend.getObjectType()

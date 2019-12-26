@@ -9,6 +9,7 @@ public class PsqlEntryPoint {
             new LoopingConsumer<>(PsqlUtils.getConsumer(initArgs), Constants.KAFKA_CONSUME_DELAY_MS);
         PsqlStorageSystem psqlStorageSystem = PsqlUtils.getStorageSystem(initArgs);
 
+        consumer.moveAllToLatest();
         consumer.subscribe(psqlStorageSystem);
         consumer.listenBlockingly();
     }

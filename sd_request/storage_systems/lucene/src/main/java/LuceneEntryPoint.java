@@ -7,6 +7,7 @@ public class LuceneEntryPoint {
 
         LuceneStorageSystem luceneStorageSystem = LuceneUtils.getStorageSystem(initArgs);
 
+        loopingConsumer.moveAllToLatest();
         loopingConsumer.subscribe(luceneStorageSystem);
         loopingConsumer.listenBlockingly();
     }

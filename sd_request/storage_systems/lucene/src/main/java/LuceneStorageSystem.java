@@ -31,7 +31,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem implements AutoClose
             LOGGER.info("No occurrences were found; sending an empty details response");
 
             this.sendResponse(requestSearchAndDetails,
-                new ResponseMessageDetails(null, requestSearchAndDetails.getUuid()));
+                new ResponseMessageDetails(null, -1));
             return;
         }
 
@@ -43,6 +43,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem implements AutoClose
             requestMessageDetails);
 
         try {
+            // PSQL will send the response to the requester
             HttpUtils.httpRequestResponse(this.psqlContactAddress, gson.toJson(fullResponse));
         } catch (IOException e) {
             LOGGER.warning("Error when conctacting PSQL with the search results");
@@ -74,6 +75,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem implements AutoClose
 
     @Override
     public void postMessage(RequestPostMessage postMessage) {
+        LOGGER.info("Lucene received a post message " + postMessage);
         this.luceneWrapper.postMessage(postMessage.getMessage(), postMessage.getUuid());
     }
 

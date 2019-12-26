@@ -50,6 +50,11 @@ public class StorageAPIEntryPoint {
                     storageAPI.deleteAllMessages();
                     System.out.println("Deleted all messages");
                     break;
+                case "sd":
+                    ResponseMessageDetails responseMessageDetails1 =
+                        storageAPI.searchAndDetails(line[1]);
+                    System.out.println("Message details: " + responseMessageDetails1);
+                    break;
                 default:
                     System.out.println("Couldn't catch that");
             }

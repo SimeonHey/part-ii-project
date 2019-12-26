@@ -21,6 +21,7 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
     }
 
     private byte[] handleLuceneContact(String query) {
+        LOGGER.info("The psql http server received params " + query);
         multithreadedCommunication.registerResponse(query);
         return ("Received " + query).getBytes();
     }
@@ -28,8 +29,12 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
     @Override
     public void searchAndDetails(RequestSearchAndDetails requestSearchAndDetails) {
         try {
+            LOGGER.info("Waiting for lucene to contact us at UUID " + requestSearchAndDetails.getUuid() + "...");
+
             String serialized =
                 multithreadedCommunication.consumeAndDestroy(requestSearchAndDetails.getUuid());
+
+            LOGGER.info("Success! Serialized response received: " + serialized);
 
             RequestMessageDetails requestMessageDetails = gson.fromJson(serialized, RequestMessageDetails.class);
             getMessageDetails(requestMessageDetails);
