@@ -45,7 +45,7 @@ public class SubscribableConsumer<K, V> {
         LOGGER.info("Moving consumer to the latest offset");
         this.kafkaConsumer.seekToEnd(Collections.emptyList()); // All partitions
         LOGGER.info("Kafka consumer moved to offset " +
-            this.kafkaConsumer.endOffsets(this.kafkaConsumer.assignment()));
+        this.kafkaConsumer.endOffsets(this.kafkaConsumer.assignment()));
     }
 
     void close() {

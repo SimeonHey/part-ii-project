@@ -18,6 +18,7 @@ class Utils {
         @Override
         public void close() throws Exception {
             this.storageAPI.deleteAllMessages(); // Produces a Kafka message
+            Thread.sleep(1000);
         }
     }
 
