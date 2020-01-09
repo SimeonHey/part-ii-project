@@ -1,24 +1,39 @@
 import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 public class SqlUtils {
     private static final Logger LOGGER = Logger.getLogger(SqlUtils.class.getName());
 
+    public static Connection obtainConnection(String username, String password, String psqlAddress) {
+        // Initialize Database connection
+        Properties props = new Properties();
+        props.setProperty("user", username);
+        props.setProperty("password", password);
+        try {
+            return DriverManager.getConnection(psqlAddress, props);
+        } catch (SQLException e) {
+            LOGGER.warning("Error when trying to obtain a connection: " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void executeStatement(String sql, Connection connection) throws SQLException {
         LOGGER.info("Executing statement: " + sql);
         connection.setAutoCommit(true);
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
-        preparedStatement.executeUpdate();
+        Statement statement = connection.createStatement();
+        statement.executeUpdate(sql);
     }
     public static ResultSet executeStatementForResult(String sql, Connection connection) throws SQLException {
         LOGGER.info("Executing statement for result: " + sql);
         connection.setAutoCommit(true);
-        PreparedStatement preparedStatement = connection.prepareStatement(sql);
+        Statement preparedStatement = connection.createStatement();
 
-        return preparedStatement.executeQuery();
+        return preparedStatement.executeQuery(sql);
     }
 
     public static Message extractMessageFromResultSet(ResultSet resultSet) throws SQLException {

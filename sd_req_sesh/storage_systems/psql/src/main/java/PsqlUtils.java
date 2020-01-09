@@ -1,10 +1,6 @@
 import org.apache.kafka.clients.consumer.Consumer;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.Properties;
 
 public class PsqlUtils {
     public static class PsqlInitArgs {
@@ -39,13 +35,9 @@ public class PsqlUtils {
         }
     }
 
-    public static PsqlStorageSystem getStorageSystem(PsqlInitArgs initArgs) throws SQLException, IOException {
-        // Initialize Database connection
-        Properties props = new Properties();
-        props.setProperty("user", initArgs.argUserPass[0]);
-        props.setProperty("password", initArgs.argUserPass[1]);
-        Connection conn = DriverManager.getConnection(initArgs.argPsqlAddress, props);
-        PsqlWrapper psqlWrapper = new PsqlWrapper(conn);
+    public static PsqlStorageSystem getStorageSystem(PsqlInitArgs initArgs) throws IOException {
+        PsqlWrapper psqlWrapper = new PsqlWrapper(() -> SqlUtils.obtainConnection(initArgs.argUserPass[0],
+            initArgs.argUserPass[1], initArgs.argPsqlAddress));
 
         // Initialize the http server
         HttpStorageSystem httpStorageSystem =

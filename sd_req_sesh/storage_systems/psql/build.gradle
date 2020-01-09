@@ -17,5 +17,7 @@ dependencies {
 
     implementation project(path: ':sd_req_sesh:common')
 
-    implementation group: 'postgresql', name: 'postgresql', version: '9.1-901-1.jdbc4'
+    implementation group: 'org.postgresql', name: 'postgresql', version: '42.2.9'
+
+    testImplementation 'junit:junit:4.12'
 }

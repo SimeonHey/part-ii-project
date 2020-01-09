@@ -1,5 +1,6 @@
 import com.google.gson.Gson;
 
+import java.sql.Connection;
 import java.util.logging.Logger;
 
 public class PsqlStorageSystem extends KafkaStorageSystem {
@@ -28,21 +29,25 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
 
     @Override
     public void searchAndDetails(RequestSearchAndDetails requestSearchAndDetails) {
-        try {
-            LOGGER.info("Waiting for lucene to contact us at UUID " + requestSearchAndDetails.getUuid() + "...");
+        new Thread(() -> {
+            Connection connection = psqlWrapper.newTransactionConnection();
+                try {
+                    LOGGER.info("IN A NEW THREAD: waiting for lucene to contact us at UUID " + requestSearchAndDetails.getUuid() + "...");
 
-            String serialized =
-                multithreadedCommunication.consumeAndDestroy(requestSearchAndDetails.getUuid());
+                    String serialized =
+                        multithreadedCommunication.consumeAndDestroy(requestSearchAndDetails.getUuid());
 
-            LOGGER.info("Success! Serialized response received: " + serialized);
+                    LOGGER.info("Success! Serialized response received: " + serialized);
 
-            RequestMessageDetails requestMessageDetails = gson.fromJson(serialized, RequestMessageDetails.class);
-            getMessageDetails(requestMessageDetails);
-        } catch (InterruptedException e) {
-            LOGGER.warning("Error when waiting on Lucene to contact us at uuid " +
-                requestSearchAndDetails.getUuid());
-            throw new RuntimeException(e);
-        }
+                    RequestMessageDetails requestMessageDetails = gson.fromJson(serialized, RequestMessageDetails.class);
+                    // Use the connection provided so that it's within this transaction
+                    getMessageDetails(connection, requestMessageDetails);
+                } catch (InterruptedException e) {
+                    LOGGER.warning("Error when waiting on Lucene to contact us at uuid " +
+                        requestSearchAndDetails.getUuid());
+                    throw new RuntimeException(e);
+                }
+            }).start();
     }
 
     @Override
@@ -63,6 +68,11 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
     @Override
     public void getMessageDetails(RequestMessageDetails requestMessageDetails) {
         ResponseMessageDetails reqResult = this.psqlWrapper.getMessageDetails(requestMessageDetails);
+        this.sendResponse(requestMessageDetails, reqResult);
+    }
+
+    private void getMessageDetails(Connection connection, RequestMessageDetails requestMessageDetails) {
+        ResponseMessageDetails reqResult = this.psqlWrapper.getMessageDetails(connection, requestMessageDetails);
         this.sendResponse(requestMessageDetails, reqResult);
     }
 
