@@ -55,7 +55,7 @@ class PsqlWrapper {
 
             boolean hasMore = resultSet.next();
             if (!hasMore) {
-                return null;
+                return new ResponseMessageDetails(null, requestMessageDetails.getMessageUUID());
             }
 
             ResponseMessageDetails response = new ResponseMessageDetails(

@@ -26,24 +26,25 @@ public class LuceneStorageSystem extends KafkaStorageSystem implements AutoClose
 
         List<Long> occurrences =
             this.luceneWrapper.searchMessage(requestSearchAndDetails.getSearchText());
-
-        if (occurrences.size() == 0) {
-            LOGGER.info("No occurrences were found; sending an empty details response");
-
-            this.sendResponse(requestSearchAndDetails,
-                new ResponseMessageDetails(null, -1));
-            return;
-        }
-
         LOGGER.info("Got occurrences " + occurrences);
 
-        RequestMessageDetails requestMessageDetails = new RequestMessageDetails(occurrences.get(0),
+        long detailsForId;
+
+        if (occurrences.size() == 0) {
+            detailsForId = -1;
+            LOGGER.info("No occurrences were found; sending a details request for id " + detailsForId);
+        } else {
+            detailsForId = occurrences.get(0);
+            LOGGER.info("At least one occurrence was found; sending a details request for id " + detailsForId);
+        }
+
+        RequestMessageDetails requestMessageDetails = new RequestMessageDetails(detailsForId,
             requestSearchAndDetails.responseEndpoint, requestSearchAndDetails.getUuid());
         MultithreadedResponse fullResponse = new MultithreadedResponse(requestSearchAndDetails.getUuid(),
             requestMessageDetails);
 
         try {
-            // PSQL will send the response to the requester
+            // We send a request to PSQL, and PSQL will send the response to the requester
             HttpUtils.httpRequestResponse(this.psqlContactAddress, gson.toJson(fullResponse));
         } catch (IOException e) {
             LOGGER.warning("Error when conctacting PSQL with the search results");
