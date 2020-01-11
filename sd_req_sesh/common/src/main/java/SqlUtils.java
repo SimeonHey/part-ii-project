@@ -43,4 +43,12 @@ public class SqlUtils {
     public static long extractUuidFromResultSet(ResultSet resultSet) throws SQLException {
         return resultSet.getLong(3);
     }
+
+    public static int resultSetSize(ResultSet resultSet) throws SQLException {
+        int cnt = 0;
+        while (resultSet.next()) {
+            cnt ++;
+        }
+        return cnt;
+    }
 }

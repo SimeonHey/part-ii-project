@@ -1,6 +1,8 @@
 import org.apache.kafka.clients.consumer.Consumer;
 
 import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class PsqlUtils {
     public static class PsqlInitArgs {
@@ -57,4 +59,5 @@ public class PsqlUtils {
             initArgs.argKafkaAddress,
             initArgs.argTransactionsTopic);
     }
+
 }

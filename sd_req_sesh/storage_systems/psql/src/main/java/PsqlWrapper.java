@@ -107,7 +107,7 @@ class PsqlWrapper {
         }
     }
 
-    Connection newTransactionConnection() {
+    Connection newSnapshotIsolatedConnection() {
         Connection connection = connectionSupplier.get();
         try {
             connection.setAutoCommit(false);

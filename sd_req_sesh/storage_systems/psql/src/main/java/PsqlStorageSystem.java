@@ -1,6 +1,7 @@
 import com.google.gson.Gson;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.logging.Logger;
 
 public class PsqlStorageSystem extends KafkaStorageSystem {
@@ -29,20 +30,27 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
 
     @Override
     public void searchAndDetails(RequestSearchAndDetails requestSearchAndDetails) {
+        // Open a new connection which has the current snapshot of the data
+        Connection snapshotIsolatedConnection = psqlWrapper.newSnapshotIsolatedConnection();
+
+        // Spin up a new thread to wait for Lucene TODO: consider adding a limit of the outstanding waiting threads
         new Thread(() -> {
-            Connection connection = psqlWrapper.newTransactionConnection();
                 try {
-                    LOGGER.info("IN A NEW THREAD: waiting for lucene to contact us at UUID " + requestSearchAndDetails.getUuid() + "...");
+                    LOGGER.info("IN A NEW THREAD: waiting for lucene to contact us at UUID " +
+                        requestSearchAndDetails.getUuid() + "...");
 
                     String serialized =
                         multithreadedCommunication.consumeAndDestroy(requestSearchAndDetails.getUuid());
 
                     LOGGER.info("Success! Serialized response received: " + serialized);
 
-                    RequestMessageDetails requestMessageDetails = gson.fromJson(serialized, RequestMessageDetails.class);
+                    RequestMessageDetails requestMessageDetails =
+                        gson.fromJson(serialized, RequestMessageDetails.class);
+
                     // Use the connection provided so that it's within this transaction
-                    getMessageDetails(connection, requestMessageDetails);
-                } catch (InterruptedException e) {
+                    getMessageDetails(snapshotIsolatedConnection, requestMessageDetails);
+                    snapshotIsolatedConnection.close();
+                } catch (InterruptedException | SQLException e) {
                     LOGGER.warning("Error when waiting on Lucene to contact us at uuid " +
                         requestSearchAndDetails.getUuid());
                     throw new RuntimeException(e);
