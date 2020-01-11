@@ -3,6 +3,14 @@ public class RequestWithResponse extends BaseRequest{
 
     final String responseEndpoint;
 
+    @Override
+    public String toString() {
+        return "RequestWithResponse{" +
+            "responseEndpoint='" + responseEndpoint + '\'' +
+            "SUPER: {" + super.toString() + "}" +
+            '}';
+    }
+
     RequestWithResponse(String responseEndpoint, long uuid) {
         super(uuid);
         this.responseEndpoint = responseEndpoint;

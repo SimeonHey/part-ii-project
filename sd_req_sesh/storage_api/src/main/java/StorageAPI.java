@@ -42,7 +42,7 @@ public class StorageAPI implements AutoCloseable {
             this.transactionsTopic,
             request);
 
-        LOGGER.info("Waiting for search response on channel with uuid " + offset);
+        LOGGER.info("Waiting for response on channel with uuid " + offset);
 
         // Will block until a response is received
         return this.multithreadedCommunication.consumeAndDestroy(offset);

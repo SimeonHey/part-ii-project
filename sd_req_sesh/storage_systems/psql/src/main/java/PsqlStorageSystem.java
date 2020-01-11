@@ -86,6 +86,7 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
 
     @Override
     public void getAllMessages(RequestAllMessages requestAllMessages) {
+        LOGGER.info("PSQL received a RequestAllMessages request: " + requestAllMessages);
         ResponseAllMessages reqResult = this.psqlWrapper.getAllMessages();
         this.sendResponse(requestAllMessages, reqResult);
     }

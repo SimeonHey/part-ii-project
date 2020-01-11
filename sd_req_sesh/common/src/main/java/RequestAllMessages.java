@@ -22,4 +22,12 @@ public class RequestAllMessages extends RequestWithResponse {
         return new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES)
             .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
     }
+
+    @Override
+    public String toString() {
+        return "RequestAllMessages{" +
+            "responseEndpoint='" + responseEndpoint + '\'' +
+            "SUPER: {" + super.toString() + "}" +
+            '}';
+    }
 }

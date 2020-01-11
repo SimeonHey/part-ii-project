@@ -5,6 +5,13 @@ public class BaseRequest {
         this.uuid = uuid;
     }
 
+    @Override
+    public String toString() {
+        return "BaseRequest{" +
+            "uuid=" + uuid +
+            '}';
+    }
+
     public Long getUuid() {
         return uuid;
     }

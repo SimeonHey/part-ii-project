@@ -19,6 +19,11 @@ import java.util.regex.Pattern;
 
 public class DummyConsumer implements Consumer<Long, StupidStreamObject> {
     private DummyKafka dummyKafka = DummyKafka.getDummyKafka();
+    private final String consumerGroup;
+
+    public DummyConsumer(String consumerGroup) {
+        this.consumerGroup = consumerGroup;
+    }
 
     @Override
     public ConsumerRecords<Long, StupidStreamObject> poll(long timeout) {
@@ -27,7 +32,7 @@ public class DummyConsumer implements Consumer<Long, StupidStreamObject> {
 
     @Override
     public ConsumerRecords<Long, StupidStreamObject> poll(Duration timeout) {
-        return dummyKafka.consumeMessages();
+        return dummyKafka.consumeMessages(this.consumerGroup);
     }
 
     @Override

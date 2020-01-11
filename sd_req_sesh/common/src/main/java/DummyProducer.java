@@ -23,7 +23,7 @@ public class DummyProducer implements Producer<Long, StupidStreamObject> {
         long offset = dummyKafka.produceMessage(record.key(), record.value());
 
         RecordMetadata metadata =
-            new RecordMetadata(DummyKafka.TOPIC_PARTITION, offset, offset,
+            new RecordMetadata(DummyKafka.TOPIC_PARTITION, offset, 0,
                 0, 0L, 0, 0);
 
         return CompletableFuture.completedFuture(metadata);

@@ -16,13 +16,14 @@ public abstract class KafkaStorageSystem implements KafkaConsumerObserver<Long, 
 
     @Override
     public void messageReceived(ConsumerRecord<Long, StupidStreamObject> message) {
+        long requestUUID = message.offset();
+
         LOGGER.info("A storage system has received values of type " + message.value().getObjectType().toString() + " " +
-            "with properties:");
+            "with offset " + requestUUID + " and properties:");
         message.value().getProperties().forEach((key, value) ->
             LOGGER.info(key + " - " + value));
 
         StupidStreamObject streamObject = message.value();
-        long requestUUID = message.offset();
 
         switch (streamObject.getObjectType()) {
             case POST_MESSAGE:
