@@ -3,6 +3,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 
 public class FullSystemTest {
@@ -96,7 +97,7 @@ public class FullSystemTest {
             assertEquals(toSend.size(), responseSearchMessage.getMessages().size());
 
             List<Message> messages = responseSearchMessage.getMessages();
-            assertEquals(toSend, messages);
+            assertTrue(toSend.containsAll(messages) && messages.containsAll(toSend));
         }
     }
 }

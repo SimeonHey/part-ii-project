@@ -1,9 +1,12 @@
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Logger;
 
 class Utils {
-    private static Trinity savedInstanceBasic;
+    private static final Logger LOGGER = Logger.getLogger(Utils.class.getName());
+
     private static ManualTrinity savedInstanceManual;
+    private static Trinity savedInstance;
 
     static class Trinity implements AutoCloseable{
         public final PsqlStorageSystem psqlStorageSystem;
@@ -20,6 +23,11 @@ class Utils {
         public void close() throws Exception {
             this.storageAPI.deleteAllMessages(); // Produces a Kafka message
             Thread.sleep(1000);
+
+            /*this.storageAPI.close();
+            this.psqlStorageSystem.close();
+            this.luceneStorageSystem.close();
+            Thread.sleep(1000);*/
         }
     }
 
@@ -47,8 +55,8 @@ class Utils {
     }
 
     static Trinity basicInitialization() throws IOException, SQLException, InterruptedException {
-        if (savedInstanceBasic != null) {
-            return savedInstanceBasic;
+        if (savedInstance != null) {
+            return savedInstance;
         }
 
         PsqlUtils.PsqlInitArgs psqlInitArgs = new PsqlUtils.PsqlInitArgs(
@@ -89,8 +97,8 @@ class Utils {
 
         Thread.sleep(1000);
 
-        savedInstanceBasic = new Trinity(psqlStorageSystem, luceneStorageSystem, storageAPI);
-        return savedInstanceBasic;
+        savedInstance = new Trinity(psqlStorageSystem, luceneStorageSystem, storageAPI);
+        return savedInstance;
     }
 
     static ManualTrinity manualConsumerInitialization() throws IOException {
@@ -103,8 +111,8 @@ class Utils {
             Constants.PSQL_USER_PASS,
             Constants.KAFKA_ADDRESS,
             Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_ADDRESS,
-            Constants.PSQL_LISTEN_PORT);
+            Constants.STORAGEAPI_ADDRESS_ALT,
+            Constants.PSQL_LISTEN_PORT_ALT);
 
         PsqlStorageSystem psqlStorageSystem = PsqlUtils.getStorageSystem(psqlInitArgs);
         ManualConsumer<Long, StupidStreamObject> manualConsumerPsql =
@@ -114,8 +122,8 @@ class Utils {
         LuceneUtils.LuceneInitArgs luceneInitArgs = new LuceneUtils.LuceneInitArgs(
             Constants.KAFKA_ADDRESS,
             Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_ADDRESS,
-            Constants.LUCENE_PSQL_CONTACT_ENDPOINT);
+            Constants.STORAGEAPI_ADDRESS_ALT,
+            Constants.LUCENE_PSQL_CONTACT_ENDPOINT_ALT);
 
         LuceneStorageSystem luceneStorageSystem = LuceneUtils.getStorageSystem(luceneInitArgs);
         ManualConsumer<Long, StupidStreamObject> manualConsumerLucene =
@@ -125,7 +133,7 @@ class Utils {
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = new StorageAPIUtils.StorageAPIInitArgs(
             Constants.KAFKA_ADDRESS,
             Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_PORT);
+            Constants.STORAGEAPI_PORT_ALT);
         StorageAPI storageAPI = StorageAPIUtils.initFromArgsWithDummyKafka(storageAPIInitArgs);
 
         manualConsumerPsql.moveAllToLatest();
@@ -140,5 +148,13 @@ class Utils {
     static void letThatSinkIn(Runnable r) throws InterruptedException {
         r.run();
         Thread.sleep(Constants.KAFKA_CONSUME_DELAY_MS * 2);
+    }
+
+    static void letThatSinkInManually(ManualTrinity manualTrinity, Runnable r) {
+        r.run();
+        int cntPsql = manualTrinity.progressPsql();
+        int cntLucene = manualTrinity.progressLucene();
+
+        LOGGER.info(String.format("Manually consumed %d PSQL and %d Lucene messages", cntPsql, cntLucene));
     }
 }

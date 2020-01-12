@@ -37,28 +37,12 @@ class LuceneWrapper implements AutoCloseable {
     private final Analyzer analyzer = new StandardAnalyzer();
 
     void postMessage(Message message, Long uuid) {
-        final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         LOGGER.info("Lucene posts message: " + message);
-
-        Directory luceneIndexDir;
-        try {
-            luceneIndexDir = FSDirectory.open(indexPath);
-        } catch (IOException e) {
-            LOGGER.info("Error when trying to open lucene dir: " + e);
-            throw new RuntimeException(e);
-        }
-
+        final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 
-        IndexWriter indexWriter;
-        try {
-            indexWriter = new IndexWriter(luceneIndexDir, iwc);
-        } catch (IOException e) {
-            LOGGER.warning("Error in Lucene when trying to open indexWriter: " + e);
-            throw new RuntimeException(e);
-        }
-
-        try {
+        try (Directory luceneIndexDir = FSDirectory.open(indexPath);
+             IndexWriter indexWriter = new IndexWriter(luceneIndexDir, iwc)) {
             Document doc = new Document();
 
             String escapedSender = QueryParser.escape(message.getSender());
@@ -71,24 +55,8 @@ class LuceneWrapper implements AutoCloseable {
             doc.add(new StoredField("uuid", uuid));
 
             indexWriter.addDocument(doc);
-            LOGGER.info("Successfully added message " + message);
         } catch (IOException e) {
-            LOGGER.warning("Error when trying to add a new doc");
-            throw new RuntimeException(e);
-        }
-
-        try {
-            indexWriter.flush();
-            indexWriter.close();
-        } catch (IOException e) {
-            LOGGER.warning("Error when trying to flush and close the indexWRiter");
-            throw new RuntimeException(e);
-        }
-
-        try {
-            luceneIndexDir.close();
-        } catch (IOException e) {
-            LOGGER.warning("Error when trying to close the lucene index dir");
+            LOGGER.warning("Error when posting message: " + e);
             throw new RuntimeException(e);
         }
     }
@@ -169,8 +137,9 @@ class LuceneWrapper implements AutoCloseable {
         try {
             indexWriter.flush();
             indexWriter.close();
+            luceneIndexDir.close();
         } catch (IOException e) {
-            LOGGER.warning("Error when trying to flush and close the indexWRiter");
+            LOGGER.warning("Error when trying to flush and close the indexWRiter and the indexdir");
             throw new RuntimeException(e);
         }
     }

@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 
@@ -78,7 +79,6 @@ public class FullSystemTest {
             StorageAPI storageAPI = trinity.storageAPI;
 
             List<Message> toSend = new ArrayList<>();
-
             toSend.add(new Message("Simeon", "Hey"));
             toSend.add(new Message("Simeon", "What's up"));
             toSend.add(new Message("Simeon", "It's a bit lonely"));
@@ -100,7 +100,7 @@ public class FullSystemTest {
             assertEquals(toSend.size(), responseSearchMessage.getMessages().size());
 
             List<Message> messages = responseSearchMessage.getMessages();
-            assertEquals(toSend, messages);
+            assertTrue(toSend.containsAll(messages) && messages.containsAll(toSend));
         }
     }
 

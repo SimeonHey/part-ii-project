@@ -4,13 +4,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-public class PsqlStorageSystem extends KafkaStorageSystem {
+public class PsqlStorageSystem extends KafkaStorageSystem implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(PsqlStorageSystem.class.getName());
 
     private final PsqlWrapper psqlWrapper;
 
     private final MultithreadedCommunication multithreadedCommunication = new MultithreadedCommunication();
-
+    private final HttpStorageSystem httpStorageSystem;
     private final Gson gson = new Gson();
 
     PsqlStorageSystem(PsqlWrapper psqlWrapper,
@@ -18,8 +18,9 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
                       HttpStorageSystem httpStorageSystem) {
         super(serverAddress);
         this.psqlWrapper = psqlWrapper;
+        this.httpStorageSystem = httpStorageSystem;
 
-        httpStorageSystem.registerHandler("luceneContact", this::handleLuceneContact);
+        this.httpStorageSystem.registerHandler("luceneContact", this::handleLuceneContact);
     }
 
     private byte[] handleLuceneContact(String query) {
@@ -89,5 +90,10 @@ public class PsqlStorageSystem extends KafkaStorageSystem {
         LOGGER.info("PSQL received a RequestAllMessages request: " + requestAllMessages);
         ResponseAllMessages reqResult = this.psqlWrapper.getAllMessages();
         this.sendResponse(requestAllMessages, reqResult);
+    }
+
+    @Override
+    public void close() throws Exception {
+        this.httpStorageSystem.close();
     }
 }
