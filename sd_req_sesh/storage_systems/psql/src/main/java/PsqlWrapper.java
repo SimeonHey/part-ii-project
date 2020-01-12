@@ -1,25 +1,27 @@
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 class PsqlWrapper {
     private static final Logger LOGGER = Logger.getLogger(PsqlWrapper.class.getName());
     
-    private final Connection connection;
+    private final Supplier<Connection> connectionSupplier;
 
-    PsqlWrapper(Connection connection) {
-        this.connection = connection;
+    PsqlWrapper(Supplier<Connection> connectionSupplier) {
+        this.connectionSupplier = connectionSupplier;
     }
 
     private void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
-
         String query = String.format("INSERT INTO messages (sender, messageText, uuid) VALUES ($$%s$$, $$%s$$, %d)",
             sender,
             messageText,
             uuid);
         LOGGER.info(query);
-        SqlUtils.executeStatement(query, this.connection);
+        try (Connection connection = connectionSupplier.get()) {
+            SqlUtils.executeStatement(query, connection);
+        }
     }
 
     void postMessage(RequestPostMessage requestPostMessage) {
@@ -34,12 +36,22 @@ class PsqlWrapper {
     }
 
     ResponseMessageDetails getMessageDetails(RequestMessageDetails requestMessageDetails) {
+        try (Connection connection = connectionSupplier.get()) {
+            return getMessageDetails(connection, requestMessageDetails);
+        } catch (SQLException e) {
+            LOGGER.warning("Error when trying to close the new connection");
+            throw new RuntimeException(e);
+        }
+    }
+
+    ResponseMessageDetails getMessageDetails(Connection connection, RequestMessageDetails requestMessageDetails) {
         LOGGER.info("Psql has to get details for message " + requestMessageDetails.getMessageUUID());
 
         try {
             String statement = String.format("SELECT * FROM messages WHERE uuid = %d",
-                requestMessageDetails.getMessageUUID());
-            ResultSet resultSet = SqlUtils.executeStatementForResult(statement, this.connection);
+            requestMessageDetails.getMessageUUID());
+
+            ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection);
 
             boolean hasMore = resultSet.next();
             if (!hasMore) {
@@ -66,16 +78,19 @@ class PsqlWrapper {
 
         try {
             String statement = "SELECT * FROM messages";
-            ResultSet resultSet = SqlUtils.executeStatementForResult(statement, this.connection);
 
-            while (resultSet.next()) {
-                responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
+            try (Connection connection = connectionSupplier.get()) {
+                ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection);
+
+                while (resultSet.next()) {
+                    responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
+                }
+
+                LOGGER.info("Psql extracted the following: " + responseAllMessages);
+
+                resultSet.close();
+                return responseAllMessages;
             }
-
-            LOGGER.info("Psql extracted the following: " + responseAllMessages);
-
-            resultSet.close();
-            return responseAllMessages;
         } catch (SQLException e) {
             LOGGER.warning("SQL exception when doing sql stuff in getAllMessages: " + e);
             throw new RuntimeException(e);
@@ -84,11 +99,30 @@ class PsqlWrapper {
 
     void deleteAllMessages() {
         LOGGER.info("Psql is deleting ALL messages");
-        try {
-            SqlUtils.executeStatement("DELETE FROM messages", this.connection);
+        try (Connection connection = connectionSupplier.get()) {
+            SqlUtils.executeStatement("DELETE FROM messages", connection);
         } catch (SQLException e) {
             LOGGER.warning("SQL exception when doing sql stuff in delete all messages: " + e);
             throw new RuntimeException(e);
         }
+    }
+
+    Connection newSnapshotIsolatedConnection() {
+        Connection connection = connectionSupplier.get();
+        try {
+            connection.setAutoCommit(false);
+            SqlUtils.executeStatement("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ", connection);
+
+            // Force the transaction to get a txid, so that a snapshot of the data is saved
+            ResultSet resultSet = SqlUtils.executeStatementForResult("SELECT txid_current()", connection);
+            resultSet.next();
+            long txId = resultSet.getLong(1);
+            LOGGER.info("Started a transaction with txid " + txId);
+
+        } catch (SQLException e) {
+            LOGGER.warning("Error when trying to open a new transaction: " + e);
+            throw new RuntimeException(e);
+        }
+        return connection;
     }
 }
