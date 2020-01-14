@@ -65,10 +65,20 @@ class LuceneWrapper implements AutoCloseable {
     }
 
     List<Long> searchMessage(String searchText) {
-        LOGGER.info("Searching for search text" + searchText);
+        LOGGER.info("Searching in the latest snapshot for search text" + searchText);
 
-        try (IndexReader indexReader = DirectoryReader.open(FSDirectory.open(indexPath));
-             Analyzer analyzer = new StandardAnalyzer()) {
+        try (IndexReader indexReader = this.newSnapshotReader()) {
+            return searchMessage(indexReader, searchText);
+        } catch (IOException e) {
+            LOGGER.warning("Error when performing search: " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    List<Long> searchMessage(IndexReader indexReader, String searchText) {
+        LOGGER.info("Searching in a previous snapshot for search text" + searchText);
+
+        try (Analyzer analyzer = new StandardAnalyzer()) {
             IndexSearcher indexSearcher = new IndexSearcher(indexReader);
 
             QueryParser queryParser = new QueryParser(FIELD_MESSAGE, analyzer);
@@ -109,6 +119,15 @@ class LuceneWrapper implements AutoCloseable {
 
         } catch (IOException e) {
             LOGGER.warning("Error when posting message: " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    IndexReader newSnapshotReader() {
+        try {
+            return DirectoryReader.open(FSDirectory.open(indexPath));
+        } catch (IOException e) {
+            LOGGER.warning("Error when trying to open a new snapshot reader: " + e);
             throw new RuntimeException(e);
         }
     }

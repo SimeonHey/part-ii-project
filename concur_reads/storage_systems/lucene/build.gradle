@@ -19,4 +19,6 @@ dependencies {
 //    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.29'
 
     implementation project(path: ':concur_reads:common')
+
+    testImplementation 'junit:junit:4.12'
 }
