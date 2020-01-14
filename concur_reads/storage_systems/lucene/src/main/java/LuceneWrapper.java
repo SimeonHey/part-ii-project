@@ -30,7 +30,10 @@ import java.util.logging.Logger;
  */
 class LuceneWrapper implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(LuceneWrapper.class.getName());
-    
+
+    private static final String FIELD_MESSAGE = "message";
+    private static final String FIELD_SENDER = "sender";
+    private static final String FIELD_UUID = "uuid";
     private static final String DEFAULT_INDEX_DEST = "./luceneindex/index_output";
 
     private final Path indexPath = Paths.get(DEFAULT_INDEX_DEST);
@@ -50,9 +53,9 @@ class LuceneWrapper implements AutoCloseable {
 
             LOGGER.info("Escaped sender: " + escapedSender + "; escaped message: " + escapedMessage);
 
-            doc.add(new StringField("sender", escapedSender, Field.Store.YES));
-            doc.add(new TextField("message", escapedMessage, Field.Store.NO));
-            doc.add(new StoredField("uuid", uuid));
+            doc.add(new StringField(FIELD_SENDER, escapedSender, Field.Store.YES));
+            doc.add(new TextField(FIELD_MESSAGE, escapedMessage, Field.Store.NO));
+            doc.add(new StoredField(FIELD_UUID, uuid));
 
             indexWriter.addDocument(doc);
         } catch (IOException e) {
@@ -64,82 +67,48 @@ class LuceneWrapper implements AutoCloseable {
     List<Long> searchMessage(String searchText) {
         LOGGER.info("Searching for search text" + searchText);
 
-        IndexReader indexReader;
-        try {
-            indexReader = DirectoryReader.open(FSDirectory.open(indexPath));
-        } catch (IOException e) {
-            LOGGER.info("Exception " + e + " when building indexReader");
-            throw new RuntimeException(e);
-        }
-        IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+        try (IndexReader indexReader = DirectoryReader.open(FSDirectory.open(indexPath));
+             Analyzer analyzer = new StandardAnalyzer()) {
+            IndexSearcher indexSearcher = new IndexSearcher(indexReader);
 
-        Analyzer analyzer = new StandardAnalyzer();
-        String searchField = "message";
-
-        QueryParser queryParser = new QueryParser(searchField, analyzer);
-        Query query;
-        try {
+            QueryParser queryParser = new QueryParser(FIELD_MESSAGE, analyzer);
             String escaped = QueryParser.escape(searchText);
             LOGGER.info("Escaped search query: " + escaped);
+            Query query = queryParser.parse(escaped);
 
-            query = queryParser.parse(escaped);
-        } catch (ParseException e) {
-            LOGGER.info("Exception " + e + " when building query");
+            TopDocs searchResults = indexSearcher.search(query, 100);
+
+            List<Long> occurrences = new ArrayList<>();
+
+            Arrays.stream(searchResults.scoreDocs).forEach(scoreDoc -> {
+                try {
+                    String res = indexSearcher.doc(scoreDoc.doc).get("uuid");
+                    occurrences.add(Long.valueOf(res));
+                } catch (IOException e) {
+                    LOGGER.info("Exception " + e + " when analysing search result");
+                    throw new RuntimeException(e);
+                }
+            });
+
+            LOGGER.info("Lucene search for text " + searchText + " and got " + occurrences);
+            return occurrences;
+        } catch (IOException | ParseException e) {
+            LOGGER.warning("Error when performing search: " + e);
             throw new RuntimeException(e);
         }
-
-        TopDocs searchResults;
-        try {
-            searchResults = indexSearcher.search(query, 100);
-        } catch (IOException e) {
-            LOGGER.info("Exception " + e + " when searching for query");
-            throw new RuntimeException(e);
-        }
-
-        List<Long> occurrences = new ArrayList<>();
-
-        Arrays.stream(searchResults.scoreDocs).forEach(scoreDoc -> {
-            try {
-                String res = indexSearcher.doc(scoreDoc.doc).get("uuid");
-                occurrences.add(Long.valueOf(res));
-            } catch (IOException e) {
-                LOGGER.info("Exception " + e + " when analysing search result");
-                throw new RuntimeException(e);
-            }
-        });
-
-        LOGGER.info("Lucene search for text " + searchText + " and got " + occurrences);
-        return occurrences;
     }
 
     void deleteAllMessages() {
-        final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         LOGGER.info("Lucene deletes all messages");
 
-        Directory luceneIndexDir;
-        try {
-            luceneIndexDir = FSDirectory.open(indexPath);
-        } catch (IOException e) {
-            LOGGER.info("Error when trying to open lucene dir: " + e);
-            throw new RuntimeException(e);
-        }
-
+        final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 
-        IndexWriter indexWriter;
-        try {
-            indexWriter = new IndexWriter(luceneIndexDir, iwc);
-        } catch (IOException e) {
-            LOGGER.warning("Error in Lucene when trying to open indexWriter: " + e);
-            throw new RuntimeException(e);
-        }
+        try (Directory luceneIndexDir = FSDirectory.open(indexPath);
+             IndexWriter ignored = new IndexWriter(luceneIndexDir, iwc)) {
 
-        try {
-            indexWriter.flush();
-            indexWriter.close();
-            luceneIndexDir.close();
         } catch (IOException e) {
-            LOGGER.warning("Error when trying to flush and close the indexWRiter and the indexdir");
+            LOGGER.warning("Error when posting message: " + e);
             throw new RuntimeException(e);
         }
     }
