@@ -42,6 +42,8 @@ class LuceneWrapper implements AutoCloseable {
         indexPath = Paths.get(indexDestination);
     }
 
+    // Write requests
+
     void postMessage(Message message, Long uuid) {
         LOGGER.info("Lucene posts message: " + message);
         final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
@@ -66,6 +68,23 @@ class LuceneWrapper implements AutoCloseable {
             throw new RuntimeException(e);
         }
     }
+
+    void deleteAllMessages() {
+        LOGGER.info("Lucene deletes all messages");
+
+        final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+        iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
+
+        try (Directory luceneIndexDir = FSDirectory.open(indexPath);
+             IndexWriter ignored = new IndexWriter(luceneIndexDir, iwc)) {
+
+        } catch (IOException e) {
+            LOGGER.warning("Error when posting message: " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Read requests
 
     List<Long> searchMessage(String searchText) {
         LOGGER.info("Searching in the latest snapshot for search text" + searchText);
@@ -108,21 +127,6 @@ class LuceneWrapper implements AutoCloseable {
             return occurrences;
         } catch (IOException | ParseException e) {
             LOGGER.warning("Error when performing search: " + e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    void deleteAllMessages() {
-        LOGGER.info("Lucene deletes all messages");
-
-        final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
-        iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
-
-        try (Directory luceneIndexDir = FSDirectory.open(indexPath);
-             IndexWriter ignored = new IndexWriter(luceneIndexDir, iwc)) {
-
-        } catch (IOException e) {
-            LOGGER.warning("Error when posting message: " + e);
             throw new RuntimeException(e);
         }
     }

@@ -72,27 +72,35 @@ class PsqlWrapper {
         }
     }
 
-    ResponseAllMessages getAllMessages() {
+    ResponseAllMessages getAllMessages(Connection connection) {
         LOGGER.info("Psql has to get ALL messages");
         ResponseAllMessages responseAllMessages = new ResponseAllMessages();
 
         try {
             String statement = "SELECT * FROM messages";
+            ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection);
 
-            try (Connection connection = connectionSupplier.get()) {
-                ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection);
-
-                while (resultSet.next()) {
-                    responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
-                }
-
-                LOGGER.info("Psql extracted the following: " + responseAllMessages);
-
-                resultSet.close();
-                return responseAllMessages;
+            while (resultSet.next()) {
+                responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
             }
+
+            LOGGER.info("Psql extracted the following: " + responseAllMessages);
+
+            resultSet.close();
+            return responseAllMessages;
+
         } catch (SQLException e) {
             LOGGER.warning("SQL exception when doing sql stuff in getAllMessages: " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    ResponseAllMessages getAllMessages() {
+        try (Connection connection = connectionSupplier.get()) {
+            return getAllMessages(connection);
+        } catch (SQLException e) {
+            LOGGER.warning("SQL exception when doing sql stuff in getAllMessages or when closing the connection: " + e);
             throw new RuntimeException(e);
         }
     }

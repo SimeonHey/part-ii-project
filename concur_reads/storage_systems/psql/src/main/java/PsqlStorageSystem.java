@@ -14,19 +14,9 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
 
     PsqlStorageSystem(PsqlWrapper psqlWrapper,
                       String serverAddress,
+                      int numberOfReaderThreads,
                       HttpStorageSystem httpStorageSystem) {
-        super(serverAddress);
-        this.psqlWrapper = psqlWrapper;
-        this.httpStorageSystem = httpStorageSystem;
-
-        this.httpStorageSystem.registerHandler("luceneContact", this::handleLuceneContact);
-    }
-
-    PsqlStorageSystem(PsqlWrapper psqlWrapper,
-                      String serverAddress,
-                      int numerOfReaderThreads,
-                      HttpStorageSystem httpStorageSystem) {
-        super(serverAddress, numerOfReaderThreads);
+        super(serverAddress, numberOfReaderThreads);
 
         this.psqlWrapper = psqlWrapper;
         this.httpStorageSystem = httpStorageSystem;
@@ -51,7 +41,7 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
                                  RequestSearchAndDetails requestSearchAndDetails) {
         // Open a new connection which has the current snapshot of the data
         try {
-            LOGGER.info("IN A NEW THREAD: waiting for lucene to contact us at UUID " +
+            LOGGER.info("Waiting for lucene to contact us at UUID " +
                 requestSearchAndDetails.getUuid() + "...");
 
             String serialized =
@@ -63,7 +53,7 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
                 gson.fromJson(serialized, RequestMessageDetails.class);
 
             // Use the connection provided so that it's within this transaction
-            getMessageDetails(snapshotHolder.getSnapshot(), requestMessageDetails);
+            getMessageDetails(snapshotHolder, requestMessageDetails);
         } catch (InterruptedException e) {
             LOGGER.warning("Error when waiting on Lucene to contact us at uuid " +
                 requestSearchAndDetails.getUuid());
@@ -80,12 +70,8 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
     @Override
     public void getMessageDetails(SnapshotHolder<Connection> snapshotHolder,
                                   RequestMessageDetails requestMessageDetails) {
-        ResponseMessageDetails reqResult = this.psqlWrapper.getMessageDetails(requestMessageDetails);
-        this.sendResponse(requestMessageDetails, reqResult);
-    }
-
-    private void getMessageDetails(Connection connection, RequestMessageDetails requestMessageDetails) {
-        ResponseMessageDetails reqResult = this.psqlWrapper.getMessageDetails(connection, requestMessageDetails);
+        ResponseMessageDetails reqResult =
+            this.psqlWrapper.getMessageDetails(snapshotHolder.getSnapshot(), requestMessageDetails);
         this.sendResponse(requestMessageDetails, reqResult);
     }
 
@@ -93,7 +79,7 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
     public void getAllMessages(SnapshotHolder<Connection> snapshotHolder,
                                RequestAllMessages requestAllMessages) {
         LOGGER.info("PSQL received a RequestAllMessages request: " + requestAllMessages);
-        ResponseAllMessages reqResult = this.psqlWrapper.getAllMessages();
+        ResponseAllMessages reqResult = this.psqlWrapper.getAllMessages(snapshotHolder.getSnapshot());
         this.sendResponse(requestAllMessages, reqResult);
     }
 

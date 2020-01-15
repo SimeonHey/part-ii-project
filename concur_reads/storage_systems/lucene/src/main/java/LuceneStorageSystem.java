@@ -33,7 +33,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem<IndexReader> impleme
         LOGGER.info(String.format("Handling search and details request through log %s", requestSearchAndDetails));
 
         List<Long> occurrences =
-            this.luceneWrapper.searchMessage(requestSearchAndDetails.getSearchText());
+            this.luceneWrapper.searchMessage(snapshotHolder.getSnapshot(), requestSearchAndDetails.getSearchText());
         LOGGER.info("Got occurrences " + occurrences);
 
         long detailsForId;
@@ -78,7 +78,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem<IndexReader> impleme
         LOGGER.info(String.format("Handling search request through log %s", requestSearchMessage));
 
         List<Long> occurrences =
-            this.luceneWrapper.searchMessage(requestSearchMessage.getSearchText());
+            this.luceneWrapper.searchMessage(snapshotHolder.getSnapshot(), requestSearchMessage.getSearchText());
         LOGGER.info("Got occurrences " + occurrences);
 
         ResponseSearchMessage searchResult = new ResponseSearchMessage(occurrences);
