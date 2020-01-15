@@ -34,10 +34,13 @@ class LuceneWrapper implements AutoCloseable {
     private static final String FIELD_MESSAGE = "message";
     private static final String FIELD_SENDER = "sender";
     private static final String FIELD_UUID = "uuid";
-    private static final String DEFAULT_INDEX_DEST = "./luceneindex/index_output";
 
-    private final Path indexPath = Paths.get(DEFAULT_INDEX_DEST);
+    private final Path indexPath;
     private final Analyzer analyzer = new StandardAnalyzer();
+
+    public LuceneWrapper(String indexDestination) {
+        indexPath = Paths.get(indexDestination);
+    }
 
     void postMessage(Message message, Long uuid) {
         LOGGER.info("Lucene posts message: " + message);
@@ -79,6 +82,7 @@ class LuceneWrapper implements AutoCloseable {
         LOGGER.info("Searching in a previous snapshot for search text" + searchText);
 
         try (Analyzer analyzer = new StandardAnalyzer()) {
+            // change the analyzer if you want different tokenization or filters
             IndexSearcher indexSearcher = new IndexSearcher(indexReader);
 
             QueryParser queryParser = new QueryParser(FIELD_MESSAGE, analyzer);

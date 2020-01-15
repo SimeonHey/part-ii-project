@@ -101,7 +101,7 @@ class Utils {
         return savedInstance;
     }
 
-    static ManualTrinity manualConsumerInitialization() throws IOException {
+    static ManualTrinity manualConsumerInitialization(int readerThreads) throws IOException {
         if (savedInstanceManual != null) {
             return savedInstanceManual;
         }
@@ -113,6 +113,7 @@ class Utils {
             Constants.KAFKA_TOPIC,
             Constants.STORAGEAPI_ADDRESS_ALT,
             Constants.PSQL_LISTEN_PORT_ALT);
+        psqlInitArgs.numberOfReaders = readerThreads;
 
         PsqlStorageSystem psqlStorageSystem = PsqlUtils.getStorageSystem(psqlInitArgs);
         ManualConsumer<Long, StupidStreamObject> manualConsumerPsql =

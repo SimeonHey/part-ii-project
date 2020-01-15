@@ -1,8 +1,6 @@
 import org.apache.kafka.clients.consumer.Consumer;
 
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 public class PsqlUtils {
     public static class PsqlInitArgs {
@@ -12,6 +10,8 @@ public class PsqlUtils {
         public final String argTransactionsTopic;
         public final String argServerAddress;
         public final String argListeningPort;
+
+        public int numberOfReaders = Constants.PSQL_DEFAULT_READER_THREADS;
 
         public PsqlInitArgs(String[] args) {
             this.argPsqlAddress = args[0];
@@ -47,7 +47,7 @@ public class PsqlUtils {
                 HttpUtils.initHttpServer(Integer.parseInt(initArgs.argListeningPort)));
 
         PsqlStorageSystem psqlStorageSystem =
-            new PsqlStorageSystem(psqlWrapper, initArgs.argServerAddress, httpStorageSystem);
+            new PsqlStorageSystem(psqlWrapper, initArgs.argServerAddress, initArgs.numberOfReaders, httpStorageSystem);
         psqlStorageSystem.deleteAllMessages();
 
         return psqlStorageSystem;

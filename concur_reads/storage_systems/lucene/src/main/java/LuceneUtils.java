@@ -25,7 +25,8 @@ public class LuceneUtils {
 
     static LuceneStorageSystem getStorageSystem(LuceneInitArgs initArgs) {
         LuceneStorageSystem luceneStorageSystem =
-            new LuceneStorageSystem(new LuceneWrapper(), initArgs.argServerAddress, initArgs.argPsqlContactAddress);
+            new LuceneStorageSystem(new LuceneWrapper(Constants.LUCENE_DEFAULT_INDEX_DEST), initArgs.argServerAddress,
+                initArgs.argPsqlContactAddress);
         luceneStorageSystem.deleteAllMessages();
 
         return luceneStorageSystem;

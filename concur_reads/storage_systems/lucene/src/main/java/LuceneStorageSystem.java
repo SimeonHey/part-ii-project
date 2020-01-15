@@ -1,10 +1,11 @@
 import com.google.gson.Gson;
+import org.apache.lucene.index.IndexReader;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class LuceneStorageSystem extends KafkaStorageSystem implements AutoCloseable {
+public class LuceneStorageSystem extends KafkaStorageSystem<IndexReader> implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystem.class.getName());
     
     private final LuceneWrapper luceneWrapper;
@@ -21,7 +22,14 @@ public class LuceneStorageSystem extends KafkaStorageSystem implements AutoClose
     }
 
     @Override
-    public void searchAndDetails(RequestSearchAndDetails requestSearchAndDetails) {
+    public SnapshotHolder<IndexReader> getSnapshot() {
+        return new SnapshotHolder<>(this.luceneWrapper.newSnapshotReader());
+    }
+
+    // Read requests handling
+    @Override
+    public void searchAndDetails(SnapshotHolder<IndexReader> snapshotHolder,
+                                 RequestSearchAndDetails requestSearchAndDetails) {
         LOGGER.info(String.format("Handling search and details request through log %s", requestSearchAndDetails));
 
         List<Long> occurrences =
@@ -53,17 +61,20 @@ public class LuceneStorageSystem extends KafkaStorageSystem implements AutoClose
     }
 
     @Override
-    public void getMessageDetails(RequestMessageDetails requestMessageDetails) {
+    public void getMessageDetails(SnapshotHolder<IndexReader> snapshotHolder,
+                                  RequestMessageDetails requestMessageDetails) {
         LOGGER.info("Lucene received a get message details request and ignores it");
     }
 
     @Override
-    public void getAllMessages(RequestAllMessages requestAllMessages) {
+    public void getAllMessages(SnapshotHolder<IndexReader> snapshotHolder,
+                               RequestAllMessages requestAllMessages) {
         LOGGER.info("Lucene received a get all messages request and ignores it");
     }
 
     @Override
-    public void searchMessage(RequestSearchMessage requestSearchMessage) {
+    public void searchMessage(SnapshotHolder<IndexReader> snapshotHolder,
+                              RequestSearchMessage requestSearchMessage) {
         LOGGER.info(String.format("Handling search request through log %s", requestSearchMessage));
 
         List<Long> occurrences =
@@ -74,6 +85,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem implements AutoClose
         this.sendResponse(requestSearchMessage, searchResult);
     }
 
+    // Write requests handling
     @Override
     public void postMessage(RequestPostMessage postMessage) {
         LOGGER.info("Lucene received a post message " + postMessage);

@@ -8,13 +8,18 @@ import static org.junit.Assert.assertEquals;
 public class LuceneTests {
     @Test
     public void testLuceneIsSnapshotIsolated() {
-        LuceneWrapper luceneWrapper = new LuceneWrapper();
+        LuceneWrapper luceneWrapper = new LuceneWrapper(Constants.LUCENE_TEST_INDEX_DEST);
+        luceneWrapper.deleteAllMessages(); // Clear up previous stuff
+
+        // This message will show up in all sessions
         Message alwaysThere = new Message("simeon", "always_there");
         long alwaysThereId = 0;
 
+        // This message will show up in the default session & reader 1 but not reader 2
         Message inReader1 = new Message("simeon", "only_in_reader_1");
         long inReader1Id = 1;
 
+        // This message will show up in the default session, but not in reader 1 nor reader 2
         Message inNone = new Message("simeon", "In_none_of_the_readers");
         long inNoneId = 2;
 

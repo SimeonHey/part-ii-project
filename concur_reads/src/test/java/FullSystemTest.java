@@ -6,9 +6,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static junit.framework.Assert.assertTrue;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class FullSystemTest {
     @Test
@@ -142,7 +142,7 @@ public class FullSystemTest {
 
     @Test
     public void searchAndDetailsSnapshotIsolated() throws Exception {
-        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization()) {
+        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization(2)) {
             ExecutorService executorService = Executors.newFixedThreadPool(2);
 
             StorageAPI storageAPI = manualTrinity.storageAPI;
