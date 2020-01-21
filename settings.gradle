@@ -55,3 +55,5 @@ include 'concur_reads:storage_systems:psql'
 include 'concur_reads:storage_systems:lucene'
 include 'concur_reads:storage_api'
 include 'concur_reads:message_app'
+
+include 'benchmarking'

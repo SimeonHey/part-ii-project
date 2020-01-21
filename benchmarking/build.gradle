@@ -1,0 +1,9 @@
+plugins {
+        id 'java-library'
+}
+
+task load_concur {
+        dependencies {
+                api project(':concur_reads')
+        }
+}

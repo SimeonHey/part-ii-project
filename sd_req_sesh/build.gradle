@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
 
 dependencies {
@@ -9,10 +9,10 @@ dependencies {
 
     implementation group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
 
-    implementation project(':sd_req_sesh:common')
-    implementation project(':sd_req_sesh:storage_systems:lucene')
-    implementation project(':sd_req_sesh:storage_systems:psql')
-    implementation project(':sd_req_sesh:storage_api')
+    api project(':sd_req_sesh:common')
+    api project(':sd_req_sesh:storage_systems:lucene')
+    api project(':sd_req_sesh:storage_systems:psql')
+    api project(':sd_req_sesh:storage_api')
 }
 
 test {

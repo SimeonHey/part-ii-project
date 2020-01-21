@@ -23,4 +23,6 @@ public class Constants {
     public static final String STORAGEAPI_ADDRESS = String.format("http://localhost:%s/server", STORAGEAPI_PORT);
     public static final String STORAGEAPI_ADDRESS_ALT = String.format("http://localhost:%s/server",
         STORAGEAPI_PORT_ALT);
+
+    public static final String random = "Hello from concur_reads";
 }

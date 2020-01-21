@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
 
 dependencies {
@@ -9,10 +9,10 @@ dependencies {
 
     implementation group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
 
-    implementation project(':concur_reads:common')
-    implementation project(':concur_reads:storage_systems:lucene')
-    implementation project(':concur_reads:storage_systems:psql')
-    implementation project(':concur_reads:storage_api')
+    api project(':concur_reads:common')
+    api project(':concur_reads:storage_systems:lucene')
+    api project(':concur_reads:storage_systems:psql')
+    api project(':concur_reads:storage_api')
 }
 
 test {
