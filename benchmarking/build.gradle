@@ -2,8 +2,12 @@ plugins {
         id 'java-library'
 }
 
-task load_concur {
-        dependencies {
-                api project(':concur_reads')
-        }
+def project_to_load = ''
+
+project_to_load = 'concur_reads'
+//project_to_load = 'sd_req_sesh'
+
+dependencies {
+        api project(':' + project_to_load)
+//        implementation project(':' + project_to_load + ':common')
 }

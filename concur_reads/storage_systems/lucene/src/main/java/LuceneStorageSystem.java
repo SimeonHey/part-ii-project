@@ -22,7 +22,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem<IndexReader> impleme
     }
 
     @Override
-    public SnapshotHolder<IndexReader> getSnapshot() {
+    public SnapshotHolder<IndexReader> getReadSnapshot() {
         return new SnapshotHolder<>(this.luceneWrapper.newSnapshotReader());
     }
 

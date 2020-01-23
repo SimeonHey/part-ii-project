@@ -40,36 +40,44 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
 
             StupidStreamObject streamObject = message.value();
 
-            if (streamObject.getObjectType() == StupidStreamObject.ObjectType.NOP) {
-                LOGGER.info("Received a NOP. Skipping...");
+            switch (streamObject.getObjectType()) {
+                case NOP:
+                    LOGGER.info("Received a NOP. Skipping...");
+                    break;
 
                 // Write requests
-            } else if (streamObject.getObjectType() == StupidStreamObject.ObjectType.POST_MESSAGE) {
-                this.postMessage(RequestPostMessage.fromStupidStreamObject(streamObject, requestUUID));
-            } else if (streamObject.getObjectType() == StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES) {
-                this.deleteAllMessages();
-            }
+                case POST_MESSAGE:
+                    this.postMessage(RequestPostMessage.fromStupidStreamObject(streamObject, requestUUID));
 
-            // Read requests
-            else if (streamObject.getObjectType() == StupidStreamObject.ObjectType.SEARCH_MESSAGES) {
-                executeReadOperation((snapshotHolder) -> this.searchMessage(snapshotHolder,
-                    RequestSearchMessage.fromStupidStreamObject(streamObject, requestUUID)));
+                    break;
+                case DELETE_ALL_MESSAGES:
+                    this.deleteAllMessages();
+                    break;
 
-            } else if (streamObject.getObjectType() == StupidStreamObject.ObjectType.GET_ALL_MESSAGES) {
-                executeReadOperation((snapshotHolder) -> this.getAllMessages(snapshotHolder,
-                    RequestAllMessages.fromStupidStreamObject(streamObject, requestUUID)));
+                // Read requests
+                case SEARCH_MESSAGES:
+                    executeReadOperation((snapshotHolder) -> this.searchMessage(snapshotHolder,
+                        RequestSearchMessage.fromStupidStreamObject(streamObject, requestUUID)));
 
-            } else if (streamObject.getObjectType() == StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS) {
-                executeReadOperation((snapshotHolder) -> this.getMessageDetails(snapshotHolder,
-                    RequestMessageDetails.fromStupidStreamObject(streamObject, requestUUID)));
+                    break;
+                case GET_ALL_MESSAGES:
+                    executeReadOperation((snapshotHolder) -> this.getAllMessages(snapshotHolder,
+                        RequestAllMessages.fromStupidStreamObject(streamObject, requestUUID)));
 
-            } else if (streamObject.getObjectType() == StupidStreamObject.ObjectType.SEARCH_AND_DETAILS) {
-                executeReadOperation((snapshotHolder) -> this.searchAndDetails(snapshotHolder,
-                    RequestSearchAndDetails.fromStupidStreamObject(streamObject, requestUUID)));
+                    break;
+                case GET_MESSAGE_DETAILS:
+                    executeReadOperation((snapshotHolder) -> this.getMessageDetails(snapshotHolder,
+                        RequestMessageDetails.fromStupidStreamObject(streamObject, requestUUID)));
 
-            } else {
-                LOGGER.warning("Received unkown message type");
-                throw new RuntimeException("Unknown stream object type");
+                    break;
+                case SEARCH_AND_DETAILS:
+                    executeReadOperation((snapshotHolder) -> this.searchAndDetails(snapshotHolder,
+                        RequestSearchAndDetails.fromStupidStreamObject(streamObject, requestUUID)));
+
+                    break;
+                default:
+                    LOGGER.warning("Received unkown message type");
+                    throw new RuntimeException("Unknown stream object type");
             }
         } catch (Exception e) {
             LOGGER.warning("Error when consuming messages: " + e);
@@ -94,7 +102,7 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
 
     private void executeReadOperation(Consumer<SnapshotHolder<T>> operation) {
         // Get the snapshot in the current thread
-        SnapshotHolder<T> snapshotHolder = getSnapshot();
+        SnapshotHolder<T> snapshotHolder = getReadSnapshot();
 
         // Use it in the new thread
         readersExecutorService.submit(() -> {
@@ -111,7 +119,8 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
         });
     }
 
-    public abstract SnapshotHolder<T> getSnapshot();
+    // Returns an instaneous read snapshot of the data
+    public abstract SnapshotHolder<T> getReadSnapshot();
 
     // Read requests
     public abstract void searchAndDetails(SnapshotHolder<T> snapshotHolder,

@@ -31,7 +31,7 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
     }
 
     @Override
-    public SnapshotHolder<Connection> getSnapshot() {
+    public SnapshotHolder<Connection> getReadSnapshot() {
         return new SnapshotHolder<>(this.psqlWrapper.newSnapshotIsolatedConnection());
     }
 
