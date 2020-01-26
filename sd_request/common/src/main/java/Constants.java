@@ -14,4 +14,6 @@ public class Constants {
 
     public static final String STORAGEAPI_PORT = "8000";
     public static final String STORAGEAPI_ADDRESS = String.format("http://localhost:%s/server", STORAGEAPI_PORT);
+
+    public static final String PROJECT_NAME = "sd_request";
 }

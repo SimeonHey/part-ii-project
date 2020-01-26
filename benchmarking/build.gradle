@@ -6,6 +6,7 @@ def project_to_load = ''
 
 project_to_load = 'concur_reads'
 //project_to_load = 'sd_req_sesh'
+//project_to_load = 'sd_request'
 
 dependencies {
         api project(':' + project_to_load)

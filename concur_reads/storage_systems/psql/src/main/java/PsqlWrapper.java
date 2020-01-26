@@ -51,20 +51,17 @@ class PsqlWrapper {
             String statement = String.format("SELECT * FROM messages WHERE uuid = %d",
             requestMessageDetails.getMessageUUID());
 
-            ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection);
+            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
 
-            boolean hasMore = resultSet.next();
-            if (!hasMore) {
-                return new ResponseMessageDetails(null, requestMessageDetails.getMessageUUID());
+                boolean hasMore = resultSet.next();
+                if (!hasMore) {
+                    return new ResponseMessageDetails(null, requestMessageDetails.getMessageUUID());
+                }
+
+                return new ResponseMessageDetails(
+                    SqlUtils.extractMessageFromResultSet(resultSet),
+                    SqlUtils.extractUuidFromResultSet(resultSet));
             }
-
-            ResponseMessageDetails response = new ResponseMessageDetails(
-                SqlUtils.extractMessageFromResultSet(resultSet),
-                SqlUtils.extractUuidFromResultSet(resultSet));
-
-            resultSet.close();
-
-            return response;
 
         } catch (SQLException e) {
             LOGGER.warning("SQL exception when doing sql stuff in getMessageDetails: " + e);
@@ -78,16 +75,16 @@ class PsqlWrapper {
 
         try {
             String statement = "SELECT * FROM messages";
-            ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection);
+            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
 
-            while (resultSet.next()) {
-                responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
+                while (resultSet.next()) {
+                    responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
+                }
+
+                LOGGER.info("Psql extracted the following: " + responseAllMessages);
+
+                return responseAllMessages;
             }
-
-            LOGGER.info("Psql extracted the following: " + responseAllMessages);
-
-            resultSet.close();
-            return responseAllMessages;
 
         } catch (SQLException e) {
             LOGGER.warning("SQL exception when doing sql stuff in getAllMessages: " + e);
@@ -122,11 +119,14 @@ class PsqlWrapper {
             SqlUtils.executeStatement("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ", connection);
 
             // Force the transaction to get a txid, so that a snapshot of the data is saved
-            ResultSet resultSet = SqlUtils.executeStatementForResult("SELECT txid_current()", connection);
-            resultSet.next();
-            long txId = resultSet.getLong(1);
-            LOGGER.info("Started a transaction with txid " + txId);
-
+            try (ResultSet resultSet = SqlUtils.executeStatementForResult("SELECT txid_current()", connection)) {
+                resultSet.next();
+                long txId = resultSet.getLong(1);
+                LOGGER.info("Started a transaction with txid " + txId);
+            } catch (Exception e) {
+                LOGGER.warning("Error when tried to read the transaction id: " + e);
+                throw new RuntimeException(e);
+            }
         } catch (SQLException e) {
             LOGGER.warning("Error when trying to open a new transaction: " + e);
             throw new RuntimeException(e);

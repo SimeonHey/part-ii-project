@@ -17,12 +17,6 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
 
     private final ExecutorService readersExecutorService;
 
-    public KafkaStorageSystem(String serverAddress) {
-        this.serverAddress = serverAddress;
-        // TODO: Consider using multiple threads
-        this.readersExecutorService = Executors.newFixedThreadPool(1);
-    }
-
     public KafkaStorageSystem(String serverAddress, int numberOfReaderThreads) {
         this.serverAddress = serverAddress;
         this.readersExecutorService = Executors.newFixedThreadPool(numberOfReaderThreads);

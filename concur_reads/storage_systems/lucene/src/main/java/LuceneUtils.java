@@ -7,6 +7,9 @@ public class LuceneUtils {
         public final String argServerAddress;
         public final String argPsqlContactAddress;
 
+
+        public int numberOfReaders = Constants.PSQL_DEFAULT_READER_THREADS;
+
         public LuceneInitArgs(String[] args) {
             argKafkaAddress = args[0];
             argTransactionsTopic = args[1];
@@ -25,8 +28,11 @@ public class LuceneUtils {
 
     static LuceneStorageSystem getStorageSystem(LuceneInitArgs initArgs) {
         LuceneStorageSystem luceneStorageSystem =
-            new LuceneStorageSystem(new LuceneWrapper(Constants.LUCENE_DEFAULT_INDEX_DEST), initArgs.argServerAddress,
-                initArgs.argPsqlContactAddress);
+            new LuceneStorageSystem(
+                new LuceneWrapper(Constants.LUCENE_DEFAULT_INDEX_DEST),
+                initArgs.argServerAddress,
+                initArgs.argPsqlContactAddress,
+                initArgs.numberOfReaders);
         luceneStorageSystem.deleteAllMessages();
 
         return luceneStorageSystem;

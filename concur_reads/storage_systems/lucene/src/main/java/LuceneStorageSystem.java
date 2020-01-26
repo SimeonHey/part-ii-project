@@ -15,8 +15,9 @@ public class LuceneStorageSystem extends KafkaStorageSystem<IndexReader> impleme
 
     LuceneStorageSystem(LuceneWrapper luceneWrapper,
                         String serverAddress,
-                        String psqlContactAddress) {
-        super(serverAddress);
+                        String psqlContactAddress,
+                        int maxNumberOfReaders) {
+        super(serverAddress, maxNumberOfReaders);
         this.luceneWrapper = luceneWrapper;
         this.psqlContactAddress = psqlContactAddress;
     }

@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'java-library'
 }
 
 dependencies {
@@ -7,12 +7,12 @@ dependencies {
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
     testImplementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
 
-    implementation group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
+    api group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
 
-    implementation project(':sd_request:common')
-    implementation project(':sd_request:storage_systems:lucene')
-    implementation project(':sd_request:storage_systems:psql')
-    implementation project(':sd_request:storage_api')
+    api project(':sd_request:common')
+    api project(':sd_request:storage_systems:lucene')
+    api project(':sd_request:storage_systems:psql')
+    api project(':sd_request:storage_api')
 }
 
 test {
