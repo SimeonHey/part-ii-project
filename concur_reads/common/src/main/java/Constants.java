@@ -9,7 +9,7 @@ public class Constants {
     public static final String[] PSQL_USER_PASS = {"postgres", "default"};
     public static final String PSQL_LISTEN_PORT = "8002";
     public static final String PSQL_LISTEN_PORT_ALT = "8022";
-    public static final int PSQL_DEFAULT_READER_THREADS = 100;
+    public static final int PSQL_DEFAULT_READER_THREADS = 50;
 
     public static final String LUCENE_DEFAULT_INDEX_DEST = "./luceneindex/index_output";
     public static final String LUCENE_TEST_INDEX_DEST  = "./luceneindex/text_index_output";

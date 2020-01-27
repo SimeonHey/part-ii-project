@@ -186,4 +186,38 @@ public class FullSystemTest {
             assertEquals(simeonHey, responseMessageDetailsFuture.get().getMessage());
         }
     }
+
+    @Test
+    public void aLotOfSD() throws Exception {
+        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization(1)) {
+
+            int messagesToPost = 50;
+            int messagesToSearch = 300;
+
+            // Post messages
+            for (int i=1; i<=messagesToPost; i++) {
+                manualTrinity.storageAPI.postMessage(new Message("simeon", "Message " + i));
+            }
+
+            // Then search for them
+            List<Future<ResponseMessageDetails>> futureDetails = new ArrayList<>();
+
+            for (int i=0; i<messagesToSearch; i++) {
+                int toSearchFor = i % messagesToPost + 1;
+                Future<ResponseMessageDetails> detailsFuture =
+                    manualTrinity.storageAPI.searchAndDetailsFuture("Message " + toSearchFor);
+                futureDetails.add(detailsFuture);
+            }
+
+            manualTrinity.progressLucene();
+            manualTrinity.progressPsql();
+
+            for (int i=0; i<futureDetails.size(); i++) {
+                String targetText = "Message " + (i % messagesToPost + 1);
+                Message actualMessage =  futureDetails.get(i).get().getMessage();
+
+                assertEquals(targetText, actualMessage.getMessageText());
+            }
+        }
+    }
 }

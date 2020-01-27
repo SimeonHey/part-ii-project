@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -16,10 +17,12 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
     private final String serverAddress;
 
     private final ExecutorService readersExecutorService;
+    private final Semaphore connectionsSemaphore;
 
-    public KafkaStorageSystem(String serverAddress, int numberOfReaderThreads) {
+    public KafkaStorageSystem(String serverAddress, int maxReaders) {
         this.serverAddress = serverAddress;
-        this.readersExecutorService = Executors.newFixedThreadPool(numberOfReaderThreads);
+        this.readersExecutorService = Executors.newFixedThreadPool(maxReaders);
+        this.connectionsSemaphore = new Semaphore(maxReaders);
     }
 
     @Override
@@ -95,8 +98,16 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
     }
 
     private void executeReadOperation(Consumer<SnapshotHolder<T>> operation) {
-        // Get the snapshot in the current thread
+        // Get the snapshot in the current thread, but make sure you have enough
+        LOGGER.info("Trying to execute a read operation; acquiring a semaphore resource...");
+        try {
+            connectionsSemaphore.acquire();
+        } catch (InterruptedException e) {
+            LOGGER.warning("Error when acquiring a semaphore resource: " + e);
+            throw new RuntimeException(e);
+        }
         SnapshotHolder<T> snapshotHolder = getReadSnapshot();
+        LOGGER.info("Successfully got snapshot");
 
         // Use it in the new thread
         readersExecutorService.submit(() -> {
@@ -105,7 +116,9 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
 
             // And close the snapshot 'connection'
             try {
+                LOGGER.info("Closing connection, and releasing a semaphore resource...");
                 snapshotHolder.close();
+                connectionsSemaphore.release();
             } catch (Exception e) {
                 LOGGER.warning("Error when trying to close to snapshot holder");
                 throw new RuntimeException(e);

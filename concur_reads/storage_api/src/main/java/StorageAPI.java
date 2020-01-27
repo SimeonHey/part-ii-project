@@ -1,6 +1,7 @@
 import com.google.gson.Gson;
 import org.apache.kafka.clients.producer.Producer;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 public class StorageAPI implements AutoCloseable {
@@ -48,11 +49,32 @@ public class StorageAPI implements AutoCloseable {
         return this.multithreadedCommunication.consumeAndDestroy(offset);
     }
 
+    private CompletableFuture<String> kafkaRequestResponseFuture(StupidStreamObject request) {
+        long offset = KafkaUtils.produceMessage(
+            this.producer,
+            this.transactionsTopic,
+            request);
+
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return this.multithreadedCommunication.consumeAndDestroy(offset);
+            } catch (InterruptedException e) {
+                LOGGER.warning("Error when waiting to receive response in new thread");
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
     private byte[] receiveResponse(String serializedResponse) {
         LOGGER.info(String.format("Received response %s", serializedResponse));
 
         this.multithreadedCommunication.registerResponse(serializedResponse);
         return ("Received response " + serializedResponse).getBytes();
+    }
+
+    public CompletableFuture<ResponseMessageDetails> searchAndDetailsFuture(String searchText) {
+        return kafkaRequestResponseFuture(RequestSearchAndDetails.getStupidStreamObject(searchText, ENDPOINT_RESPONSE))
+            .thenApply(serializedResponse -> gson.fromJson(serializedResponse, ResponseMessageDetails.class));
     }
 
     public ResponseMessageDetails searchAndDetails(String searchText) throws InterruptedException {

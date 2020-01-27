@@ -25,17 +25,15 @@ public class SqlUtils {
     public static void executeStatement(String sql, Connection connection) throws SQLException {
         LOGGER.info("Executing statement: " + sql);
         connection.setAutoCommit(true);
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate(sql);
-        }
+        Statement statement = connection.createStatement();
+        statement.executeUpdate(sql);
     }
 
     public static ResultSet executeStatementForResult(String sql, Connection connection) throws SQLException {
         LOGGER.info("Executing statement for result: " + sql);
         connection.setAutoCommit(true);
-        try (Statement plainStatement = connection.createStatement()) {
-            return plainStatement.executeQuery(sql);
-        }
+        Statement plainStatement = connection.createStatement();
+        return plainStatement.executeQuery(sql);
     }
 
     public static Message extractMessageFromResultSet(ResultSet resultSet) throws SQLException {

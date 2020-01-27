@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 public class EntryPoint {
     private static final Logger logger = Logger.getLogger(EntryPoint.class.getName());
 
-    private static final int NUM_MESSAGES = 500;
+    private static final int NUM_MESSAGES = 300;
 
     private static final AtomicInteger psqlCounter = new AtomicInteger(0);
     private static final AtomicInteger luceneCounter = new AtomicInteger(0);
@@ -93,7 +93,7 @@ public class EntryPoint {
                 try {
                     long uuid = storageAPI.searchAndDetails(String.valueOf(finalI)).getUuid();
                     if (uuid == -1) {
-                        throw new RuntimeException("MY ERROR: Couldnt find a message I should have been able to");
+                        throw new RuntimeException("MY ERROR: Couldn't find a message I should have been able to");
                     }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
