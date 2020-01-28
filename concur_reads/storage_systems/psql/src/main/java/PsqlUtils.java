@@ -4,50 +4,61 @@ import java.io.IOException;
 
 public class PsqlUtils {
     public static class PsqlInitArgs {
-        public final String argPsqlAddress;
-        public final String[] argUserPass;
-        public final String argKafkaAddress;
-        public final String argTransactionsTopic;
-        public final String argServerAddress;
-        public final String argListeningPort;
+        public String psqlAddress = Constants.PSQL_ADDRESS;
+        public String[] userPass = Constants.PSQL_USER_PASS;
+        public String kafkaAddress = Constants.KAFKA_ADDRESS;
+        public String transactionsTopic = Constants.KAFKA_TOPIC;
+        public String serverAddress = Constants.STORAGEAPI_ADDRESS;
+        public String listeningPort = Constants.PSQL_LISTEN_PORT;
+        public int numberOfReaders = Constants.PSQL_MAX_READERS;
 
-        public int numberOfReaders = Constants.PSQL_DEFAULT_READER_THREADS;
+        private PsqlInitArgs() {
 
-        public PsqlInitArgs(String[] args) {
-            this.argPsqlAddress = args[0];
-            this.argUserPass = args[1].split(":");
-            this.argKafkaAddress = args[2];
-            this.argTransactionsTopic = args[3];
-            this.argServerAddress = args[4];
-            this.argListeningPort = args[5];
         }
 
-        public PsqlInitArgs(String argPsqlAddress,
-                            String[] argUserPass,
-                            String argKafkaAddress,
-                            String argTransactionsTopic,
-                            String argServerAddress,
-                            String argListeningPort) {
-            this.argPsqlAddress = argPsqlAddress;
-            this.argUserPass = argUserPass;
-            this.argKafkaAddress = argKafkaAddress;
-            this.argTransactionsTopic = argTransactionsTopic;
-            this.argServerAddress = argServerAddress;
-            this.argListeningPort = argListeningPort;
+        public static PsqlInitArgs defaultValues() {
+            return customValues(
+                Constants.PSQL_ADDRESS,
+                Constants.PSQL_USER_PASS,
+                Constants.KAFKA_ADDRESS,
+                Constants.KAFKA_TOPIC,
+                Constants.STORAGEAPI_ADDRESS,
+                Constants.PSQL_LISTEN_PORT,
+                Constants.PSQL_MAX_READERS);
+        }
+
+        public static PsqlInitArgs customValues(String argPsqlAddress,
+                                                String[] argUserPass,
+                                                String argKafkaAddress,
+                                                String argTransactionsTopic,
+                                                String argServerAddress,
+                                                String argListeningPort,
+                                                int numberOfReaders) {
+            PsqlInitArgs ret = new PsqlInitArgs();
+
+            ret.psqlAddress = argPsqlAddress;
+            ret.userPass = argUserPass;
+            ret.kafkaAddress = argKafkaAddress;
+            ret.transactionsTopic = argTransactionsTopic;
+            ret.serverAddress = argServerAddress;
+            ret.listeningPort = argListeningPort;
+            ret.numberOfReaders = numberOfReaders;
+
+            return ret;
         }
     }
 
     public static PsqlStorageSystem getStorageSystem(PsqlInitArgs initArgs) throws IOException {
-        PsqlWrapper psqlWrapper = new PsqlWrapper(() -> SqlUtils.obtainConnection(initArgs.argUserPass[0],
-            initArgs.argUserPass[1], initArgs.argPsqlAddress));
+        PsqlWrapper psqlWrapper = new PsqlWrapper(() -> SqlUtils.obtainConnection(initArgs.userPass[0],
+            initArgs.userPass[1], initArgs.psqlAddress));
 
         // Initialize the http server
         HttpStorageSystem httpStorageSystem =
             new HttpStorageSystem("psql",
-                HttpUtils.initHttpServer(Integer.parseInt(initArgs.argListeningPort)));
+                HttpUtils.initHttpServer(Integer.parseInt(initArgs.listeningPort)));
 
         PsqlStorageSystem psqlStorageSystem =
-            new PsqlStorageSystem(psqlWrapper, initArgs.argServerAddress, initArgs.numberOfReaders, httpStorageSystem);
+            new PsqlStorageSystem(psqlWrapper, initArgs.serverAddress, initArgs.numberOfReaders, httpStorageSystem);
         psqlStorageSystem.deleteAllMessages();
 
         return psqlStorageSystem;
@@ -56,8 +67,8 @@ public class PsqlUtils {
     public static Consumer<Long, StupidStreamObject> getConsumer(PsqlInitArgs initArgs) {
         return KafkaUtils.createConsumer(
             "psql",
-            initArgs.argKafkaAddress,
-            initArgs.argTransactionsTopic);
+            initArgs.kafkaAddress,
+            initArgs.transactionsTopic);
     }
 
 }

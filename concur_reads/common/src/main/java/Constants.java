@@ -9,7 +9,7 @@ public class Constants {
     public static final String[] PSQL_USER_PASS = {"postgres", "default"};
     public static final String PSQL_LISTEN_PORT = "8002";
     public static final String PSQL_LISTEN_PORT_ALT = "8022";
-    public static final int PSQL_DEFAULT_READER_THREADS = 50;
+    public static final int PSQL_MAX_READERS = 50;
 
     public static final String LUCENE_DEFAULT_INDEX_DEST = "./luceneindex/index_output";
     public static final String LUCENE_TEST_INDEX_DEST  = "./luceneindex/text_index_output";
@@ -17,6 +17,8 @@ public class Constants {
         "/psql/luceneContact";
     public static final String LUCENE_PSQL_CONTACT_ENDPOINT_ALT = "http://localhost:" + PSQL_LISTEN_PORT_ALT +
         "/psql/luceneContact";
+    public static final int LUCENE_MAX_READERS = 50;
+
 
     public static final String STORAGEAPI_PORT = "8000";
     public static final String STORAGEAPI_PORT_ALT = "8020";

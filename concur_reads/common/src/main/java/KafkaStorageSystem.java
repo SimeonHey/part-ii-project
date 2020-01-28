@@ -14,15 +14,19 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
     private final static Logger LOGGER = Logger.getLogger(KafkaStorageSystem.class.getName());
     private final Gson gson = new Gson();
 
-    private final String serverAddress;
+    private final String storageSystemName;
 
-    private final ExecutorService readersExecutorService;
+    private final String serverAddress;
     private final Semaphore connectionsSemaphore;
 
-    public KafkaStorageSystem(String serverAddress, int maxReaders) {
+    private final ExecutorService readExecutorService;
+
+    public KafkaStorageSystem(String storageSystemName, String serverAddress, int maxReaders) {
+        this.storageSystemName = storageSystemName;
         this.serverAddress = serverAddress;
-        this.readersExecutorService = Executors.newFixedThreadPool(maxReaders);
-        this.connectionsSemaphore = new Semaphore(maxReaders);
+
+        this.connectionsSemaphore = maxReaders > 0 ? new Semaphore(maxReaders) : new Semaphore(1);
+        this.readExecutorService = maxReaders > 0 ? Executors.newFixedThreadPool(maxReaders) : null;
     }
 
     @Override
@@ -30,10 +34,13 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
         try {
             long requestUUID = message.offset();
 
-            LOGGER.info("A storage system has received values of type " + message.value().getObjectType().toString() + " " +
-                "with offset " + requestUUID + " and properties:");
+            // This just concatenates all properties in a string
+            StringBuilder fullProps = new StringBuilder();
             message.value().getProperties().forEach((key, value) ->
-                LOGGER.info(key + " - " + value));
+                fullProps.append("\n").append(key).append(" - ").append(value));
+
+            LOGGER.info(String.format("%s has received values of type %s with offset %s and properties %s",
+                this.storageSystemName, message.value().getObjectType().toString(), requestUUID, fullProps.toString()));
 
             StupidStreamObject streamObject = message.value();
 
@@ -84,7 +91,7 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
 
     protected void sendResponse(RequestWithResponse request, Object resp) {
         try {
-            MultithreadedResponse fullResponse = new MultithreadedResponse(request.getUuid(), resp);
+            MultithreadedResponse fullResponse = new MultithreadedResponse(request.getRequestUUID(), resp);
             String serialized = this.gson.toJson(fullResponse);
 
             LOGGER.info(String.format("Sending response %s to server %s and endpoint %s", serialized,
@@ -99,7 +106,9 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
 
     private void executeReadOperation(Consumer<SnapshotHolder<T>> operation) {
         // Get the snapshot in the current thread, but make sure you have enough
-        LOGGER.info("Trying to execute a read operation; acquiring a semaphore resource...");
+        LOGGER.info(this.storageSystemName +
+            " trying to execute a read operation; acquiring a semaphore resource...");
+
         try {
             connectionsSemaphore.acquire();
         } catch (InterruptedException e) {
@@ -107,23 +116,29 @@ public abstract class KafkaStorageSystem<T extends AutoCloseable>
             throw new RuntimeException(e);
         }
         SnapshotHolder<T> snapshotHolder = getReadSnapshot();
-        LOGGER.info("Successfully got snapshot");
+        LOGGER.info(this.storageSystemName + " successfully got snapshot");
 
         // Use it in the new thread
-        readersExecutorService.submit(() -> {
+        Runnable fullOperation = () -> {
             // Perform the operation
             operation.accept(snapshotHolder);
 
             // And close the snapshot 'connection'
             try {
-                LOGGER.info("Closing connection, and releasing a semaphore resource...");
+                LOGGER.info(this.storageSystemName + " closing connection, and releasing a semaphore resource...");
                 snapshotHolder.close();
                 connectionsSemaphore.release();
             } catch (Exception e) {
                 LOGGER.warning("Error when trying to close to snapshot holder");
                 throw new RuntimeException(e);
             }
-        });
+        };
+
+        if (readExecutorService == null) {
+            fullOperation.run();
+        } else {
+            readExecutorService.submit(fullOperation);
+        }
     }
 
     // Returns an instaneous read snapshot of the data

@@ -9,7 +9,7 @@ public class StorageAPIEntryPoint {
 
     public static void main(String[] args) throws IOException, InterruptedException {
         LOGGER.info("Starting StorageAPI with params " + Arrays.toString(args));
-        StorageAPIUtils.StorageAPIInitArgs initArgs = new StorageAPIUtils.StorageAPIInitArgs(args);
+        StorageAPIUtils.StorageAPIInitArgs initArgs = StorageAPIUtils.StorageAPIInitArgs.defaultValues();
         StorageAPI storageAPI = StorageAPIUtils.initFromArgs(initArgs);
 
         // Take user commands and perform actions

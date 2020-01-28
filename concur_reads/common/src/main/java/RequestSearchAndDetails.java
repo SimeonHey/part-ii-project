@@ -6,8 +6,8 @@ public class RequestSearchAndDetails extends RequestWithResponse {
 
     private final String searchText;
 
-    RequestSearchAndDetails(String searchText, String responseEndpoint, long uuid) {
-        super(responseEndpoint, uuid);
+    RequestSearchAndDetails(String searchText, String responseEndpoint, long requestUUID) {
+        super(responseEndpoint, requestUUID);
         this.searchText = searchText;
     }
 

@@ -1,18 +1,18 @@
 public class BaseRequest {
-    private final Long uuid;
+    private final Long requestUUID;
 
-    public BaseRequest(Long uuid) {
-        this.uuid = uuid;
+    public BaseRequest(Long requestUUID) {
+        this.requestUUID = requestUUID;
     }
 
     @Override
     public String toString() {
         return "BaseRequest{" +
-            "uuid=" + uuid +
+            "uuid=" + requestUUID +
             '}';
     }
 
-    public Long getUuid() {
-        return uuid;
+    public Long getRequestUUID() {
+        return requestUUID;
     }
 }

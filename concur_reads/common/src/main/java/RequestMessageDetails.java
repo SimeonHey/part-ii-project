@@ -7,8 +7,8 @@ public class RequestMessageDetails extends RequestWithResponse {
 
     private final Long messageUUID;
 
-    public RequestMessageDetails(Long messageUUID, String responseEndpoint, long uuid) {
-        super(responseEndpoint, uuid);
+    public RequestMessageDetails(Long messageUUID, String responseEndpoint, long requestUUID) {
+        super(responseEndpoint, requestUUID);
         this.messageUUID = messageUUID;
     }
 

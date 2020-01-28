@@ -1,6 +1,6 @@
 public class LuceneEntryPoint {
-    public static void main(String[] args) throws InterruptedException {
-        LuceneUtils.LuceneInitArgs initArgs = new LuceneUtils.LuceneInitArgs(args);
+    public static void main(String[] args) {
+        LuceneUtils.LuceneInitArgs initArgs = LuceneUtils.LuceneInitArgs.defaultValues();
 
         LoopingConsumer<Long, StupidStreamObject> loopingConsumer =
             new LoopingConsumer<>(LuceneUtils.getConsumer(initArgs), Constants.KAFKA_CONSUME_DELAY_MS);

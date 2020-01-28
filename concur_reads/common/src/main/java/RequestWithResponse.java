@@ -11,8 +11,8 @@ public class RequestWithResponse extends BaseRequest{
             '}';
     }
 
-    RequestWithResponse(String responseEndpoint, long uuid) {
-        super(uuid);
+    RequestWithResponse(String responseEndpoint, long requestUUID) {
+        super(requestUUID);
         this.responseEndpoint = responseEndpoint;
     }
 

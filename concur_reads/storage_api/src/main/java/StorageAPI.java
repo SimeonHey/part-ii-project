@@ -50,16 +50,18 @@ public class StorageAPI implements AutoCloseable {
     }
 
     private CompletableFuture<String> kafkaRequestResponseFuture(StupidStreamObject request) {
+        // Post message in this thread
         long offset = KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,
             request);
 
+        // Return a future which waits for the response
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return this.multithreadedCommunication.consumeAndDestroy(offset);
             } catch (InterruptedException e) {
-                LOGGER.warning("Error when waiting to receive response in new thread");
+                LOGGER.warning("Error when waiting to receive response in a new thread");
                 throw new RuntimeException(e);
             }
         });

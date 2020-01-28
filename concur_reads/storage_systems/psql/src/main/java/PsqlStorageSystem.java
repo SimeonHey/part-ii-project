@@ -16,7 +16,7 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
                       String serverAddress,
                       int numberOfReaderThreads,
                       HttpStorageSystem httpStorageSystem) {
-        super(serverAddress, numberOfReaderThreads);
+        super("PSQL", serverAddress, numberOfReaderThreads);
 
         this.psqlWrapper = psqlWrapper;
         this.httpStorageSystem = httpStorageSystem;
@@ -42,10 +42,10 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
         // Open a new connection which has the current snapshot of the data
         try {
             LOGGER.info("Waiting for lucene to contact us at UUID " +
-                requestSearchAndDetails.getUuid() + "...");
+                requestSearchAndDetails.getRequestUUID() + "...");
 
             String serialized =
-                multithreadedCommunication.consumeAndDestroy(requestSearchAndDetails.getUuid());
+                multithreadedCommunication.consumeAndDestroy(requestSearchAndDetails.getRequestUUID());
 
             LOGGER.info("Success! Serialized response received: " + serialized);
 
@@ -56,7 +56,7 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
             getMessageDetails(snapshotHolder, requestMessageDetails);
         } catch (InterruptedException e) {
             LOGGER.warning("Error when waiting on Lucene to contact us at uuid " +
-                requestSearchAndDetails.getUuid());
+                requestSearchAndDetails.getRequestUUID());
             throw new RuntimeException(e);
         }
     }

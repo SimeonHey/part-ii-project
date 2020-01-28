@@ -17,7 +17,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem<IndexReader> impleme
                         String serverAddress,
                         String psqlContactAddress,
                         int maxNumberOfReaders) {
-        super(serverAddress, maxNumberOfReaders);
+        super("Lucene", serverAddress, maxNumberOfReaders);
         this.luceneWrapper = luceneWrapper;
         this.psqlContactAddress = psqlContactAddress;
     }
@@ -48,12 +48,13 @@ public class LuceneStorageSystem extends KafkaStorageSystem<IndexReader> impleme
         }
 
         RequestMessageDetails requestMessageDetails = new RequestMessageDetails(detailsForId,
-            requestSearchAndDetails.responseEndpoint, requestSearchAndDetails.getUuid());
-        MultithreadedResponse fullResponse = new MultithreadedResponse(requestSearchAndDetails.getUuid(),
+            requestSearchAndDetails.responseEndpoint, requestSearchAndDetails.getRequestUUID());
+        MultithreadedResponse fullResponse = new MultithreadedResponse(requestSearchAndDetails.getRequestUUID(),
             requestMessageDetails);
 
         try {
             // We send a request to PSQL, and PSQL will send the response to the requester
+            LOGGER.info("Lucene tries to contact PSQL at channel " + fullResponse.getChannelUuid() + "...");
             HttpUtils.httpRequestResponse(this.psqlContactAddress, gson.toJson(fullResponse));
         } catch (IOException e) {
             LOGGER.warning("Error when conctacting PSQL with the search results");
@@ -90,7 +91,7 @@ public class LuceneStorageSystem extends KafkaStorageSystem<IndexReader> impleme
     @Override
     public void postMessage(RequestPostMessage postMessage) {
         LOGGER.info("Lucene received a post message " + postMessage);
-        this.luceneWrapper.postMessage(postMessage.getMessage(), postMessage.getUuid());
+        this.luceneWrapper.postMessage(postMessage.getMessage(), postMessage.getRequestUUID());
     }
 
     @Override

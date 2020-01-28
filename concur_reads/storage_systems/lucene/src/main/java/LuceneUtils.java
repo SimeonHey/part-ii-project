@@ -2,27 +2,39 @@ import org.apache.kafka.clients.consumer.Consumer;
 
 public class LuceneUtils {
     public static class LuceneInitArgs {
-        public final String argKafkaAddress;
-        public final String argTransactionsTopic;
-        public final String argServerAddress;
-        public final String argPsqlContactAddress;
+        public String kafkaAddress;
+        public String transactionsTopic;
+        public String serverAddress;
+        public String psqlContactAddress;
+        public int maxNumberOfReaders;
 
+        private LuceneInitArgs() {
 
-        public int numberOfReaders = Constants.PSQL_DEFAULT_READER_THREADS;
-
-        public LuceneInitArgs(String[] args) {
-            argKafkaAddress = args[0];
-            argTransactionsTopic = args[1];
-            argServerAddress = args[2];
-            argPsqlContactAddress = args[3];
         }
 
-        public LuceneInitArgs(String argKafkaAddress, String argTransactionsTopic, String argServerAddress,
-                              String argPsqlContactAddress) {
-            this.argKafkaAddress = argKafkaAddress;
-            this.argTransactionsTopic = argTransactionsTopic;
-            this.argServerAddress = argServerAddress;
-            this.argPsqlContactAddress = argPsqlContactAddress;
+        public static LuceneInitArgs defaultValues() {
+            return fromValues(
+                Constants.KAFKA_ADDRESS,
+                Constants.KAFKA_TOPIC,
+                Constants.STORAGEAPI_ADDRESS,
+                Constants.LUCENE_PSQL_CONTACT_ENDPOINT,
+                Constants.LUCENE_MAX_READERS);
+        }
+
+        public static LuceneInitArgs fromValues(String argKafkaAddress,
+                                                String argTransactionsTopic,
+                                                String argServerAddress,
+                                                String argPsqlContactAddress,
+                                                int maxNumberOfReaders) {
+            LuceneInitArgs ret = new LuceneInitArgs();
+            
+            ret.kafkaAddress = argKafkaAddress;
+            ret.transactionsTopic = argTransactionsTopic;
+            ret.serverAddress = argServerAddress;
+            ret.psqlContactAddress = argPsqlContactAddress;
+            ret.maxNumberOfReaders = maxNumberOfReaders;
+            
+            return ret;
         }
     }
 
@@ -30,9 +42,9 @@ public class LuceneUtils {
         LuceneStorageSystem luceneStorageSystem =
             new LuceneStorageSystem(
                 new LuceneWrapper(Constants.LUCENE_DEFAULT_INDEX_DEST),
-                initArgs.argServerAddress,
-                initArgs.argPsqlContactAddress,
-                initArgs.numberOfReaders);
+                initArgs.serverAddress,
+                initArgs.psqlContactAddress,
+                initArgs.maxNumberOfReaders);
         luceneStorageSystem.deleteAllMessages();
 
         return luceneStorageSystem;
@@ -41,7 +53,7 @@ public class LuceneUtils {
     static Consumer<Long, StupidStreamObject> getConsumer(LuceneInitArgs initArgs) {
         return KafkaUtils.createConsumer(
             "lucene",
-            initArgs.argKafkaAddress,
-            initArgs.argTransactionsTopic);
+            initArgs.kafkaAddress,
+            initArgs.transactionsTopic);
     }
 }

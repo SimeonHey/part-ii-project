@@ -8,20 +8,27 @@ class StorageAPIUtils {
     private static final Logger LOGGER = Logger.getLogger(StorageAPIUtils.class.getName());
 
     static class StorageAPIInitArgs {
-        public final String argKafkaAddress;
-        public final String argTransactionsTopic;
-        public final String argListeningPort;
+        public String kafkaAddress;
+        public String transactionsTopic;
+        public String listeningPort;
 
-        StorageAPIInitArgs(String argKafkaAddress, String argTransactionsTopic, String argListeningPort) {
-            this.argKafkaAddress = argKafkaAddress;
-            this.argTransactionsTopic = argTransactionsTopic;
-            this.argListeningPort = argListeningPort;
+        private StorageAPIInitArgs () {
+
         }
 
-        StorageAPIInitArgs(String[] args) {
-            this.argKafkaAddress = args[0];
-            this.argTransactionsTopic = args[1];
-            this.argListeningPort = args[2];
+        public static StorageAPIInitArgs customValues(String argKafkaAddress, String argTransactionsTopic,
+                                          String argListeningPort) {
+            StorageAPIInitArgs ret = new StorageAPIInitArgs();
+
+            ret.kafkaAddress = argKafkaAddress;
+            ret.transactionsTopic = argTransactionsTopic;
+            ret.listeningPort = argListeningPort;
+
+            return ret;
+        }
+
+        public static StorageAPIInitArgs defaultValues() {
+            return customValues(Constants.KAFKA_ADDRESS, Constants.KAFKA_TOPIC, Constants.STORAGEAPI_PORT);
         }
     }
 
@@ -31,16 +38,16 @@ class StorageAPIUtils {
         // Setup connections
         LOGGER.info("Initializing a Kafka producer...");
         Producer<Long, StupidStreamObject> producer =
-            KafkaUtils.createProducer(initArgs.argKafkaAddress, "storageAPI");
-        KafkaUtils.produceMessage(producer, initArgs.argTransactionsTopic, RequestNOP.toStupidStreamObject());
+            KafkaUtils.createProducer(initArgs.kafkaAddress, "storageAPI");
+        KafkaUtils.produceMessage(producer, initArgs.transactionsTopic, RequestNOP.toStupidStreamObject());
         LOGGER.info("Success");
 
-        LOGGER.info("Initializing an HTTP server on port " + initArgs.argListeningPort);
+        LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);
         HttpStorageSystem httpStorageSystem = new HttpStorageSystem("server",
-            HttpUtils.initHttpServer(Integer.parseInt(initArgs.argListeningPort)));
+            HttpUtils.initHttpServer(Integer.parseInt(initArgs.listeningPort)));
 
         StorageAPI ret =
-            new StorageAPI(new Gson(), producer, httpStorageSystem, initArgs.argTransactionsTopic);
+            new StorageAPI(new Gson(), producer, httpStorageSystem, initArgs.transactionsTopic);
 
         LOGGER.info("Successfully initialized storage api " + ret);
         return ret;
@@ -52,15 +59,15 @@ class StorageAPIUtils {
         // Setup connections
         LOGGER.info("Initializing a Kafka producer...");
         Producer<Long, StupidStreamObject> producer = new DummyProducer();
-        KafkaUtils.produceMessage(producer, initArgs.argTransactionsTopic, RequestNOP.toStupidStreamObject());
+        KafkaUtils.produceMessage(producer, initArgs.transactionsTopic, RequestNOP.toStupidStreamObject());
         LOGGER.info("Success");
 
-        LOGGER.info("Initializing an HTTP server on port " + initArgs.argListeningPort);
+        LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);
         HttpStorageSystem httpStorageSystem = new HttpStorageSystem("server",
-            HttpUtils.initHttpServer(Integer.parseInt(initArgs.argListeningPort)));
+            HttpUtils.initHttpServer(Integer.parseInt(initArgs.listeningPort)));
 
         StorageAPI ret =
-            new StorageAPI(new Gson(), producer, httpStorageSystem, initArgs.argTransactionsTopic);
+            new StorageAPI(new Gson(), producer, httpStorageSystem, initArgs.transactionsTopic);
 
         LOGGER.info("Successfully initialized storage api " + ret);
         return ret;

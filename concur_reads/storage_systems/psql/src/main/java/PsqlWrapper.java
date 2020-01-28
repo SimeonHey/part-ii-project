@@ -28,7 +28,7 @@ class PsqlWrapper {
         LOGGER.info("PSQL posts message " + requestPostMessage);
         try {
             insertMessage(requestPostMessage.getMessage().getSender(),
-                requestPostMessage.getMessage().getMessageText(), requestPostMessage.getUuid());
+                requestPostMessage.getMessage().getMessageText(), requestPostMessage.getRequestUUID());
         } catch (SQLException e) {
             LOGGER.warning("Error when inserting message: " + e);
             throw new RuntimeException(e);

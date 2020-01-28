@@ -1,5 +1,7 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.SQLException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -13,10 +15,16 @@ import java.util.logging.Logger;
 public class EntryPoint {
     private static final Logger logger = Logger.getLogger(EntryPoint.class.getName());
 
-    private static final int NUM_MESSAGES = 300;
+    private static final String OUTPUT_DIRECTORY = "/home/simeon/Documents/Cambridge/project/";
+
+    private static final int CONCURRENT_READS = 100;
+    private static final int NUM_MESSAGES = 500;
 
     private static final AtomicInteger psqlCounter = new AtomicInteger(0);
     private static final AtomicInteger luceneCounter = new AtomicInteger(0);
+
+    private static final ExecutorService longRunningExecutorService =
+        Executors.newFixedThreadPool(2);
 
     static class Pair {
         public int first, second;
@@ -27,39 +35,56 @@ public class EntryPoint {
         }
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException, SQLException {
-        ExecutorService executorService = Executors.newFixedThreadPool(2 + NUM_MESSAGES);
+    public static void writeToCsv(String outputDestination, List<List<String>> dataLines) {
+        File csvOutputFile = new File(outputDestination);
+        try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
+            dataLines.forEach(dataLine -> pw.println(String.join(",", dataLine)));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void pairsToCsv(String fileName, ArrayBlockingQueue<Pair> pairs) {
+        List<String> valuesPSQL = new ArrayList<>();
+        List<String> valuesLucene = new ArrayList<>();
+
+        while (pairs.size() > 0) {
+            Pair pair = null;
+            try {
+                pair = pairs.take();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            valuesPSQL.add(String.valueOf(pair.first));
+            valuesLucene.add(String.valueOf(pair.second));
+        }
+
+        writeToCsv(OUTPUT_DIRECTORY + fileName, List.of(valuesPSQL, valuesLucene));
+    }
+
+    public static void main(String[] args) throws IOException, InterruptedException {
         ArrayBlockingQueue<Pair> cntQueue = new ArrayBlockingQueue<>(2000);
 
         logger.info("Benchmarking: " + Constants.PROJECT_NAME);
 
-        StorageAPI storageAPI = StorageAPIUtils.initFromArgs(new StorageAPIUtils.StorageAPIInitArgs(
-            Constants.KAFKA_ADDRESS,
-            Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_PORT
-        ));
-
-        PsqlUtils.PsqlInitArgs psqlInitArgs = new PsqlUtils.PsqlInitArgs(
-            Constants.PSQL_ADDRESS,
-            Constants.PSQL_USER_PASS,
-            Constants.KAFKA_ADDRESS,
-            Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_ADDRESS,
-            Constants.PSQL_LISTEN_PORT
-        );
+        // Initialize storage systems
+        PsqlUtils.PsqlInitArgs psqlInitArgs = PsqlUtils.PsqlInitArgs.defaultValues();
+        psqlInitArgs.numberOfReaders = CONCURRENT_READS;
         PsqlStorageSystem psqlStorageSystem = PsqlUtils.getStorageSystem(psqlInitArgs);
 
-        LuceneUtils.LuceneInitArgs luceneInitArgs = new LuceneUtils.LuceneInitArgs(
-            Constants.KAFKA_ADDRESS,
-            Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_ADDRESS,
-            Constants.LUCENE_PSQL_CONTACT_ENDPOINT
-        );
+        LuceneUtils.LuceneInitArgs luceneInitArgs = LuceneUtils.LuceneInitArgs.defaultValues();
         LuceneStorageSystem luceneStorageSystem = LuceneUtils.getStorageSystem(luceneInitArgs);
 
-        executorService.submit(() -> {
+        StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultValues();
+        StorageAPI storageAPI = StorageAPIUtils.initFromArgs(storageAPIInitArgs);
+
+        // Initialize consumers
+        longRunningExecutorService.submit(() -> {
             LoopingConsumer<Long, StupidStreamObject> psqlConsumer =
                 new LoopingConsumer<>(PsqlUtils.getConsumer(psqlInitArgs));
+            psqlConsumer.moveAllToLatest();
+
             psqlConsumer.subscribe(psqlStorageSystem);
 
             psqlConsumer.subscribe((consumerRecord) -> {
@@ -68,9 +93,11 @@ public class EntryPoint {
 
             psqlConsumer.listenBlockingly();
         });
-        executorService.submit(() -> {
+        longRunningExecutorService.submit(() -> {
             LoopingConsumer<Long, StupidStreamObject> luceneConsumer =
                 new LoopingConsumer<>(LuceneUtils.getConsumer(luceneInitArgs));
+            luceneConsumer.moveAllToLatest();
+
             luceneConsumer.subscribe(luceneStorageSystem);
 
             luceneConsumer.subscribe((consumerRecord) -> {
@@ -79,47 +106,47 @@ public class EntryPoint {
 
             luceneConsumer.listenBlockingly();
         });
-
         Thread.sleep(1000);
 
         long beginTime = System.nanoTime();
 
-        List<Future> futures = new ArrayList<>();
-        for (int i=0; i<NUM_MESSAGES; i++) {
+        List<Future<ResponseMessageDetails>> futures = new ArrayList<>();
+        for (int i=1; i<=NUM_MESSAGES; i++) {
+            System.out.println("Posting message " + i + " out of " + NUM_MESSAGES);
+
             storageAPI.postMessage(new Message("simeon", "Message " + i));
 
-            int finalI = i;
-            Future thisFuture = executorService.submit(() -> {
-                try {
-                    long uuid = storageAPI.searchAndDetails(String.valueOf(finalI)).getUuid();
-                    if (uuid == -1) {
-                        throw new RuntimeException("MY ERROR: Couldn't find a message I should have been able to");
-                    }
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            Future<ResponseMessageDetails> detailsFuture1 =
+                storageAPI.searchAndDetailsFuture(String.valueOf(i));
 
-            futures.add(thisFuture);
-
-//            storageAPI.allMessages();
+            futures.add(detailsFuture1);
         }
 
-        // Wait for all the futures
+        // Wait for all the futures & check results
         futures.forEach(future -> {
             try {
-                future.get();
+                long uuid = future.get().getUuid();
+
+                if (uuid == -1) {
+                    throw new RuntimeException("MY ERROR: Expected a good uuid, but got " + uuid);
+                }
             } catch (InterruptedException | ExecutionException e) {
                 throw new RuntimeException(e);
             }
         });
 
+        ResponseMessageDetails liastDetails =
+            storageAPI.searchAndDetails("" + NUM_MESSAGES);
+        System.out.println("Last details is: " + liastDetails);
+
         long elapsedTime = System.nanoTime() - beginTime;
 
-        while (cntQueue.size() > 0) {
-            Pair current = cntQueue.take();
-            System.out.println("PSQL AND LUCENE SCORE - " + current.first + " : " + current.second);
-        }
+        pairsToCsv("post.sd-" + CONCURRENT_READS + ".csv", cntQueue);
+
+//        while (cntQueue.size() > 0) {
+//            Pair current = cntQueue.take();
+//            System.out.println("PSQL AND LUCENE SCORE - " + current.first + " : " + current.second);
+//        }
 
         System.out.println("Total time: " + elapsedTime / 1000000.0 + " ms");
     }
