@@ -48,7 +48,7 @@ public class PsqlUtils {
         }
     }
 
-    public static PsqlStorageSystem getStorageSystem(PsqlInitArgs initArgs) throws IOException {
+    public static PsqlConcurrentSnapshots getStorageSystem(PsqlInitArgs initArgs) throws IOException {
         PsqlWrapper psqlWrapper = new PsqlWrapper(() -> SqlUtils.obtainConnection(initArgs.userPass[0],
             initArgs.userPass[1], initArgs.psqlAddress));
 
@@ -57,11 +57,11 @@ public class PsqlUtils {
             new HttpStorageSystem("psql",
                 HttpUtils.initHttpServer(Integer.parseInt(initArgs.listeningPort)));
 
-        PsqlStorageSystem psqlStorageSystem =
-            new PsqlStorageSystem(psqlWrapper, initArgs.serverAddress, initArgs.numberOfReaders, httpStorageSystem);
-        psqlStorageSystem.deleteAllMessages();
+        PsqlConcurrentSnapshots psqlConcurrentSnapshots =
+            new PsqlConcurrentSnapshots(psqlWrapper, initArgs.serverAddress, initArgs.numberOfReaders, httpStorageSystem);
+        psqlConcurrentSnapshots.deleteAllMessages();
 
-        return psqlStorageSystem;
+        return psqlConcurrentSnapshots;
     }
 
     public static Consumer<Long, StupidStreamObject> getConsumer(PsqlInitArgs initArgs) {

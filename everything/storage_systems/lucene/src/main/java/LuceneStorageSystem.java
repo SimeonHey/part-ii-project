@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class LuceneStorageSystem extends KafkaStorageSystem<IndexReader> implements AutoCloseable {
+public class LuceneStorageSystem extends AutoSnapshottedEventStorageSystem<IndexReader> implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystem.class.getName());
     
     private final LuceneWrapper luceneWrapper;

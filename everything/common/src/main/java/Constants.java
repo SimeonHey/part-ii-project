@@ -1,3 +1,5 @@
+import com.google.gson.Gson;
+
 import java.util.concurrent.TimeUnit;
 
 public class Constants {
@@ -32,4 +34,7 @@ public class Constants {
 
     public static final long STORAGE_SYSTEMS_POLL_TIMEOUT = 30;
     public static final TimeUnit STORAGE_SYSTEMS_POLL_UNIT = TimeUnit.SECONDS;
+
+    // TODO: Might not be the best place?
+    public static final Gson gson = new Gson();
 }

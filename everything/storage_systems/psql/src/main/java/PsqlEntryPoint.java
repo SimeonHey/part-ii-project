@@ -6,10 +6,10 @@ public class PsqlEntryPoint {
 
         LoopingConsumer<Long, StupidStreamObject> consumer =
             new LoopingConsumer<>(PsqlUtils.getConsumer(initArgs), Constants.KAFKA_CONSUME_DELAY_MS);
-        PsqlStorageSystem psqlStorageSystem = PsqlUtils.getStorageSystem(initArgs);
+        PsqlConcurrentSnapshots psqlConcurrentSnapshots = PsqlUtils.getStorageSystem(initArgs);
 
         consumer.moveAllToLatest();
-        consumer.subscribe(psqlStorageSystem);
+        consumer.subscribe(psqlConcurrentSnapshots);
         consumer.listenBlockingly();
     }
 }

@@ -3,8 +3,8 @@ import com.google.gson.Gson;
 import java.sql.Connection;
 import java.util.logging.Logger;
 
-public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements AutoCloseable {
-    private static final Logger LOGGER = Logger.getLogger(PsqlStorageSystem.class.getName());
+public class PsqlConcurrentSnapshots extends AutoSnapshottedEventStorageSystem<Connection> implements AutoCloseable {
+    private static final Logger LOGGER = Logger.getLogger(PsqlConcurrentSnapshots.class.getName());
 
     private final PsqlWrapper psqlWrapper;
 
@@ -12,10 +12,10 @@ public class PsqlStorageSystem extends KafkaStorageSystem<Connection> implements
     private final HttpStorageSystem httpStorageSystem;
     private final Gson gson = new Gson();
 
-    PsqlStorageSystem(PsqlWrapper psqlWrapper,
-                      String serverAddress,
-                      int numberOfReaderThreads,
-                      HttpStorageSystem httpStorageSystem) {
+    PsqlConcurrentSnapshots(PsqlWrapper psqlWrapper,
+                            String serverAddress,
+                            int numberOfReaderThreads,
+                            HttpStorageSystem httpStorageSystem) {
         super("PSQL", serverAddress, numberOfReaderThreads);
 
         this.psqlWrapper = psqlWrapper;

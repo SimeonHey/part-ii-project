@@ -8,12 +8,12 @@ class Utils {
     private static Trinity savedInstance;
 
     static class Trinity implements AutoCloseable{
-        public final PsqlStorageSystem psqlStorageSystem;
+        public final PsqlConcurrentSnapshots psqlConcurrentSnapshots;
         public final LuceneStorageSystem luceneStorageSystem;
         public final StorageAPI storageAPI;
 
-        Trinity(PsqlStorageSystem psqlStorageSystem, LuceneStorageSystem luceneStorageSystem, StorageAPI storageAPI) {
-            this.psqlStorageSystem = psqlStorageSystem;
+        Trinity(PsqlConcurrentSnapshots psqlConcurrentSnapshots, LuceneStorageSystem luceneStorageSystem, StorageAPI storageAPI) {
+            this.psqlConcurrentSnapshots = psqlConcurrentSnapshots;
             this.luceneStorageSystem = luceneStorageSystem;
             this.storageAPI = storageAPI;
         }
@@ -34,12 +34,12 @@ class Utils {
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerLucene;
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerPsql;
 
-        ManualTrinity(PsqlStorageSystem psqlStorageSystem,
+        ManualTrinity(PsqlConcurrentSnapshots psqlConcurrentSnapshots,
                       LuceneStorageSystem luceneStorageSystem,
                       StorageAPI storageAPI,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerLucene,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerPsql) {
-            super(psqlStorageSystem, luceneStorageSystem, storageAPI);
+            super(psqlConcurrentSnapshots, luceneStorageSystem, storageAPI);
             this.manualConsumerLucene = manualConsumerLucene;
             this.manualConsumerPsql = manualConsumerPsql;
         }
@@ -65,7 +65,7 @@ class Utils {
             this.manualConsumerLucene.close();
 
             this.storageAPI.close();
-            this.psqlStorageSystem.close();
+            this.psqlConcurrentSnapshots.close();
             this.luceneStorageSystem.close();
         }
     }
@@ -77,10 +77,10 @@ class Utils {
 
         PsqlUtils.PsqlInitArgs psqlInitArgs = PsqlUtils.PsqlInitArgs.defaultValues();
 
-        PsqlStorageSystem psqlStorageSystem = PsqlUtils.getStorageSystem(psqlInitArgs);
+        PsqlConcurrentSnapshots psqlConcurrentSnapshots = PsqlUtils.getStorageSystem(psqlInitArgs);
         LoopingConsumer<Long, StupidStreamObject> loopingConsumerPsql =
             new LoopingConsumer<>(PsqlUtils.getConsumer(psqlInitArgs));
-        loopingConsumerPsql.subscribe(psqlStorageSystem);
+        loopingConsumerPsql.subscribe(psqlConcurrentSnapshots);
 
         LuceneUtils.LuceneInitArgs luceneInitArgs = LuceneUtils.LuceneInitArgs.defaultValues();
 
@@ -100,7 +100,7 @@ class Utils {
 
         Thread.sleep(1000);
 
-        savedInstance = new Trinity(psqlStorageSystem, luceneStorageSystem, storageAPI);
+        savedInstance = new Trinity(psqlConcurrentSnapshots, luceneStorageSystem, storageAPI);
         return savedInstance;
     }
 
@@ -118,10 +118,10 @@ class Utils {
             Constants.PSQL_LISTEN_PORT_ALT,
             readerThreads);
 
-        PsqlStorageSystem psqlStorageSystem = PsqlUtils.getStorageSystem(psqlInitArgs);
+        PsqlConcurrentSnapshots psqlConcurrentSnapshots = PsqlUtils.getStorageSystem(psqlInitArgs);
         ManualConsumer<Long, StupidStreamObject> manualConsumerPsql =
             new ManualConsumer<>(new DummyConsumer("PSQL"));
-        manualConsumerPsql.subscribe(psqlStorageSystem);
+        manualConsumerPsql.subscribe(psqlConcurrentSnapshots);
 
         LuceneUtils.LuceneInitArgs luceneInitArgs = LuceneUtils.LuceneInitArgs.fromValues(
             Constants.KAFKA_ADDRESS,
@@ -144,7 +144,7 @@ class Utils {
         manualConsumerPsql.moveAllToLatest();
         manualConsumerLucene.moveAllToLatest();
 
-        savedInstanceManual = new ManualTrinity(psqlStorageSystem, luceneStorageSystem, storageAPI,
+        savedInstanceManual = new ManualTrinity(psqlConcurrentSnapshots, luceneStorageSystem, storageAPI,
             manualConsumerLucene, manualConsumerPsql);
 
         return savedInstanceManual;
