@@ -56,4 +56,11 @@ include 'concur_reads:storage_systems:lucene'
 include 'concur_reads:storage_api'
 include 'concur_reads:message_app'
 
+include 'everything'
+include 'everything:common'
+include 'everything:storage_systems:psql'
+include 'everything:storage_systems:lucene'
+include 'everything:storage_api'
+include 'everything:message_app'
+
 include 'benchmarking'
