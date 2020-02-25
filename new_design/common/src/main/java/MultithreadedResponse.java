@@ -1,8 +1,5 @@
 import com.google.gson.Gson;
 
-/**
- * Basically a holder of the information with an identifier
- */
 public class MultithreadedResponse {
     private final long channelUuid;
     private final String serializedResponse;

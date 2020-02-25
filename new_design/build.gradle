@@ -10,10 +10,10 @@ dependencies {
 
     api group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
 
-    api project(':everything:common')
-    api project(':everything:storage_systems:lucene')
-    api project(':everything:storage_systems:psql')
-    api project(':everything:storage_api')
+    api project(':new_design:common')
+    api project(':new_design:storage_systems:lucene')
+    api project(':new_design:storage_systems:psql')
+    api project(':new_design:storage_api')
 }
 
 test {

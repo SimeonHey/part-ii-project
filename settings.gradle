@@ -63,4 +63,11 @@ include 'everything:storage_systems:lucene'
 include 'everything:storage_api'
 include 'everything:message_app'
 
+include 'new_design'
+include 'new_design:common'
+include 'new_design:storage_systems:psql'
+include 'new_design:storage_systems:lucene'
+include 'new_design:storage_api'
+include 'new_design:message_app'
+
 include 'benchmarking'
