@@ -2,7 +2,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 /**
- * Basically a serialized version of an object, represented by a hashmap of properties and an object type
+ * Basically a serialized version of an object, represented by a hashmap of properties (customizable by each message
+ * type) and an object type
  */
 public class StupidStreamObject implements Serializable {
     public enum ObjectType {
@@ -16,11 +17,13 @@ public class StupidStreamObject implements Serializable {
     }
 
     private final ObjectType objectType;
-    private final HashMap<String, String> properties;
+    private final HashMap<String, String> properties = new HashMap<>();
 
-    public StupidStreamObject(ObjectType objectType) {
-        this.properties = new HashMap<>();
+    private final String responseAddress;
+
+    public StupidStreamObject(ObjectType objectType, String responseAddress) {
         this.objectType = objectType;
+        this.responseAddress = responseAddress;
     }
 
     StupidStreamObject setProperty(String name, String property) {
@@ -38,5 +41,9 @@ public class StupidStreamObject implements Serializable {
 
     public HashMap<String, String> getProperties() {
         return properties;
+    }
+
+    public String getResponseAddress() {
+        return responseAddress;
     }
 }

@@ -19,7 +19,7 @@ public class RequestAllMessages extends RequestWithResponse {
     }
 
     public static StupidStreamObject getStupidStreamObject(String responseEndpoint) {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES)
+        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, responseAddress)
             .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
     }
 

@@ -109,7 +109,7 @@ public class StorageAPI implements AutoCloseable {
         KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,
-            new StupidStreamObject(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES)
+            new StupidStreamObject(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, responseAddress)
         );
     }
 

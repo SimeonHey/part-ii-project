@@ -34,7 +34,7 @@ public class PsqlConcurSearchDetails extends EventStorageSystem {
     public void searchAndDetails(RequestSearchAndDetails requestSearchAndDetails) {
 
         // Open a new connection which has the current snapshot of the data
-        Connection snapshotIsolatedConnection = psqlWrapper.newSnapshotIsolatedConnection();
+        Connection snapshotIsolatedConnection = psqlWrapper.getConcurrentSnapshot();
 
         // Spin up a new thread to wait for Lucene TODO: consider adding a limit of the outstanding waiting threads
         new Thread(() -> {

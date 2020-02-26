@@ -1,27 +1,14 @@
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<Connection> {
     private static final Logger LOGGER = Logger.getLogger(PsqlSnapshottedWrapper.class.getName());
 
-    protected final Supplier<Connection> connectionSupplier;
+    private static final Connection sequentialConnection = SqlUtils.defaultConnection();
+    PsqlSnapshottedWrapper() {
 
-    PsqlSnapshottedWrapper(Supplier<Connection> connectionSupplier) {
-        this.connectionSupplier = connectionSupplier;
-    }
-
-    protected void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
-        String query = String.format("INSERT INTO messages (sender, messageText, uuid) VALUES ($$%s$$, $$%s$$, %d)",
-            sender,
-            messageText,
-            uuid);
-        LOGGER.info(query);
-        try (Connection connection = connectionSupplier.get()) {
-            SqlUtils.executeStatement(query, connection);
-        }
     }
 
     @Override
@@ -97,16 +84,30 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
     @Override
     public void deleteAllMessages() {
         LOGGER.info("Psql is deleting ALL messages");
-        try (Connection connection = connectionSupplier.get()) {
-            SqlUtils.executeStatement("DELETE FROM messages", connection);
+        try {
+            SqlUtils.executeStatement("DELETE FROM messages", sequentialConnection);
         } catch (SQLException e) {
             LOGGER.warning("SQL exception when doing sql stuff in delete all messages: " + e);
             throw new RuntimeException(e);
         }
     }
 
-    Connection newSnapshotIsolatedConnection() {
-        Connection connection = connectionSupplier.get();
+    void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
+        String query = String.format("INSERT INTO messages (sender, messageText, uuid) VALUES ($$%s$$, $$%s$$, %d)",
+            sender,
+            messageText,
+            uuid);
+        LOGGER.info(query);
+        SqlUtils.executeStatement(query, sequentialConnection);
+    }
+
+    public SnapshotHolder<Connection> getDefaultSnapshot() {
+        return new SnapshotHolder<>(sequentialConnection);
+    }
+
+    SnapshotHolder<Connection> getConcurrentSnapshot() {
+        Connection connection = SqlUtils.defaultConnection();
+
         try {
             connection.setAutoCommit(false);
             SqlUtils.executeStatement("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ", connection);
@@ -124,6 +125,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
             LOGGER.warning("Error when trying to open a new transaction: " + e);
             throw new RuntimeException(e);
         }
-        return connection;
+
+        return new SnapshotHolder<>(connection);
     }
 }

@@ -32,7 +32,7 @@ public class PsqlConcurrentSnapshots extends AutoSnapshottedEventStorageSystem<C
 
     @Override
     public SnapshotHolder<Connection> getReadSnapshot() {
-        return new SnapshotHolder<>(this.psqlWrapper.newSnapshotIsolatedConnection());
+        return new SnapshotHolder<>(this.psqlWrapper.getConcurrentSnapshot());
     }
 
     // Read requests

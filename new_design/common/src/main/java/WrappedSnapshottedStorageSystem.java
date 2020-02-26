@@ -1,5 +1,5 @@
 public interface WrappedSnapshottedStorageSystem<T extends AutoCloseable> {
-    // Read requests
+    // Read requests - require a snapshot (it might be the latest one, in which case it's not really a snaphost)
     ResponseMessageDetails getMessageDetails(SnapshotHolder<T> snapshotHolder,
                                              RequestMessageDetails requestMessageDetails);
     ResponseAllMessages getAllMessages(SnapshotHolder<T> snapshotHolder,
@@ -7,7 +7,12 @@ public interface WrappedSnapshottedStorageSystem<T extends AutoCloseable> {
     ResponseSearchMessage searchMessage(SnapshotHolder<T> snapshotHolder,
                                         RequestSearchMessage requestSearchMessage);
 
-    // Write requests
+    // Write requests - they always operate on the latest non-snapshot connection
     void postMessage(RequestPostMessage postMessage);
     void deleteAllMessages();
+
+
+
+    SnapshotHolder<T> getDefaultSnapshot();
+    SnapshotHolder<T> getConcurrentSnapshot();
 }

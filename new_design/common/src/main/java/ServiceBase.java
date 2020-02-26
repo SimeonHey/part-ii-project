@@ -1,3 +1,5 @@
+import java.util.function.Consumer;
+
 public abstract class ServiceBase<Snap extends AutoCloseable> {
     private StupidStreamObject.ObjectType objectTypeToHandle;
     protected boolean handleAsyncWithSnapshot;
@@ -11,6 +13,7 @@ public abstract class ServiceBase<Snap extends AutoCloseable> {
         return sso.getObjectType().equals(this.objectTypeToHandle);
     }
 
-    abstract StupidStreamObject handleRequest(StupidStreamObject request,
-                                              WrappedSnapshottedStorageSystem<Snap> wrapper);
+    abstract void handleRequest(StupidStreamObject request,
+                                WrappedSnapshottedStorageSystem<Snap> wrapper,
+                                Consumer<StupidStreamObject> responseCallback);
 }

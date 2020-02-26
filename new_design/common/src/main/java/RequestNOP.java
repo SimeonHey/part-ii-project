@@ -11,6 +11,6 @@ public class RequestNOP {
     }
 
     public static StupidStreamObject toStupidStreamObject() {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.NOP);
+        return new StupidStreamObject(StupidStreamObject.ObjectType.NOP, responseAddress);
     }
 }

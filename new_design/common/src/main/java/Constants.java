@@ -31,6 +31,7 @@ public class Constants {
         STORAGEAPI_PORT_ALT);
 
     public static final String PROJECT_NAME = "new_design";
+    public static final String NO_RESPONSE = "dontrespond";
 
     public static final long STORAGE_SYSTEMS_POLL_TIMEOUT = 30;
     public static final TimeUnit STORAGE_SYSTEMS_POLL_UNIT = TimeUnit.SECONDS;

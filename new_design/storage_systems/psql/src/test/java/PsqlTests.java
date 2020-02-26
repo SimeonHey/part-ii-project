@@ -28,7 +28,7 @@ public class PsqlTests {
 //        SqlUtils.executeStatement("CREATE TABLE test2 (col1 text)", normalConnection);
 
         // Initialize a connection which has its own transaction
-        Connection transactionConnection = psqlWrapper.newSnapshotIsolatedConnection();
+        Connection transactionConnection = psqlWrapper.getConcurrentSnapshot();
 
         // Insert things from the normal connection.
         SqlUtils.executeStatement("INSERT INTO test VALUES ($$hello$$)", normalConnection);
