@@ -10,11 +10,13 @@ public class HttpStorageSystem implements AutoCloseable {
 
     private final HttpServer httpServer;
     private final String storageSystemName;
+    private final int port;
 
     public HttpStorageSystem(String storageSystemName, HttpServer httpServer) {
         LOGGER.info("Initializing HTTP system " + storageSystemName + " on address " + httpServer.getAddress());
         this.httpServer = httpServer;
         this.storageSystemName = storageSystemName;
+        this.port = httpServer.getAddress().getPort();
 
         this.registerHandler("discover", this::handleDiscover);
     }
@@ -25,7 +27,8 @@ public class HttpStorageSystem implements AutoCloseable {
 
     protected void registerHandler(String endpoint, Function<String, byte[]> handler) {
         String fullEndpoint = String.format("/%s/%s", this.storageSystemName, endpoint);
-        LOGGER.info("HTTP system handler initialization on " + fullEndpoint);
+        LOGGER.info("HTTP system handler initialization on " + fullEndpoint +
+            " (port " + port + ")");
 
         this.httpServer.createContext(fullEndpoint,
             (httpExchange) -> {
@@ -44,6 +47,14 @@ public class HttpStorageSystem implements AutoCloseable {
 
                 httpExchange.close();
             });
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public String getStorageSystemName() {
+        return storageSystemName;
     }
 
     @Override

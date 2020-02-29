@@ -10,7 +10,7 @@ public class RequestNOP {
         }
     }
 
-    public static StupidStreamObject toStupidStreamObject() {
+    public static StupidStreamObject toStupidStreamObject(String responseAddress) {
         return new StupidStreamObject(StupidStreamObject.ObjectType.NOP, responseAddress);
     }
 }

@@ -1,7 +1,5 @@
 import org.apache.kafka.clients.consumer.Consumer;
 
-import java.io.IOException;
-
 public class PsqlUtils {
     public static class PsqlInitArgs {
         public String psqlAddress = Constants.PSQL_ADDRESS;
@@ -48,7 +46,7 @@ public class PsqlUtils {
         }
     }
 
-    public static PsqlConcurrentSnapshots getStorageSystem(PsqlInitArgs initArgs) throws IOException {
+    /*public static PsqlConcurrentSnapshots getStorageSystem(PsqlInitArgs initArgs) throws IOException {
         PsqlWrapper psqlWrapper = new PsqlWrapper(SqlUtils.obtainConnection());
 
         // Initialize the http server
@@ -61,7 +59,7 @@ public class PsqlUtils {
         psqlConcurrentSnapshots.deleteAllMessages();
 
         return psqlConcurrentSnapshots;
-    }
+    }*/
 
     public static Consumer<Long, StupidStreamObject> getConsumer(PsqlInitArgs initArgs) {
         return KafkaUtils.createConsumer(

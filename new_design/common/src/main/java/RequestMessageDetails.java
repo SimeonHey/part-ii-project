@@ -25,7 +25,7 @@ public class RequestMessageDetails extends RequestWithResponse {
     }
 
     public static StupidStreamObject getStupidStreamObject(Long messageUUID, String responseEndpoint) {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, responseAddress)
+        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, responseEndpoint)
             .setProperty(KEY_MESSAGE_UUID, String.valueOf(messageUUID))
             .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
     }

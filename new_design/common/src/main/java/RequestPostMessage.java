@@ -24,8 +24,8 @@ public class RequestPostMessage extends BaseRequest{
         this.message = message;
     }
 
-    public StupidStreamObject toStupidStreamObject() {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.POST_MESSAGE, responseAddress)
+    public StupidStreamObject toStupidStreamObject(String responseEndpoint) {
+        return new StupidStreamObject(StupidStreamObject.ObjectType.POST_MESSAGE, responseEndpoint)
             .setProperty(KEY_SENDER, getMessage().getSender())
             .setProperty(KEY_MESSAGE_TEXT, getMessage().getMessageText());
     }

@@ -24,7 +24,7 @@ public class RequestSearchMessage extends RequestWithResponse {
     }
 
     public static StupidStreamObject getStupidStreamObject(String searchText, String responseEndpoint) {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.SEARCH_MESSAGES, responseAddress)
+        return new StupidStreamObject(StupidStreamObject.ObjectType.SEARCH_MESSAGES, responseEndpoint)
             .setProperty(KEY_SEARCH_TEXT, searchText)
             .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
     }

@@ -23,7 +23,6 @@ public class Constants {
         "/psql/luceneContact";
     public static final int LUCENE_MAX_READERS = 50;
 
-
     public static final String STORAGEAPI_PORT = "8000";
     public static final String STORAGEAPI_PORT_ALT = "8020";
     public static final String STORAGEAPI_ADDRESS = String.format("http://localhost:%s/server", STORAGEAPI_PORT);

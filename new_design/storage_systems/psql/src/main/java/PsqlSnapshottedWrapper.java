@@ -105,7 +105,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
         return new SnapshotHolder<>(sequentialConnection);
     }
 
-    SnapshotHolder<Connection> getConcurrentSnapshot() {
+    public SnapshotHolder<Connection> getConcurrentSnapshot() {
         Connection connection = SqlUtils.defaultConnection();
 
         try {

@@ -24,7 +24,7 @@ public class RequestSearchAndDetails extends RequestWithResponse {
     }
 
     public static StupidStreamObject getStupidStreamObject(String searchText, String responseEndpoint) {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, responseAddress)
+        return new StupidStreamObject(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, responseEndpoint)
             .setProperty(KEY_SEARCH_TEXT, searchText)
             .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
     }

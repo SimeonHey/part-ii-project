@@ -9,8 +9,8 @@ dependencies {
     testImplementation 'junit:junit:4.12'
 
     // TODO: Remove
-    implementation project(':new_design:storage_systems:lucene')
-    implementation project(':new_design:storage_systems:psql')
+//    implementation project(':new_design:storage_systems:lucene')
+//    implementation project(':new_design:storage_systems:psql')
 
 //    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.29'
 //    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.29'

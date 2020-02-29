@@ -2,12 +2,8 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class FullSystemTest {
@@ -104,6 +100,7 @@ public class FullSystemTest {
         }
     }
 
+    /*
     @Test
     public void searchAndDetailsNoOccurrences() throws Exception {
         try (Utils.Trinity trinity = Utils.basicInitialization()) {
@@ -219,5 +216,5 @@ public class FullSystemTest {
                 assertEquals(targetText, actualMessage.getMessageText());
             }
         }
-    }
+    }*/
 }

@@ -1,15 +1,10 @@
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class PsqlEntryPoint {
     public static void main(String[] args) throws IOException {
-        PsqlUtils.PsqlInitArgs initArgs = PsqlUtils.PsqlInitArgs.defaultValues();
-
-        LoopingConsumer<Long, StupidStreamObject> consumer =
-            new LoopingConsumer<>(PsqlUtils.getConsumer(initArgs), Constants.KAFKA_CONSUME_DELAY_MS);
-        PsqlConcurrentSnapshots psqlConcurrentSnapshots = PsqlUtils.getStorageSystem(initArgs);
-
-        consumer.moveAllToLatest();
-        consumer.subscribe(psqlConcurrentSnapshots);
-        consumer.listenBlockingly();
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        PsqlStorageSystemsFactory.simpleOlep(executorService);
     }
 }
