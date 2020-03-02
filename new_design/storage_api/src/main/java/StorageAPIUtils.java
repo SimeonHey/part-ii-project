@@ -40,7 +40,7 @@ class StorageAPIUtils {
         Producer<Long, StupidStreamObject> producer =
             KafkaUtils.createProducer(initArgs.kafkaAddress, "storageAPI");
         KafkaUtils.produceMessage(producer, initArgs.transactionsTopic,
-            RequestNOP.toStupidStreamObject(Constants.STORAGEAPI_ADDRESS));
+            RequestNOP.toStupidStreamObject(new Addressable(Constants.STORAGEAPI_ADDRESS, 0L)));
         LOGGER.info("Success");
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);
@@ -61,7 +61,7 @@ class StorageAPIUtils {
         LOGGER.info("Initializing a Kafka producer...");
         Producer<Long, StupidStreamObject> producer = new DummyProducer();
         KafkaUtils.produceMessage(producer, initArgs.transactionsTopic,
-            RequestNOP.toStupidStreamObject(Constants.STORAGEAPI_ADDRESS));
+            RequestNOP.toStupidStreamObject(new Addressable(Constants.STORAGEAPI_ADDRESS, 0L)));
         LOGGER.info("Success");
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);

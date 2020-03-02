@@ -7,8 +7,18 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
     private static final Logger LOGGER = Logger.getLogger(PsqlSnapshottedWrapper.class.getName());
 
     private static final Connection sequentialConnection = SqlUtils.defaultConnection();
+
     PsqlSnapshottedWrapper() {
 
+    }
+
+    private void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
+        String query = String.format("INSERT INTO messages (sender, messageText, uuid) VALUES ($$%s$$, $$%s$$, %d)",
+            sender,
+            messageText,
+            uuid);
+        LOGGER.info(query);
+        SqlUtils.executeStatement(query, sequentialConnection);
     }
 
     @Override
@@ -74,7 +84,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
         LOGGER.info("PSQL posts message " + requestPostMessage);
         try {
             insertMessage(requestPostMessage.getMessage().getSender(),
-                requestPostMessage.getMessage().getMessageText(), requestPostMessage.getRequestUUID());
+                requestPostMessage.getMessage().getMessageText(), requestPostMessage.getChannelID());
         } catch (SQLException e) {
             LOGGER.warning("Error when inserting message: " + e);
             throw new RuntimeException(e);
@@ -90,15 +100,6 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
             LOGGER.warning("SQL exception when doing sql stuff in delete all messages: " + e);
             throw new RuntimeException(e);
         }
-    }
-
-    void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
-        String query = String.format("INSERT INTO messages (sender, messageText, uuid) VALUES ($$%s$$, $$%s$$, %d)",
-            sender,
-            messageText,
-            uuid);
-        LOGGER.info(query);
-        SqlUtils.executeStatement(query, sequentialConnection);
     }
 
     public SnapshotHolder<Connection> getDefaultSnapshot() {
@@ -127,5 +128,10 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
         }
 
         return new SnapshotHolder<>(connection);
+    }
+
+    @Override
+    public void close() throws Exception {
+
     }
 }

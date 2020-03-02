@@ -7,7 +7,7 @@ public class PsqlUtils {
         public String kafkaAddress = Constants.KAFKA_ADDRESS;
         public String transactionsTopic = Constants.KAFKA_TOPIC;
         public String serverAddress = Constants.STORAGEAPI_ADDRESS;
-        public String listeningPort = Constants.PSQL_LISTEN_PORT;
+        public Integer listeningPort = Constants.PSQL_LISTEN_PORT;
         public int numberOfReaders = Constants.PSQL_MAX_READERS;
 
         private PsqlInitArgs() {
@@ -30,7 +30,7 @@ public class PsqlUtils {
                                                 String argKafkaAddress,
                                                 String argTransactionsTopic,
                                                 String argServerAddress,
-                                                String argListeningPort,
+                                                Integer argListeningPort,
                                                 int numberOfReaders) {
             PsqlInitArgs ret = new PsqlInitArgs();
 

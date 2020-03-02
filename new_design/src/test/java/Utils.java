@@ -1,3 +1,5 @@
+import org.apache.lucene.index.IndexReader;
+
 import java.io.IOException;
 import java.sql.Connection;
 import java.util.concurrent.Executors;
@@ -11,13 +13,13 @@ class Utils {
 
     static class Trinity implements AutoCloseable{
         public final JointStorageSystem<Connection> psqlSimpleOlep;
-        public final LuceneStorageSystem luceneStorageSystem;
+        public final JointStorageSystem<IndexReader> luceneSimpleOlep;
         public final StorageAPI storageAPI;
 
-        Trinity(JointStorageSystem<Connection> psqlSimpleOlep, LuceneStorageSystem luceneStorageSystem,
+        Trinity(JointStorageSystem<Connection> psqlSimpleOlep, JointStorageSystem<IndexReader> luceneSimpleOlep,
                 StorageAPI storageAPI) {
             this.psqlSimpleOlep = psqlSimpleOlep;
-            this.luceneStorageSystem = luceneStorageSystem;
+            this.luceneSimpleOlep = luceneSimpleOlep;
             this.storageAPI = storageAPI;
         }
 
@@ -37,12 +39,12 @@ class Utils {
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerLucene;
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerPsql;
 
-        ManualTrinity(JointStorageSystem<Connection> psqlConcurrentSnapshots,
-                      LuceneStorageSystem luceneStorageSystem,
+        ManualTrinity(JointStorageSystem<Connection> psqlSimpleOlep,
+                      JointStorageSystem<IndexReader> luceneSimpleOlep,
                       StorageAPI storageAPI,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerLucene,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerPsql) {
-            super(psqlConcurrentSnapshots, luceneStorageSystem, storageAPI);
+            super(psqlSimpleOlep, luceneSimpleOlep, storageAPI);
             this.manualConsumerLucene = manualConsumerLucene;
             this.manualConsumerPsql = manualConsumerPsql;
         }
@@ -69,29 +71,21 @@ class Utils {
 
             this.storageAPI.close();
             this.psqlSimpleOlep.close();
-            this.luceneStorageSystem.close();
+            this.luceneSimpleOlep.close();
         }
     }
 
     static Trinity basicInitialization() throws IOException, InterruptedException {
         if (savedInstance != null) {
+            LOGGER.info("Returning saved instance!");
             return savedInstance;
         }
 
-        PsqlUtils.PsqlInitArgs psqlInitArgs = PsqlUtils.PsqlInitArgs.defaultValues();
-
         JointStorageSystem<Connection> psqlConcurrentSnapshots =
-            PsqlStorageSystemsFactory.simpleOlep(Executors.newFixedThreadPool(1));
-        /*LoopingConsumer<Long, StupidStreamObject> loopingConsumerPsql =
-            new LoopingConsumer<>(PsqlUtils.getConsumer(psqlInitArgs));
-        loopingConsumerPsql.subscribe(psqlConcurrentSnapshots);*/
+            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).simpleOlep();
 
-        LuceneUtils.LuceneInitArgs luceneInitArgs = LuceneUtils.LuceneInitArgs.defaultValues();
-
-        LuceneStorageSystem luceneStorageSystem = LuceneUtils.getStorageSystem(luceneInitArgs);
-        LoopingConsumer<Long, StupidStreamObject> loopingConsumerLucene =
-            new LoopingConsumer<>(LuceneUtils.getConsumer(luceneInitArgs));
-        loopingConsumerLucene.subscribe(luceneStorageSystem);
+        JointStorageSystem<IndexReader> luceneStorageSystem =
+            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).simpleOlep();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultValues();
         StorageAPI storageAPI = StorageAPIUtils.initFromArgs(storageAPIInitArgs);
@@ -126,22 +120,15 @@ class Utils {
             readerThreads);
 
         JointStorageSystem<Connection> psqlConcurrentSnapshots =
-            PsqlStorageSystemsFactory.simpleOlep(Executors.newFixedThreadPool(1));
+            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).simpleOlep();
         ManualConsumer<Long, StupidStreamObject> manualConsumerPsql =
             new ManualConsumer<>(new DummyConsumer("PSQL"));
-//        manualConsumerPsql.subscribe(psqlConcurrentSnapshots);
 
-        LuceneUtils.LuceneInitArgs luceneInitArgs = LuceneUtils.LuceneInitArgs.fromValues(
-            Constants.KAFKA_ADDRESS,
-            Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_ADDRESS_ALT,
-            Constants.LUCENE_PSQL_CONTACT_ENDPOINT_ALT,
-            readerThreads);
-
-        LuceneStorageSystem luceneStorageSystem = LuceneUtils.getStorageSystem(luceneInitArgs);
+        JointStorageSystem<IndexReader> luceneStorageSystem =
+            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).simpleOlep();
         ManualConsumer<Long, StupidStreamObject> manualConsumerLucene =
             new ManualConsumer<>(new DummyConsumer("Lucene"));
-        manualConsumerLucene.subscribe(luceneStorageSystem);
+//        manualConsumerLucene.subscribe(luceneStorageSystem);
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(
             Constants.KAFKA_ADDRESS,

@@ -1,4 +1,4 @@
-public interface WrappedSnapshottedStorageSystem<T extends AutoCloseable> {
+public interface WrappedSnapshottedStorageSystem<T extends AutoCloseable> extends AutoCloseable {
     // Read requests - require a snapshot (it might be the latest one, in which case it's not really a snaphost)
     ResponseMessageDetails getMessageDetails(SnapshotHolder<T> snapshotHolder,
                                              RequestMessageDetails requestMessageDetails);

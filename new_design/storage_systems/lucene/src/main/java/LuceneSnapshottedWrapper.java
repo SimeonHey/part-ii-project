@@ -28,8 +28,8 @@ import java.util.logging.Logger;
 /**
  * Proxy for Lucene transactions
  */
-class LuceneWrapper implements AutoCloseable {
-    private static final Logger LOGGER = Logger.getLogger(LuceneWrapper.class.getName());
+class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexReader> {
+    private static final Logger LOGGER = Logger.getLogger(LuceneSnapshottedWrapper.class.getName());
 
     private static final String FIELD_MESSAGE = "message";
     private static final String FIELD_SENDER = "sender";
@@ -38,14 +38,18 @@ class LuceneWrapper implements AutoCloseable {
     private final Path indexPath;
     private final Analyzer analyzer = new StandardAnalyzer();
 
-    public LuceneWrapper(String indexDestination) {
+    public LuceneSnapshottedWrapper() {
+        indexPath = Paths.get(Constants.LUCENE_DEFAULT_INDEX_DEST);
+    }
+
+    public LuceneSnapshottedWrapper(String indexDestination) {
         indexPath = Paths.get(indexDestination);
     }
 
     // Write requests
-
-    void postMessage(Message message, Long uuid) {
-        LOGGER.info("Lucene posts message: " + message);
+    @Override
+    public void postMessage(RequestPostMessage requestPostMessage) {
+        LOGGER.info("Lucene posts message: " + requestPostMessage.getMessage());
         final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 
@@ -53,14 +57,14 @@ class LuceneWrapper implements AutoCloseable {
              IndexWriter indexWriter = new IndexWriter(luceneIndexDir, iwc)) {
             Document doc = new Document();
 
-            String escapedSender = QueryParser.escape(message.getSender());
-            String escapedMessage = QueryParser.escape(message.getMessageText());
+            String escapedSender = QueryParser.escape(requestPostMessage.getMessage().getSender());
+            String escapedMessage = QueryParser.escape(requestPostMessage.getMessage().getMessageText());
 
             LOGGER.info("Escaped sender: " + escapedSender + "; escaped message: " + escapedMessage);
 
             doc.add(new StringField(FIELD_SENDER, escapedSender, Field.Store.YES));
             doc.add(new TextField(FIELD_MESSAGE, escapedMessage, Field.Store.NO));
-            doc.add(new StoredField(FIELD_UUID, uuid));
+            doc.add(new StoredField(FIELD_UUID, requestPostMessage.getChannelID()));
 
             indexWriter.addDocument(doc);
         } catch (IOException e) {
@@ -69,7 +73,7 @@ class LuceneWrapper implements AutoCloseable {
         }
     }
 
-    void deleteAllMessages() {
+    public void deleteAllMessages() {
         LOGGER.info("Lucene deletes all messages");
 
         final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
@@ -77,7 +81,6 @@ class LuceneWrapper implements AutoCloseable {
 
         try (Directory luceneIndexDir = FSDirectory.open(indexPath);
              IndexWriter ignored = new IndexWriter(luceneIndexDir, iwc)) {
-
         } catch (IOException e) {
             LOGGER.warning("Error when posting message: " + e);
             throw new RuntimeException(e);
@@ -85,27 +88,17 @@ class LuceneWrapper implements AutoCloseable {
     }
 
     // Read requests
-
-    List<Long> searchMessage(String searchText) {
-        LOGGER.info("Searching in the latest snapshot for search text" + searchText);
-
-        try (IndexReader indexReader = this.newSnapshotReader()) {
-            return searchMessage(indexReader, searchText);
-        } catch (IOException e) {
-            LOGGER.warning("Error when performing search: " + e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    List<Long> searchMessage(IndexReader indexReader, String searchText) {
-        LOGGER.info("Searching in a previous snapshot for search text" + searchText);
+    @Override
+    public ResponseSearchMessage searchMessage(SnapshotHolder<IndexReader> snapshotHolder,
+                                               RequestSearchMessage searchMessage) {
+        LOGGER.info("Searching in a previous snapshot for search text" + searchMessage.getSearchText());
 
         try (Analyzer analyzer = new StandardAnalyzer()) {
             // change the analyzer if you want different tokenization or filters
-            IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+            IndexSearcher indexSearcher = new IndexSearcher(snapshotHolder.getSnapshot());
 
             QueryParser queryParser = new QueryParser(FIELD_MESSAGE, analyzer);
-            String escaped = QueryParser.escape(searchText);
+            String escaped = QueryParser.escape(searchMessage.getSearchText());
             LOGGER.info("Escaped search query: " + escaped);
             Query query = queryParser.parse(escaped);
 
@@ -123,21 +116,37 @@ class LuceneWrapper implements AutoCloseable {
                 }
             });
 
-            LOGGER.info("Lucene search for text " + searchText + " and got " + occurrences);
-            return occurrences;
+            LOGGER.info("Lucene search for text " + searchMessage.getSearchText() + " and got " + occurrences);
+            return new ResponseSearchMessage(occurrences);
         } catch (IOException | ParseException e) {
             LOGGER.warning("Error when performing search: " + e);
             throw new RuntimeException(e);
         }
     }
 
-    IndexReader newSnapshotReader() {
+    @Override
+    public ResponseMessageDetails getMessageDetails(SnapshotHolder<IndexReader> snapshotHolder, RequestMessageDetails requestMessageDetails) {
+        throw new RuntimeException("Lucene doesn't have message details functionality implemented");
+    }
+
+    @Override
+    public ResponseAllMessages getAllMessages(SnapshotHolder<IndexReader> snapshotHolder, RequestAllMessages requestAllMessages) {
+        throw new RuntimeException("Lucene doesn't have get all messages functionality implemented");
+    }
+
+    @Override
+    public SnapshotHolder<IndexReader> getDefaultSnapshot() {
         try {
-            return DirectoryReader.open(FSDirectory.open(indexPath));
+            return new SnapshotHolder<>(DirectoryReader.open(FSDirectory.open(indexPath)));
         } catch (IOException e) {
             LOGGER.warning("Error when trying to open a new snapshot reader: " + e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public SnapshotHolder<IndexReader> getConcurrentSnapshot() {
+        return getDefaultSnapshot();
     }
 
     @Override

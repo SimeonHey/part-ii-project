@@ -1,14 +1,10 @@
+import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class LuceneEntryPoint {
-    public static void main(String[] args) {
-        LuceneUtils.LuceneInitArgs initArgs = LuceneUtils.LuceneInitArgs.defaultValues();
-
-        LoopingConsumer<Long, StupidStreamObject> loopingConsumer =
-            new LoopingConsumer<>(LuceneUtils.getConsumer(initArgs), Constants.KAFKA_CONSUME_DELAY_MS);
-
-        LuceneStorageSystem luceneStorageSystem = LuceneUtils.getStorageSystem(initArgs);
-
-        loopingConsumer.moveAllToLatest();
-        loopingConsumer.subscribe(luceneStorageSystem);
-        loopingConsumer.listenBlockingly();
+    public static void main(String[] args) throws IOException {
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        new LuceneStorageSystemFactory(executorService).simpleOlep();
     }
 }

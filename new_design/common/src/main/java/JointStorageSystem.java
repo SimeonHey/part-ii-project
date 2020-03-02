@@ -39,19 +39,21 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     }
 
     private void kafkaServiceHandler(ConsumerRecord<Long, StupidStreamObject> record) {
-        requestArrived(record.value(), wrapResponseWithAddress(record.value().getResponseAddress()));
+        StupidStreamObject sso = record.value();
+        sso.getResponseAddress().setChannelID(record.offset());
+
+        requestArrived(sso, wrapResponseWithAddress(record.value().getResponseAddress()));
     }
 
-    private Consumer<StupidStreamObject> wrapResponseWithAddress(String responseAddress) {
-        return (StupidStreamObject sso) -> respond(responseAddress, sso);
+    private Consumer<MultithreadedResponse> wrapResponseWithAddress(Addressable responseAddress) {
+        return (MultithreadedResponse response) -> respond(responseAddress, response);
     }
 
-    private void respond(String responseAddress, StupidStreamObject response) {
-        LOGGER.info(name + " joint storage system responds to " + responseAddress + " with response type " +
-            response.getObjectType());
+    private void respond(Addressable responseAddress, MultithreadedResponse response) {
+        LOGGER.info(name + " joint storage system responds to " + responseAddress + ": " + response);
         String serialized = Constants.gson.toJson(response);
         try {
-            HttpUtils.httpRequestResponse(responseAddress, serialized);
+            HttpUtils.httpRequestResponse(responseAddress.getInternetAddress(), serialized);
         } catch (IOException e) {
 
             throw new RuntimeException(e);
@@ -59,8 +61,8 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     }
 
     private void handleWithHandler(StupidStreamObject sso,
-                                                 ServiceBase<Snap> serviceHandler,
-                                                 Consumer<StupidStreamObject> responseCallback) {
+                                   ServiceBase<Snap> serviceHandler,
+                                   Consumer<MultithreadedResponse> responseCallback) {
         if (serviceHandler.handleAsyncWithSnapshot) {
             new Thread(() ->
                 serviceHandler.handleRequest(sso, wrapper, responseCallback)
@@ -70,7 +72,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         }
     }
 
-    private void requestArrived(StupidStreamObject sso, Consumer<StupidStreamObject> responseCallback) {
+    private void requestArrived(StupidStreamObject sso, Consumer<MultithreadedResponse> responseCallback) {
         LOGGER.info(name + " joint storage system handles request of type " + sso.getObjectType());
         for (ServiceBase<Snap> serviceHandler: this.serviceHandlers) {
             if (serviceHandler.couldHandle(sso)) {

@@ -19,9 +19,9 @@ public class StupidStreamObject implements Serializable {
     private final ObjectType objectType;
     private final HashMap<String, String> properties = new HashMap<>();
 
-    private final String responseAddress;
+    private final Addressable responseAddress;
 
-    public StupidStreamObject(ObjectType objectType, String responseAddress) {
+    public StupidStreamObject(ObjectType objectType, Addressable responseAddress) {
         this.objectType = objectType;
         this.responseAddress = responseAddress;
     }
@@ -43,7 +43,7 @@ public class StupidStreamObject implements Serializable {
         return properties;
     }
 
-    public String getResponseAddress() {
+    public Addressable getResponseAddress() {
         return responseAddress;
     }
 }

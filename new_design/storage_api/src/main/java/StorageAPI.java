@@ -86,32 +86,33 @@ public class StorageAPI implements AutoCloseable {
 
     // Reads
     public CompletableFuture<ResponseMessageDetails> searchAndDetailsFuture(String searchText) {
-        return kafkaRequestResponseFuture(RequestSearchAndDetails.getStupidStreamObject(searchText, ADDRESS_RESPONSE))
+        return kafkaRequestResponseFuture(
+            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)))
             .thenApply(serializedResponse -> gson.fromJson(serializedResponse, ResponseMessageDetails.class));
     }
 
     public ResponseMessageDetails searchAndDetails(String searchText) throws InterruptedException {
         String serializedResponse = kafkaRequestResponse(
-            RequestSearchAndDetails.getStupidStreamObject(searchText, ADDRESS_RESPONSE));
+            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)));
         return gson.fromJson(serializedResponse, ResponseMessageDetails.class);
     }
 
     public ResponseSearchMessage searchMessage(String searchText) throws InterruptedException {
         String serializedResponse = kafkaRequestResponse(
-            RequestSearchMessage.getStupidStreamObject(searchText, ADDRESS_RESPONSE));
+            RequestSearchMessage.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)));
         return gson.fromJson(serializedResponse, ResponseSearchMessage.class);
     }
 
     public ResponseMessageDetails messageDetails(Long uuid) throws InterruptedException {
         String serializedResponse = kafkaRequestResponse(
-            RequestMessageDetails.getStupidStreamObject(uuid, ADDRESS_RESPONSE)
+            RequestMessageDetails.getStupidStreamObject(uuid, new Addressable(ADDRESS_RESPONSE))
         );
         return gson.fromJson(serializedResponse, ResponseMessageDetails.class);
     }
 
     public ResponseAllMessages allMessages() throws InterruptedException {
         String serializedResponse = kafkaRequestResponse(
-            RequestAllMessages.getStupidStreamObject(ADDRESS_RESPONSE)
+            new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, new Addressable(ADDRESS_RESPONSE))
         );
         return gson.fromJson(serializedResponse, ResponseAllMessages.class);
     }
@@ -121,7 +122,7 @@ public class StorageAPI implements AutoCloseable {
         LOGGER.info("Posting message " + message);
         KafkaUtils.produceMessage(this.producer,
             this.transactionsTopic,
-            new RequestPostMessage(message, -1).toStupidStreamObject(ADDRESS_CONFIRMATION)
+            new RequestPostMessage(message, new Addressable(ADDRESS_CONFIRMATION)).toStupidStreamObject()
         );
     }
 
@@ -129,7 +130,8 @@ public class StorageAPI implements AutoCloseable {
         KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,
-            new StupidStreamObject(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, ADDRESS_CONFIRMATION)
+            new StupidStreamObject(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES,
+                new Addressable(ADDRESS_CONFIRMATION))
         );
     }
 

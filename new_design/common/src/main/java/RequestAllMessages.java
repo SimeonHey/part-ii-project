@@ -1,33 +1,22 @@
 import java.util.logging.Logger;
 
-public class RequestAllMessages extends RequestWithResponse {
+public class RequestAllMessages extends Addressable {
     private static final Logger LOGGER = Logger.getLogger(RequestAllMessages.class.getName());
 
-    RequestAllMessages(String responseEndpoint, long uuid) {
-        super(responseEndpoint, uuid);
+    RequestAllMessages(Addressable addressable) {
+        super(addressable);
     }
 
-    static RequestAllMessages fromStupidStreamObject(StupidStreamObject stupidStreamObject, long uuid) {
+    static RequestAllMessages fromStupidStreamObject(StupidStreamObject stupidStreamObject) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.GET_ALL_MESSAGES) {
             LOGGER.warning("StupidStreamObject doesn't have the correct object type");
             throw new RuntimeException("Incorrect object type");
         }
 
-        String responseEndpoint = stupidStreamObject.getProperty(KEY_RESPONSE_ENDPOINT);
-
-        return new RequestAllMessages(responseEndpoint, uuid);
+        return new RequestAllMessages(stupidStreamObject.getResponseAddress());
     }
 
-    public static StupidStreamObject getStupidStreamObject(String responseEndpoint) {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, responseEndpoint)
-            .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
-    }
-
-    @Override
-    public String toString() {
-        return "RequestAllMessages{" +
-            "responseEndpoint='" + responseEndpoint + '\'' +
-            "SUPER: {" + super.toString() + "}" +
-            '}';
+    public static StupidStreamObject getStupidStreamObject(Addressable responseEndpoint) {
+        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, responseEndpoint);
     }
 }

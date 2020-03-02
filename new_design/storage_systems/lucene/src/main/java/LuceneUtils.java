@@ -38,18 +38,6 @@ public class LuceneUtils {
         }
     }
 
-    static LuceneStorageSystem getStorageSystem(LuceneInitArgs initArgs) {
-        LuceneStorageSystem luceneStorageSystem =
-            new LuceneStorageSystem(
-                new LuceneWrapper(Constants.LUCENE_DEFAULT_INDEX_DEST),
-                initArgs.serverAddress,
-                initArgs.psqlContactAddress,
-                initArgs.maxNumberOfReaders);
-        luceneStorageSystem.deleteAllMessages();
-
-        return luceneStorageSystem;
-    }
-
     static Consumer<Long, StupidStreamObject> getConsumer(LuceneInitArgs initArgs) {
         return KafkaUtils.createConsumer(
             "lucene",

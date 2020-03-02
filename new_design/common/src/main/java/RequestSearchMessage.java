@@ -1,21 +1,20 @@
 import java.util.logging.Logger;
 
-public class RequestSearchMessage extends RequestWithResponse {
+public class RequestSearchMessage extends Addressable {
     private static final Logger LOGGER = Logger.getLogger(RequestSearchMessage.class.getName());
     private static final String KEY_SEARCH_TEXT = "searchText";
 
     private final String searchText;
 
-    public static RequestSearchMessage fromStupidStreamObject(StupidStreamObject stupidStreamObject, long uuid) {
+    public static RequestSearchMessage fromStupidStreamObject(StupidStreamObject stupidStreamObject) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.SEARCH_MESSAGES) {
             LOGGER.warning("StupidStreamObject doesn't have the correct object type");
             throw new RuntimeException("Incorrect object type");
         }
 
         String searchText = stupidStreamObject.getProperty(KEY_SEARCH_TEXT);
-        String responseEndpoint = stupidStreamObject.getProperty(KEY_RESPONSE_ENDPOINT);
 
-        return new RequestSearchMessage(searchText, responseEndpoint, uuid);
+        return new RequestSearchMessage(searchText, stupidStreamObject.getResponseAddress());
     }
 
     public RequestSearchMessage(String searchText, String responseEndpoint, long uuid) {
@@ -23,17 +22,21 @@ public class RequestSearchMessage extends RequestWithResponse {
         this.searchText = searchText;
     }
 
-    public static StupidStreamObject getStupidStreamObject(String searchText, String responseEndpoint) {
+    public RequestSearchMessage(String searchText, Addressable responseAddress) {
+        super(responseAddress);
+        this.searchText = searchText;
+    }
+
+    public static StupidStreamObject getStupidStreamObject(String searchText, Addressable responseEndpoint) {
         return new StupidStreamObject(StupidStreamObject.ObjectType.SEARCH_MESSAGES, responseEndpoint)
-            .setProperty(KEY_SEARCH_TEXT, searchText)
-            .setProperty(KEY_RESPONSE_ENDPOINT, responseEndpoint);
+            .setProperty(KEY_SEARCH_TEXT, searchText);
     }
 
     @Override
     public String toString() {
         return "RequestSearchMessage{" +
             "searchText='" + searchText + '\'' +
-            ", responseEndpoint='" + responseEndpoint + '\'' +
+            ", addres='" + super.toString() + '\'' +
             '}';
     }
 

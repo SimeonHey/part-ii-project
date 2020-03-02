@@ -1,6 +1,6 @@
 import java.util.logging.Logger;
 
-public class RequestPostMessage extends BaseRequest{
+public class RequestPostMessage extends Addressable {
     private static final Logger LOGGER = Logger.getLogger(RequestPostMessage.class.getName());
 
     private static final String KEY_SENDER = "sender";
@@ -8,7 +8,7 @@ public class RequestPostMessage extends BaseRequest{
 
     private final Message message;
 
-    public static RequestPostMessage fromStupidStreamObject(StupidStreamObject stupidStreamObject, long uuid) {
+    public static RequestPostMessage fromStupidStreamObject(StupidStreamObject stupidStreamObject) {
         if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.POST_MESSAGE) {
             LOGGER.warning("Stupid Stream Object has the incorrect object type");
             throw new RuntimeException("Incorrect object type");
@@ -16,16 +16,16 @@ public class RequestPostMessage extends BaseRequest{
 
         Message message = new Message(stupidStreamObject.getProperty(KEY_SENDER),
             stupidStreamObject.getProperty(KEY_MESSAGE_TEXT));
-        return new RequestPostMessage(message, uuid);
+        return new RequestPostMessage(message, stupidStreamObject.getResponseAddress());
     }
 
-    public RequestPostMessage(Message message, long uuid) {
-        super(uuid);
+    public RequestPostMessage(Message message, Addressable responseEndpoint) {
+        super(responseEndpoint);
         this.message = message;
     }
 
-    public StupidStreamObject toStupidStreamObject(String responseEndpoint) {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.POST_MESSAGE, responseEndpoint)
+    public StupidStreamObject toStupidStreamObject() {
+        return new StupidStreamObject(StupidStreamObject.ObjectType.POST_MESSAGE, this)
             .setProperty(KEY_SENDER, getMessage().getSender())
             .setProperty(KEY_MESSAGE_TEXT, getMessage().getMessageText());
     }

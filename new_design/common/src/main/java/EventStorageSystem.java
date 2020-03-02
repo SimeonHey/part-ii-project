@@ -28,6 +28,7 @@ public abstract class EventStorageSystem implements KafkaConsumerObserver<Long, 
                 this.storageSystemName, message.value().getObjectType().toString(), requestUUID, fullProps.toString()));
 
             StupidStreamObject streamObject = message.value();
+            streamObject.getResponseAddress().setChannelID(requestUUID);
 
             switch (streamObject.getObjectType()) {
                 case NOP:
@@ -36,7 +37,7 @@ public abstract class EventStorageSystem implements KafkaConsumerObserver<Long, 
 
                 // Write requests
                 case POST_MESSAGE:
-                    this.postMessage(RequestPostMessage.fromStupidStreamObject(streamObject, requestUUID));
+                    this.postMessage(RequestPostMessage.fromStupidStreamObject(streamObject));
 
                     break;
                 case DELETE_ALL_MESSAGES:
@@ -45,19 +46,19 @@ public abstract class EventStorageSystem implements KafkaConsumerObserver<Long, 
 
                 // Read requests
                 case SEARCH_MESSAGES:
-                    this.searchMessage(RequestSearchMessage.fromStupidStreamObject(streamObject, requestUUID));
+                    this.searchMessage(RequestSearchMessage.fromStupidStreamObject(streamObject));
 
                     break;
                 case GET_ALL_MESSAGES:
-                    this.getAllMessages(RequestAllMessages.fromStupidStreamObject(streamObject, requestUUID));
+                    this.getAllMessages(RequestAllMessages.fromStupidStreamObject(streamObject));
 
                     break;
                 case GET_MESSAGE_DETAILS:
-                    this.getMessageDetails(RequestMessageDetails.fromStupidStreamObject(streamObject, requestUUID));
+                    this.getMessageDetails(RequestMessageDetails.fromStupidStreamObject(streamObject));
 
                     break;
                 case SEARCH_AND_DETAILS:
-                    this.searchAndDetails(RequestSearchAndDetails.fromStupidStreamObject(streamObject, requestUUID));
+                    this.searchAndDetails(RequestSearchAndDetails.fromStupidStreamObject(streamObject));
 
                     break;
                 default:
@@ -70,15 +71,15 @@ public abstract class EventStorageSystem implements KafkaConsumerObserver<Long, 
         }
     }
 
-    protected void sendResponse(RequestWithResponse request, Object resp) {
+    protected void sendResponse(Addressable request, Object resp) {
         try {
-            MultithreadedResponse fullResponse = new MultithreadedResponse(request.getRequestUUID(), resp);
+            MultithreadedResponse fullResponse = new MultithreadedResponse(request.getChannelID(), resp);
             String serialized = Constants.gson.toJson(fullResponse);
 
             LOGGER.info(String.format("Sending response %s to server %s and endpoint %s", serialized,
-                this.serverAddress, request.getResponseEndpoint()));
+                this.serverAddress, request.getInternetAddress()));
 
-            HttpUtils.httpRequestResponse(this.serverAddress, request.getResponseEndpoint(), serialized);
+            HttpUtils.httpRequestResponse(this.serverAddress, request.getInternetAddress(), serialized);
         } catch (IOException e) {
             LOGGER.warning("Failed to send a response back");
             throw new RuntimeException(e);
