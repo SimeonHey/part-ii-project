@@ -1,6 +1,5 @@
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
-import java.io.IOException;
 import java.util.logging.Logger;
 
 public abstract class EventStorageSystem implements KafkaConsumerObserver<Long, StupidStreamObject>, AutoCloseable {
@@ -71,7 +70,7 @@ public abstract class EventStorageSystem implements KafkaConsumerObserver<Long, 
         }
     }
 
-    protected void sendResponse(Addressable request, Object resp) {
+    /*protected void sendResponse(Addressable request, Object resp) {
         try {
             MultithreadedResponse fullResponse = new MultithreadedResponse(request.getChannelID(), resp);
             String serialized = Constants.gson.toJson(fullResponse);
@@ -84,7 +83,7 @@ public abstract class EventStorageSystem implements KafkaConsumerObserver<Long, 
             LOGGER.warning("Failed to send a response back");
             throw new RuntimeException(e);
         }
-    }
+    }*/
 
     // Read requests
     public abstract void searchAndDetails(RequestSearchAndDetails requestSearchAndDetails);

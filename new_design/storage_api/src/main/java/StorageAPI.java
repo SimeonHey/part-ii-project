@@ -1,7 +1,7 @@
 import com.google.gson.Gson;
 import org.apache.kafka.clients.producer.Producer;
 
-import java.util.concurrent.CompletableFuture;
+import java.io.IOException;
 import java.util.logging.Logger;
 
 public class StorageAPI implements AutoCloseable {
@@ -9,8 +9,8 @@ public class StorageAPI implements AutoCloseable {
     private static final String ENDPOINT_RESPONSE = "response";
     private static final String ENDPOINT_CONFIRMATION = "confirmation";
 
-    private final String ADDRESS_CONFIRMATION;
-    private final String ADDRESS_RESPONSE;
+    public final String ADDRESS_CONFIRMATION;
+    public final String ADDRESS_RESPONSE;
 
     private final Producer<Long, StupidStreamObject> producer;
     private final String transactionsTopic;
@@ -42,7 +42,7 @@ public class StorageAPI implements AutoCloseable {
         LOGGER.info("Address response: " + ADDRESS_RESPONSE);
     }
 
-    private String kafkaRequestResponse(StupidStreamObject request) throws InterruptedException {
+    private <T>T kafkaRequestResponse(StupidStreamObject request, Class<T> responseType) throws InterruptedException {
         long offset = KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,
@@ -51,26 +51,23 @@ public class StorageAPI implements AutoCloseable {
         LOGGER.info("Waiting for response on channel with uuid " + offset);
 
         // Will block until a response is received
-        return this.multithreadedCommunication.consumeAndDestroy(offset);
+        String serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
+        return Constants.gson.fromJson(serializedResponse, responseType);
     }
 
-    private CompletableFuture<String> kafkaRequestResponseFuture(StupidStreamObject request) {
-        // Post message in this thread
-        long offset = KafkaUtils.produceMessage(
-            this.producer,
-            this.transactionsTopic,
-            request);
-
-        // Return a future which waits for the response
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                return this.multithreadedCommunication.consumeAndDestroy(offset);
-            } catch (InterruptedException e) {
-                LOGGER.warning("Error when waiting to receive response in a new thread");
-                throw new RuntimeException(e);
-            }
-        });
+    private <T>T httpRequestResponse(String address, StupidStreamObject request, Class<T> responseType) {
+        try {
+            String serializedResponse =
+                HttpUtils.httpRequestResponse(address, Constants.gson.toJson(request));
+            LOGGER.info("Direct HTTP response received: " + serializedResponse);
+            return Constants.gson.fromJson(serializedResponse, responseType);
+        } catch (IOException e) {
+            LOGGER.warning("Error when sending request to " + address +
+                " in the storageapi http request response: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
     }
+
 
     private byte[] receiveResponse(String serializedResponse) {
         LOGGER.info(String.format("Received response %s", serializedResponse));
@@ -85,36 +82,29 @@ public class StorageAPI implements AutoCloseable {
     }
 
     // Reads
-    public CompletableFuture<ResponseMessageDetails> searchAndDetailsFuture(String searchText) {
-        return kafkaRequestResponseFuture(
-            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)))
-            .thenApply(serializedResponse -> gson.fromJson(serializedResponse, ResponseMessageDetails.class));
+    /*public ResponseMessageDetails searchAndDetails(String searchText) throws InterruptedException {
+        return kafkaRequestResponse(
+            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
+            ResponseMessageDetails.class);
+    }*/
+
+    public ResponseSearchMessage searchMessage(String searchText) {
+        return httpRequestResponse(Constants.LUCENE_REQUEST_ADDRESS,
+            RequestSearchMessage.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
+            ResponseSearchMessage.class);
     }
 
-    public ResponseMessageDetails searchAndDetails(String searchText) throws InterruptedException {
-        String serializedResponse = kafkaRequestResponse(
-            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)));
-        return gson.fromJson(serializedResponse, ResponseMessageDetails.class);
+    public ResponseMessageDetails messageDetails(Long uuid) {
+        return httpRequestResponse(Constants.PSQL_REQUEST_ADDRESS,
+            RequestMessageDetails.getStupidStreamObject(uuid, new Addressable(ADDRESS_RESPONSE)),
+            ResponseMessageDetails.class);
     }
 
-    public ResponseSearchMessage searchMessage(String searchText) throws InterruptedException {
-        String serializedResponse = kafkaRequestResponse(
-            RequestSearchMessage.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)));
-        return gson.fromJson(serializedResponse, ResponseSearchMessage.class);
-    }
-
-    public ResponseMessageDetails messageDetails(Long uuid) throws InterruptedException {
-        String serializedResponse = kafkaRequestResponse(
-            RequestMessageDetails.getStupidStreamObject(uuid, new Addressable(ADDRESS_RESPONSE))
+    public ResponseAllMessages allMessages() {
+        return httpRequestResponse(Constants.PSQL_REQUEST_ADDRESS,
+            new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, new Addressable(ADDRESS_RESPONSE)),
+            ResponseAllMessages.class
         );
-        return gson.fromJson(serializedResponse, ResponseMessageDetails.class);
-    }
-
-    public ResponseAllMessages allMessages() throws InterruptedException {
-        String serializedResponse = kafkaRequestResponse(
-            new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, new Addressable(ADDRESS_RESPONSE))
-        );
-        return gson.fromJson(serializedResponse, ResponseAllMessages.class);
     }
 
     // Writes
@@ -134,6 +124,7 @@ public class StorageAPI implements AutoCloseable {
                 new Addressable(ADDRESS_CONFIRMATION))
         );
     }
+
 
     @Override
     public String toString() {

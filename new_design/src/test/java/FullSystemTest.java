@@ -93,6 +93,7 @@ public class FullSystemTest {
             });
 
             ResponseAllMessages responseAllMessages = storageAPI.allMessages();
+            System.out.println("Received " + responseAllMessages);
             assertEquals(toSend.size(), responseAllMessages.getMessages().size());
 
             List<Message> messages = responseAllMessages.getMessages();

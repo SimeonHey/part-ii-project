@@ -8,11 +8,13 @@ import java.util.logging.Logger;
 
 public class JointStorageSystem<Snap extends AutoCloseable> implements AutoCloseable {
     private final static Logger LOGGER = Logger.getLogger(JointStorageSystem.class.getName());
-    private WrappedSnapshottedStorageSystem<Snap> wrapper;
 
     private final MultithreadedCommunication multithreadedCommunication = new MultithreadedCommunication();
-    private final List<ServiceBase<Snap>> serviceHandlers = new ArrayList<>();
+    private final List<ServiceBase<Snap>> kafkaServiceHandlers = new ArrayList<>();
+    private final List<ServiceBase<Snap>> httpServiceHandlers = new ArrayList<>();
+
     private final String name;
+    private WrappedSnapshottedStorageSystem<Snap> wrapper;
 
     public JointStorageSystem(String name,
                               SubscribableConsumer<Long, StupidStreamObject> eventStorageSystem,
@@ -21,12 +23,15 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         this.name = name;
         this.wrapper = wrapper;
 
-        // Subscribe to listeners
+        // Subscribe to kafka and http listeners
         eventStorageSystem.subscribe(this::kafkaServiceHandler);
-        httpStorageSystem.registerHandler("contact", this::externalContact);
         httpStorageSystem.registerHandler("query", this::httpServiceHandler);
+
+        // Settle things for contact
+        httpStorageSystem.registerHandler("contact", this::externalContact);
     }
 
+    // Handlers
     private byte[] externalContact(String contactResponse) {
         multithreadedCommunication.registerResponse(contactResponse);
         return "Thanks!".getBytes();
@@ -34,15 +39,26 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     private byte[] httpServiceHandler(String serializedQuery) {
         StupidStreamObject sso = Constants.gson.fromJson(serializedQuery, StupidStreamObject.class);
-        requestArrived(sso, wrapResponseWithAddress(sso.getResponseAddress()));
-        return "Processing request...".getBytes();
+        sso.getResponseAddress().setChannelID(-1L);
+
+        LOGGER.info(String.format("%s received a HTTP query of type %s", name, sso.getObjectType()));
+
+        final Object[] hackySavedResponse = new Object[1];
+        requestArrived(this.httpServiceHandlers, sso, (response -> hackySavedResponse[0] = response));
+
+        String serializedResponse = Constants.gson.toJson(hackySavedResponse[0]);
+        LOGGER.info(String.format("%s successfully handled the request of type %s; sending back %s", name,
+            sso.getObjectType(), serializedResponse));
+        return serializedResponse.getBytes();
     }
 
     private void kafkaServiceHandler(ConsumerRecord<Long, StupidStreamObject> record) {
         StupidStreamObject sso = record.value();
+        LOGGER.info(String.format("%s received a Kafka query: %s", name, sso.getObjectType()));
+
         sso.getResponseAddress().setChannelID(record.offset());
 
-        requestArrived(sso, wrapResponseWithAddress(record.value().getResponseAddress()));
+        requestArrived(this.kafkaServiceHandlers, sso, wrapResponseWithAddress(sso.getResponseAddress()));
     }
 
     private Consumer<MultithreadedResponse> wrapResponseWithAddress(Addressable responseAddress) {
@@ -55,7 +71,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         try {
             HttpUtils.httpRequestResponse(responseAddress.getInternetAddress(), serialized);
         } catch (IOException e) {
-
+            LOGGER.warning("Error when responding to " + responseAddress + ": " + e);
             throw new RuntimeException(e);
         }
     }
@@ -68,14 +84,18 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
                 serviceHandler.handleRequest(sso, wrapper, responseCallback)
             ).start();
         } else {
+            LOGGER.info(name + " calls the handler for request of type " + sso.getObjectType());
             serviceHandler.handleRequest(sso, wrapper, responseCallback);
         }
     }
 
-    private void requestArrived(StupidStreamObject sso, Consumer<MultithreadedResponse> responseCallback) {
-        LOGGER.info(name + " joint storage system handles request of type " + sso.getObjectType());
-        for (ServiceBase<Snap> serviceHandler: this.serviceHandlers) {
+    private void requestArrived(List<ServiceBase<Snap>> serviceHandlers,
+                                StupidStreamObject sso,
+                                Consumer<MultithreadedResponse> responseCallback) {
+        LOGGER.info("Request arrived for " + name + " of type " + sso.getObjectType());
+        for (ServiceBase<Snap> serviceHandler: serviceHandlers) {
             if (serviceHandler.couldHandle(sso)) {
+                LOGGER.info(name + " found a handler for request of type " + sso.getObjectType());
                 handleWithHandler(sso, serviceHandler, responseCallback);
                 return;
             }
@@ -84,7 +104,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         LOGGER.warning("Couldn't find a handler for request of type " + sso.getObjectType());
         // TODO: This might be okay, so would have no need for an exception
         // TODO: Throwing an exception here will blow up the http server and won't show up in the logs
-        throw new RuntimeException("No relevant handler for object type " + sso.getObjectType());
+//        throw new RuntimeException("No relevant handler for object type " + sso.getObjectType());
     }
 
     private <T> T waitForContact(long channel, Class<T> classOfResponse) throws InterruptedException {
@@ -92,8 +112,13 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         return Constants.gson.fromJson(serialized, classOfResponse);
     }
 
-    public JointStorageSystem<Snap> registerService(ServiceBase<Snap> serviceDescription) {
-        this.serviceHandlers.add(serviceDescription);
+    public JointStorageSystem<Snap> registerKafkaService(ServiceBase<Snap> serviceDescription) {
+        this.kafkaServiceHandlers.add(serviceDescription);
+        return this;
+    }
+
+    public JointStorageSystem<Snap> registerHttpService(ServiceBase<Snap> serviceDescription) {
+        this.httpServiceHandlers.add(serviceDescription);
         return this;
     }
 

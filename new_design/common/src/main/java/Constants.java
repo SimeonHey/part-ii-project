@@ -13,10 +13,13 @@ public class Constants {
     public static final String[] PSQL_USER_PASS = {"postgres", "default"};
     public static final Integer PSQL_LISTEN_PORT = 8002;
     public static final Integer PSQL_LISTEN_PORT_ALT = 8022;
+    public static final String PSQL_REQUEST_ADDRESS = String.format("http://localhost:%d/psql/query", PSQL_LISTEN_PORT);
     public static final int PSQL_MAX_READERS = 50;
 
     public static final Integer LUCENE_LISTEN_PORT = 8001;
-    public static final Integer LUCENE_LISTEN_PORT_ALT = 80021;
+    public static final Integer LUCENE_LISTEN_PORT_ALT = 8021;
+    public static final String LUCENE_REQUEST_ADDRESS = String.format("http://localhost:%d/lucene/query",
+        LUCENE_LISTEN_PORT);
     public static final String LUCENE_DEFAULT_INDEX_DEST = "./luceneindex/index_output";
     public static final String LUCENE_TEST_INDEX_DEST  = "./luceneindex/text_index_output";
     public static final String LUCENE_PSQL_CONTACT_ENDPOINT = "http://localhost:" + PSQL_LISTEN_PORT +

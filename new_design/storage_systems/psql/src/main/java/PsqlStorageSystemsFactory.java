@@ -8,15 +8,14 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
     private static final Logger LOGGER = Logger.getLogger(PsqlStorageSystemsFactory.class.getName());
 
     public PsqlStorageSystemsFactory(ExecutorService executorService) throws IOException {
-        super(executorService, new PsqlSnapshottedWrapper(), Constants.PSQL_LISTEN_PORT);
+        super("psql", executorService, new PsqlSnapshottedWrapper(), Constants.PSQL_LISTEN_PORT);
     }
 
     @Override
     public JointStorageSystem<Connection> simpleOlep() {
         var ss = new JointStorageSystem<>("PSQL simple olep", loopingKafka, httpStorageSystem, snapshottedWrapper)
-
             // POST MESSAGE
-            .registerService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, false) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -27,7 +26,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // DELETE ALL MESSAGES
-            .registerService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, false) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -38,19 +37,21 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, false) {
+            .registerHttpService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, false) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback) {
                     var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
                         RequestAllMessages.fromStupidStreamObject(request));
-                    responseCallback.accept(
-                        new MultithreadedResponse(request.getResponseAddress().getChannelID(), dbResponse));
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), dbResponse);
+                    LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
+                        "response is " + dbResponse + "; the multithreaded response is: " + response);
+                    responseCallback.accept(response);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, false) {
+            .registerHttpService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, false) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -63,7 +64,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // SEARCH MESSAGE
-            .registerService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, false) {
+            .registerHttpService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, false) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -72,7 +73,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // NOP
-            .registerService(new ServiceBase<>(StupidStreamObject.ObjectType.NOP, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.NOP, false) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
