@@ -3,7 +3,7 @@ import java.util.HashMap;
 
 /**
  * Basically a serialized version of an object, represented by a hashmap of properties (customizable by each message
- * type) and an object type
+ * type) and an object type. TODO: Why not JSON?
  */
 public class StupidStreamObject implements Serializable {
     public enum ObjectType {

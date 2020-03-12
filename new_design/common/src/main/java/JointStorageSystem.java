@@ -39,23 +39,18 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     private byte[] httpServiceHandler(String serializedQuery) {
         StupidStreamObject sso = Constants.gson.fromJson(serializedQuery, StupidStreamObject.class);
-        sso.getResponseAddress().setChannelID(-1L);
 
-        LOGGER.info(String.format("%s received a HTTP query of type %s", name, sso.getObjectType()));
+        LOGGER.info(String.format("%s received an HTTP query of type %s", name, sso.getObjectType()));
 
-        final Object[] hackySavedResponse = new Object[1];
-        requestArrived(this.httpServiceHandlers, sso, (response -> hackySavedResponse[0] = response));
-
-        String serializedResponse = Constants.gson.toJson(hackySavedResponse[0]);
-        LOGGER.info(String.format("%s successfully handled the request of type %s; sending back %s", name,
-            sso.getObjectType(), serializedResponse));
-        return serializedResponse.getBytes();
+        requestArrived(this.httpServiceHandlers, sso, wrapResponseWithAddress(sso.getResponseAddress()));
+        return "Thanks, processing... :)".getBytes();
     }
 
     private void kafkaServiceHandler(ConsumerRecord<Long, StupidStreamObject> record) {
         StupidStreamObject sso = record.value();
         LOGGER.info(String.format("%s received a Kafka query: %s", name, sso.getObjectType()));
 
+        // The Kafka offset is only known after the message has been published
         sso.getResponseAddress().setChannelID(record.offset());
 
         requestArrived(this.kafkaServiceHandlers, sso, wrapResponseWithAddress(sso.getResponseAddress()));

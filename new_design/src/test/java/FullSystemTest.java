@@ -2,22 +2,27 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class FullSystemTest {
+    private static final Logger LOGGER = Logger.getLogger(FullSystemTest.class.getName());
+
     @Test
     public void searchNoOccurrences() throws Exception {
         try (Utils.Trinity trinity = Utils.basicInitialization()) {
             StorageAPI storageAPI = trinity.storageAPI;
 
-            Utils.letThatSinkIn(() -> {
+            Utils.letThatSinkIn(storageAPI, () -> {
                 storageAPI.postMessage(new Message("Simeon", "Hey"));
                 storageAPI.postMessage(new Message("Simeon", "What's up"));
             });
 
-            ResponseSearchMessage responseSearchMessage = storageAPI.searchMessage("non-existent");
+            ResponseSearchMessage responseSearchMessage =
+                storageAPI.searchMessage("non-existent");
+            LOGGER.info("Tester: Response from search is " + responseSearchMessage);
             assertEquals(0, responseSearchMessage.getOccurrences().size());
         }
     }
@@ -27,7 +32,7 @@ public class FullSystemTest {
         try (Utils.Trinity trinity = Utils.basicInitialization()) {
             StorageAPI storageAPI = trinity.storageAPI;
 
-            Utils.letThatSinkIn(() -> {
+            Utils.letThatSinkIn(storageAPI, () -> {
                 storageAPI.postMessage(new Message("Simeon", "Hey"));
                 storageAPI.postMessage(new Message("Simeon", "What's up"));
                 storageAPI.postMessage(new Message("Simeon", "Hey"));
@@ -47,7 +52,7 @@ public class FullSystemTest {
             Message toSend = new Message("Simeon", "Hey");
             int cnt = 10;
 
-            Utils.letThatSinkIn(() -> {
+            Utils.letThatSinkIn(storageAPI, () -> {
                 for (int i = 0; i < cnt; i++) {
                     storageAPI.postMessage(toSend);
 
@@ -86,7 +91,7 @@ public class FullSystemTest {
                 toSend.add(new Message("Simeon", "Ho"));
             }
 
-            Utils.letThatSinkIn(() -> {
+            Utils.letThatSinkIn(storageAPI, () -> {
                 for (Message mes : toSend) {
                     storageAPI.postMessage(mes);
                 }

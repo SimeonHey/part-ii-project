@@ -9,7 +9,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
     private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystemFactory.class.getName());
 
     public LuceneStorageSystemFactory(ExecutorService executorService) throws IOException {
-        super("Lucene", executorService, new LuceneSnapshottedWrapper(), Constants.LUCENE_LISTEN_PORT);
+        super("lucene", executorService, new LuceneSnapshottedWrapper(), Constants.LUCENE_LISTEN_PORT);
     }
 
     @Override
@@ -64,6 +64,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    Consumer<MultithreadedResponse> responseCallback) {
                     var dbResponse = wrapper.searchMessage(wrapper.getDefaultSnapshot(),
                         RequestSearchMessage.fromStupidStreamObject(request));
+                    LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
                         new MultithreadedResponse(request.getResponseAddress().getChannelID(), dbResponse)
                     );

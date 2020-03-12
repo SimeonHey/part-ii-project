@@ -42,4 +42,6 @@ public class Constants {
 
     // TODO: Might not be the best place?
     public static final Gson gson = new Gson();
+
+    public static final int NUM_STORAGE_SYSTEMS = 2;
 }

@@ -13,30 +13,33 @@ public class MultithreadedCommunication {
 
     private void createChannelIfAbsent(long uuid) {
         if (!channels.containsKey(uuid)) {
-            channels.put(uuid, new ArrayBlockingQueue<>(1));
+            channels.put(uuid, new ArrayBlockingQueue<>(Constants.NUM_STORAGE_SYSTEMS));
         }
     }
 
     public void registerResponse(String serializedResponse) {
         MultithreadedResponse response = gson.fromJson(serializedResponse, MultithreadedResponse.class);
-
         createChannelIfAbsent(response.getChannelUuid());
-
         channels.get(response.getChannelUuid()).add(response.getSerializedResponse());
     }
 
-    public String consumeAndDestroy(long uuid) throws InterruptedException {
+    public String consume(long uuid) throws InterruptedException {
         createChannelIfAbsent(uuid);
 
         String response = channels
             .get(uuid)
             .poll(Constants.STORAGE_SYSTEMS_POLL_TIMEOUT, Constants.STORAGE_SYSTEMS_POLL_UNIT);
-        // TODO: Timeout of polling doesn't work
+
 
         if (response == null) {
             throw new RuntimeException("Error: Timeout while waiting for a response on channel " + uuid);
         }
 
+        return response;
+    }
+
+    public String consumeAndDestroy(long uuid) throws InterruptedException {
+        String response = consume(uuid);
         channels.remove(uuid);
         return response;
     }

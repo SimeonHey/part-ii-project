@@ -116,7 +116,7 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
                 }
             });
 
-            LOGGER.info("Lucene search for text " + searchMessage.getSearchText() + " and got " + occurrences);
+            LOGGER.info("Lucene searched for text " + searchMessage.getSearchText() + " and got " + occurrences);
             return new ResponseSearchMessage(occurrences);
         } catch (IOException | ParseException e) {
             LOGGER.warning("Error when performing search: " + e);

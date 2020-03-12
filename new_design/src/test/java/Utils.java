@@ -26,6 +26,7 @@ class Utils {
         @Override
         public void close() throws Exception {
             this.storageAPI.deleteAllMessages(); // Produces a Kafka message
+            this.storageAPI.waitForAllConfirmations();
             Thread.sleep(1000);
 
             /*this.storageAPI.close();
@@ -145,9 +146,9 @@ class Utils {
         return savedInstanceManual;
     }
 
-    static void letThatSinkIn(Runnable r) throws InterruptedException {
+    static void letThatSinkIn(StorageAPI storageAPI, Runnable r) throws InterruptedException {
         r.run();
-        Thread.sleep(Constants.KAFKA_CONSUME_DELAY_MS * 2);
+        storageAPI.waitForAllConfirmations();
     }
 
     static void letThatSinkInManually(ManualTrinity manualTrinity, Runnable r) {
