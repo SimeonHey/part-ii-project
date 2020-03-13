@@ -3,7 +3,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 
 import java.util.logging.Logger;
 
-public class LoopingConsumer<K, V> extends SubscribableConsumer<K, V>{
+public class LoopingConsumer<K, V> extends ManualConsumer<K, V>{
     private static final Logger LOGGER = Logger.getLogger(LoopingConsumer.class.getName());
     private final long sleepMs;
 
@@ -33,5 +33,10 @@ public class LoopingConsumer<K, V> extends SubscribableConsumer<K, V>{
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    public static LoopingConsumer<Long, StupidStreamObject> fresh(String consumerGroup) {
+        return new LoopingConsumer<>(
+            KafkaUtils.createConsumer(consumerGroup, Constants.KAFKA_ADDRESS, Constants.KAFKA_TOPIC));
     }
 }

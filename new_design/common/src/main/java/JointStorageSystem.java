@@ -13,11 +13,11 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private final List<ServiceBase<Snap>> kafkaServiceHandlers = new ArrayList<>();
     private final List<ServiceBase<Snap>> httpServiceHandlers = new ArrayList<>();
 
-    private final String name;
+    final String name;
     private WrappedSnapshottedStorageSystem<Snap> wrapper;
 
     public JointStorageSystem(String name,
-                              SubscribableConsumer<Long, StupidStreamObject> eventStorageSystem,
+                              ManualConsumer<Long, StupidStreamObject> eventStorageSystem,
                               HttpStorageSystem httpStorageSystem,
                               WrappedSnapshottedStorageSystem<Snap> wrapper) {
         this.name = name;
@@ -75,12 +75,19 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
                                    ServiceBase<Snap> serviceHandler,
                                    Consumer<MultithreadedResponse> responseCallback) {
         if (serviceHandler.handleAsyncWithSnapshot) {
-            new Thread(() ->
-                serviceHandler.handleRequest(sso, wrapper, responseCallback, this)
-            ).start();
+            Snap snapshotToUse = wrapper.getConcurrentSnapshot();
+            new Thread(() -> {
+                try {
+                    serviceHandler.handleRequest(sso, wrapper, responseCallback, this, snapshotToUse);
+                    snapshotToUse.close();
+                } catch (Exception e) {
+                    LOGGER.warning("Error when closing the snapshot in storage system " + name);
+                    throw new RuntimeException(e);
+                }
+            }).start();
         } else {
             LOGGER.info(name + " calls the handler for request of type " + sso.getObjectType());
-            serviceHandler.handleRequest(sso, wrapper, responseCallback, this);
+            serviceHandler.handleRequest(sso, wrapper, responseCallback, this, null);
         }
     }
 

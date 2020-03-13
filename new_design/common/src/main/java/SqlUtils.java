@@ -26,30 +26,6 @@ public class SqlUtils {
         }
     }
 
-
-    Connection newSnapshotIsolatedConnection() {
-        Connection connection = defaultConnection();
-
-        try {
-            connection.setAutoCommit(false);
-            SqlUtils.executeStatement("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ", connection);
-
-            // Force the transaction to get a txid, so that a snapshot of the data is saved
-            try (ResultSet resultSet = SqlUtils.executeStatementForResult("SELECT txid_current()", connection)) {
-                resultSet.next();
-                long txId = resultSet.getLong(1);
-                LOGGER.info("Started a transaction with txid " + txId);
-            } catch (Exception e) {
-                LOGGER.warning("Error when tried to read the transaction id: " + e);
-                throw new RuntimeException(e);
-            }
-        } catch (SQLException e) {
-            LOGGER.warning("Error when trying to open a new transaction: " + e);
-            throw new RuntimeException(e);
-        }
-        return connection;
-    }
-
     public static void executeStatement(String sql, Connection connection) throws SQLException {
         LOGGER.info("Executing statement: " + sql);
         connection.setAutoCommit(true);

@@ -1,10 +1,10 @@
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class LuceneEntryPoint {
     public static void main(String[] args) throws IOException {
-        ExecutorService executorService = Executors.newFixedThreadPool(1);
-        new LuceneStorageSystemFactory(executorService).simpleOlep();
+        var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene"));
+        luceneFactory.simpleOlep();
+        luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
     }
 }

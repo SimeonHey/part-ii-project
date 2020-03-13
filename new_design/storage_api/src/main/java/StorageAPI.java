@@ -3,6 +3,7 @@ import org.apache.kafka.clients.producer.Producer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 public class StorageAPI implements AutoCloseable {
@@ -50,6 +51,7 @@ public class StorageAPI implements AutoCloseable {
             this.transactionsTopic,
             request);
 
+
         LOGGER.info("Waiting for response on channel with uuid " + offset);
 
         // Will block until a response is received
@@ -61,6 +63,27 @@ public class StorageAPI implements AutoCloseable {
             throw new RuntimeException(e);
         }
         return Constants.gson.fromJson(serializedResponse, responseType);
+    }
+
+    private <T> CompletableFuture<T> kafkaRequestResponseFuture(StupidStreamObject request, Class<T> responseType) {
+        long offset = KafkaUtils.produceMessage(
+            this.producer,
+            this.transactionsTopic,
+            request);
+
+        LOGGER.info("Waiting for response on channel with uuid " + offset);
+
+        return CompletableFuture.supplyAsync(() -> {
+            // Will block until a response is received
+            String serializedResponse;
+            try {
+                serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
+            } catch (InterruptedException e) {
+                LOGGER.warning("Error when waiting on channel " + offset + ": " + e);
+                throw new RuntimeException(e);
+            }
+            return Constants.gson.fromJson(serializedResponse, responseType);
+        });
     }
 
     private <T>T httpRequestResponse(String address, StupidStreamObject request, Class<T> responseType) {
@@ -158,6 +181,12 @@ public class StorageAPI implements AutoCloseable {
 
     public ResponseMessageDetails searchAndDetails(String searchText) {
         return kafkaRequestResponse(//Constants.LUCENE_REQUEST_ADDRESS,
+            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
+            ResponseMessageDetails.class);
+    }
+
+    public CompletableFuture<ResponseMessageDetails> searchAndDetailsFuture(String searchText) {
+        return kafkaRequestResponseFuture(//Constants.LUCENE_REQUEST_ADDRESS,
             RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
             ResponseMessageDetails.class);
     }

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 class DummyKafka {
     private final static Logger LOGGER = Logger.getLogger(DummyKafka.class.getName());
@@ -40,6 +41,9 @@ class DummyKafka {
             new ConsumerRecord<>(TOPIC_PARTITION.topic(), TOPIC_PARTITION.partition(), offset, key, value);
         records.add(consumerRecord);
 
+        LOGGER.info("State of the log: " + records.stream().map(r ->
+            r.value().getObjectType()).collect(Collectors.toList()).toString());
+
         return records.size()-1;
     }
 
@@ -48,7 +52,9 @@ class DummyKafka {
 
         int consumeFrom = getConsumeFromAndUpdateIt(consumerGroup);
         LOGGER.info("DUMMY KAFKA: " + consumerGroup + " consuming messages of length " +
-            (this.records.size() - consumeFrom) + " starting from " + consumeFrom);
+            (this.records.size() - consumeFrom) + " starting from " + consumeFrom + ": " +
+            records.subList(consumeFrom,
+                this.records.size()).stream().map(r -> r.value().getObjectType()).collect(Collectors.toList()).toString());
 
         return new ConsumerRecords<>(
             Collections.singletonMap(TOPIC_PARTITION, records.subList(consumeFrom, this.records.size())));

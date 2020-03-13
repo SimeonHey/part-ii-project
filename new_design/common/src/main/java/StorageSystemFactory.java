@@ -2,30 +2,33 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
 public abstract class StorageSystemFactory<T extends AutoCloseable> implements AutoCloseable {
-    final LoopingConsumer<Long, StupidStreamObject> loopingKafka;
+    final LoopingConsumer<Long, StupidStreamObject> kafka;
     final HttpStorageSystem httpStorageSystem;
-    final ExecutorService executorServiceForLoopingListener;
     final WrappedSnapshottedStorageSystem<T> snapshottedWrapper;
 
     private void initProcedure() {
         this.snapshottedWrapper.deleteAllMessages();
-        this.executorServiceForLoopingListener.submit(this.loopingKafka::listenBlockingly);
     }
 
     public StorageSystemFactory(String name,
-                                ExecutorService executorServiceForLoopingListener,
                                 WrappedSnapshottedStorageSystem<T> snapshottedWrapper,
-                                int httpListenPort) throws IOException {
-        this.executorServiceForLoopingListener = executorServiceForLoopingListener;
+                                int httpListenPort,
+                                LoopingConsumer<Long, StupidStreamObject> kafka) throws IOException {
         this.snapshottedWrapper = snapshottedWrapper;
 
-        this.loopingKafka =
-            new LoopingConsumer<>(KafkaUtils.createConsumer(name,
-                Constants.KAFKA_ADDRESS, Constants.KAFKA_TOPIC));
+        this.kafka = kafka;
         this.httpStorageSystem = new HttpStorageSystem(name,
             HttpUtils.initHttpServer(httpListenPort));
 
         initProcedure();
+    }
+
+    public void listenBlockingly(ExecutorService executorServiceForLoopingListener) {
+        executorServiceForLoopingListener.submit(this.kafka::listenBlockingly);
+    }
+
+    public ManualConsumer<Long, StupidStreamObject> getManualConsumer() {
+        return kafka;
     }
 
     abstract JointStorageSystem<T> simpleOlep();
@@ -34,8 +37,10 @@ public abstract class StorageSystemFactory<T extends AutoCloseable> implements A
 
     abstract JointStorageSystem<T> sdRequestNoSession();
 
+    abstract JointStorageSystem<T> sdRequestSeparateSession();
+
     @Override
     public void close() throws Exception {
-        executorServiceForLoopingListener.shutdownNow();
+
     }
 }

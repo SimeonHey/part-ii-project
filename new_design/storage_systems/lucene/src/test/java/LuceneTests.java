@@ -35,12 +35,12 @@ public class LuceneTests {
 
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(alwaysThere, alwaysThereAddress));
 
-        SnapshotHolder<IndexReader> snapshotReader2 = luceneSnapshottedWrapper.getDefaultSnapshot(); // Reader 2 won't
+        IndexReader snapshotReader2 = luceneSnapshottedWrapper.getDefaultSnapshot(); // Reader 2 won't
         // see subsequent updates
 
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(inReader1, inReader1Address));
 
-        SnapshotHolder<IndexReader> snapshotReader = luceneSnapshottedWrapper.getDefaultSnapshot(); // Reader 1 won't
+        IndexReader snapshotReader = luceneSnapshottedWrapper.getDefaultSnapshot(); // Reader 1 won't
         // see subsequent updates
 
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(inNone, inNoneAddress));

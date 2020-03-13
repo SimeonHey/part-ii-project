@@ -22,7 +22,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
     }
 
     @Override
-    public ResponseMessageDetails getMessageDetails(SnapshotHolder<Connection> snapshotHolder,
+    public ResponseMessageDetails getMessageDetails(Connection snapshot,
                                                     RequestMessageDetails requestMessageDetails) {
         LOGGER.info("Psql has to get details for message " + requestMessageDetails.getMessageUUID());
 
@@ -30,8 +30,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
             String statement = String.format("SELECT * FROM messages WHERE uuid = %d",
                 requestMessageDetails.getMessageUUID());
 
-            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, snapshotHolder.getSnapshot())) {
-
+            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, snapshot)) {
                 boolean hasMore = resultSet.next();
                 if (!hasMore) {
                     return new ResponseMessageDetails(null, requestMessageDetails.getMessageUUID());
@@ -49,14 +48,14 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
     }
 
     @Override
-    public ResponseAllMessages getAllMessages(SnapshotHolder<Connection> snapshotHolder,
+    public ResponseAllMessages getAllMessages(Connection snapshot,
                                               RequestAllMessages requestAllMessages) {
         LOGGER.info("Psql has to get ALL messages");
         ResponseAllMessages responseAllMessages = new ResponseAllMessages();
 
         try {
             String statement = "SELECT * FROM messages";
-            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, snapshotHolder.getSnapshot())) {
+            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, snapshot)) {
 
                 while (resultSet.next()) {
                     responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
@@ -74,7 +73,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
     }
 
     @Override
-    public ResponseSearchMessage searchMessage(SnapshotHolder<Connection> snapshotHolder,
+    public ResponseSearchMessage searchMessage(Connection snapshot,
                                                RequestSearchMessage requestSearchMessage) {
         throw new RuntimeException("PSQL doesn't have search functionality implemented");
     }
@@ -102,11 +101,11 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
         }
     }
 
-    public SnapshotHolder<Connection> getDefaultSnapshot() {
-        return new SnapshotHolder<>(sequentialConnection);
+    public Connection getDefaultSnapshot() {
+        return sequentialConnection;
     }
 
-    public SnapshotHolder<Connection> getConcurrentSnapshot() {
+    public Connection getConcurrentSnapshot() {
         Connection connection = SqlUtils.defaultConnection();
 
         try {
@@ -127,7 +126,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
             throw new RuntimeException(e);
         }
 
-        return new SnapshotHolder<>(connection);
+        return connection;
     }
 
     @Override

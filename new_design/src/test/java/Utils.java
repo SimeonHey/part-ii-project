@@ -12,19 +12,21 @@ class Utils {
     private static Trinity savedInstance;
 
     static class Trinity implements AutoCloseable{
-        public final JointStorageSystem<Connection> psqlSdRequestNoSession;
-        public final JointStorageSystem<IndexReader> luceneSdRequestNoSession;
+        public final JointStorageSystem<Connection> psqlSdRequestSeparateSession;
+        public final JointStorageSystem<IndexReader> luceneSdRequestSeparateSession;
         public final StorageAPI storageAPI;
 
-        Trinity(JointStorageSystem<Connection> psqlSdRequestNoSession, JointStorageSystem<IndexReader> luceneSdRequestNoSession,
+        Trinity(JointStorageSystem<Connection> psqlSdRequestSeparateSession, JointStorageSystem<IndexReader> luceneSdRequestSeparateSession,
                 StorageAPI storageAPI) {
-            this.psqlSdRequestNoSession = psqlSdRequestNoSession;
-            this.luceneSdRequestNoSession = luceneSdRequestNoSession;
+            this.psqlSdRequestSeparateSession = psqlSdRequestSeparateSession;
+            this.luceneSdRequestSeparateSession = luceneSdRequestSeparateSession;
             this.storageAPI = storageAPI;
         }
 
         @Override
         public void close() throws Exception {
+            LOGGER.info("STARTING SHUTDOWN PROCEDURE");
+
             this.storageAPI.deleteAllMessages(); // Produces a Kafka message
             this.storageAPI.waitForAllConfirmations();
             Thread.sleep(1000);
@@ -37,29 +39,30 @@ class Utils {
     }
 
     static class ManualTrinity extends Trinity {
-        public final ManualConsumer<Long, StupidStreamObject> manualConsumerLucene;
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerPsql;
+        public final ManualConsumer<Long, StupidStreamObject> manualConsumerLucene;
 
-        ManualTrinity(JointStorageSystem<Connection> psqlSdRequestNoSession,
-                      JointStorageSystem<IndexReader> luceneSdRequestNoSession,
+        ManualTrinity(JointStorageSystem<Connection> psqlSdRequestSeparateSession,
+                      JointStorageSystem<IndexReader> luceneSdRequestSeparateSession,
                       StorageAPI storageAPI,
-                      ManualConsumer<Long, StupidStreamObject> manualConsumerLucene,
-                      ManualConsumer<Long, StupidStreamObject> manualConsumerPsql) {
-            super(psqlSdRequestNoSession, luceneSdRequestNoSession, storageAPI);
-            this.manualConsumerLucene = manualConsumerLucene;
+                      ManualConsumer<Long, StupidStreamObject> manualConsumerPsql,
+                      ManualConsumer<Long, StupidStreamObject> manualConsumerLucene) {
+            super(psqlSdRequestSeparateSession, luceneSdRequestSeparateSession, storageAPI);
             this.manualConsumerPsql = manualConsumerPsql;
-        }
-
-        public int progressLucene() {
-            return manualConsumerLucene.consumeAvailableRecords();
+            this.manualConsumerLucene = manualConsumerLucene;
         }
 
         public int progressPsql() {
             return manualConsumerPsql.consumeAvailableRecords();
         }
 
+        public int progressLucene() {
+            return manualConsumerLucene.consumeAvailableRecords();
+        }
+
         @Override
         public void close() throws Exception {
+            LOGGER.info("STARTING SHUTDOWN PROCEDURE");
             /*this.storageAPI.deleteAllMessages();
 
             this.progressLucene();
@@ -71,8 +74,8 @@ class Utils {
             this.manualConsumerLucene.close();
 
             this.storageAPI.close();
-            this.psqlSdRequestNoSession.close();
-            this.luceneSdRequestNoSession.close();
+            this.psqlSdRequestSeparateSession.close();
+            this.luceneSdRequestSeparateSession.close();
         }
     }
 
@@ -82,20 +85,16 @@ class Utils {
             return savedInstance;
         }
 
-        JointStorageSystem<Connection> psqlConcurrentSnapshots =
-            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).sdRequestNoSession();
+        var psqlFactory = new PsqlStorageSystemsFactory(LoopingConsumer.fresh("psql"));
+        JointStorageSystem<Connection> psqlConcurrentSnapshots = psqlFactory.sdRequestSeparateSession();
+        psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
-        JointStorageSystem<IndexReader> luceneStorageSystem =
-            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).sdRequestNoSession();
+        var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene"));
+        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.sdRequestSeparateSession();
+        luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultValues();
         StorageAPI storageAPI = StorageAPIUtils.initFromArgs(storageAPIInitArgs);
-
-        /*loopingConsumerPsql.moveAllToLatest();
-        loopingConsumerLucene.moveAllToLatest();
-
-        new Thread(loopingConsumerPsql::listenBlockingly).start();
-        new Thread(loopingConsumerLucene::listenBlockingly).start();*/
 
         Thread.sleep(1000);
 
@@ -104,9 +103,6 @@ class Utils {
     }
 
     static ManualTrinity manualConsumerInitialization(int readerThreads) throws IOException {
-        if (5 == 5 ) {
-            throw new RuntimeException("No.");
-        }
         /*if (savedInstanceManual != null) {
             return savedInstanceManual;
         }*/
@@ -120,16 +116,13 @@ class Utils {
             Constants.PSQL_LISTEN_PORT_ALT,
             readerThreads);
 
-        JointStorageSystem<Connection> psqlConcurrentSnapshots =
-            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).sdRequestNoSession();
-        ManualConsumer<Long, StupidStreamObject> manualConsumerPsql =
-            new ManualConsumer<>(new DummyConsumer("PSQL"));
+        var psqlFactory = new PsqlStorageSystemsFactory(
+            new LoopingConsumer<>(new DummyConsumer("psql")));
+        JointStorageSystem<Connection> psqlStorageSystem = psqlFactory.sdRequestSeparateSession();
 
-        JointStorageSystem<IndexReader> luceneStorageSystem =
-            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).sdRequestNoSession();
-        ManualConsumer<Long, StupidStreamObject> manualConsumerLucene =
-            new ManualConsumer<>(new DummyConsumer("Lucene"));
-//        manualConsumerLucene.subscribe(luceneStorageSystem);
+        var luceneFactory = new LuceneStorageSystemFactory(
+            new LoopingConsumer<>(new DummyConsumer("lucene")));
+        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.sdRequestSeparateSession();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(
             Constants.KAFKA_ADDRESS,
@@ -137,18 +130,15 @@ class Utils {
             Constants.STORAGEAPI_PORT_ALT);
         StorageAPI storageAPI = StorageAPIUtils.initFromArgsWithDummyKafka(storageAPIInitArgs);
 
-        manualConsumerPsql.moveAllToLatest();
-        manualConsumerLucene.moveAllToLatest();
-
-        savedInstanceManual = new ManualTrinity(psqlConcurrentSnapshots, luceneStorageSystem, storageAPI,
-            manualConsumerLucene, manualConsumerPsql);
+        savedInstanceManual = new ManualTrinity(psqlStorageSystem, luceneStorageSystem, storageAPI,
+            psqlFactory.getManualConsumer(), luceneFactory.getManualConsumer());
 
         return savedInstanceManual;
     }
 
     static void letThatSinkIn(StorageAPI storageAPI, Runnable r) throws InterruptedException {
         r.run();
-        // storageAPI.waitForAllConfirmations();
+        storageAPI.waitForAllConfirmations();
     }
 
     static void letThatSinkInManually(ManualTrinity manualTrinity, Runnable r) {

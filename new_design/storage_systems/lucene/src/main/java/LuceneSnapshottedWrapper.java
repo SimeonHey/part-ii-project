@@ -89,13 +89,13 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
 
     // Read requests
     @Override
-    public ResponseSearchMessage searchMessage(SnapshotHolder<IndexReader> snapshotHolder,
+    public ResponseSearchMessage searchMessage(IndexReader snapshot,
                                                RequestSearchMessage searchMessage) {
         LOGGER.info("Searching in a previous snapshot for search text" + searchMessage.getSearchText());
 
         try (Analyzer analyzer = new StandardAnalyzer()) {
             // change the analyzer if you want different tokenization or filters
-            IndexSearcher indexSearcher = new IndexSearcher(snapshotHolder.getSnapshot());
+            IndexSearcher indexSearcher = new IndexSearcher(snapshot);
 
             QueryParser queryParser = new QueryParser(FIELD_MESSAGE, analyzer);
             String escaped = QueryParser.escape(searchMessage.getSearchText());
@@ -125,19 +125,19 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
     }
 
     @Override
-    public ResponseMessageDetails getMessageDetails(SnapshotHolder<IndexReader> snapshotHolder, RequestMessageDetails requestMessageDetails) {
+    public ResponseMessageDetails getMessageDetails(IndexReader snapshot, RequestMessageDetails requestMessageDetails) {
         throw new RuntimeException("Lucene doesn't have message details functionality implemented");
     }
 
     @Override
-    public ResponseAllMessages getAllMessages(SnapshotHolder<IndexReader> snapshotHolder, RequestAllMessages requestAllMessages) {
+    public ResponseAllMessages getAllMessages(IndexReader snapshot, RequestAllMessages requestAllMessages) {
         throw new RuntimeException("Lucene doesn't have get all messages functionality implemented");
     }
 
     @Override
-    public SnapshotHolder<IndexReader> getDefaultSnapshot() {
+    public IndexReader getDefaultSnapshot() {
         try {
-            return new SnapshotHolder<>(DirectoryReader.open(FSDirectory.open(indexPath)));
+            return DirectoryReader.open(FSDirectory.open(indexPath));
         } catch (IOException e) {
             LOGGER.warning("Error when trying to open a new snapshot reader: " + e);
             throw new RuntimeException(e);
@@ -145,7 +145,7 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
     }
 
     @Override
-    public SnapshotHolder<IndexReader> getConcurrentSnapshot() {
+    public IndexReader getConcurrentSnapshot() {
         return getDefaultSnapshot();
     }
 

@@ -2,6 +2,9 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import static junit.framework.TestCase.assertEquals;
@@ -144,7 +147,6 @@ public class FullSystemTest {
         }
     }
 
-    /*
     @Test
     public void searchAndDetailsSnapshotIsolated() throws Exception {
         try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization(2)) {
@@ -152,8 +154,8 @@ public class FullSystemTest {
 
             StorageAPI storageAPI = manualTrinity.storageAPI;
             // Consume the NOP operation and make sure that they can communicate through Kafka
-//            assertEquals(1, manualTrinity.progressLucene());
-//            assertEquals(1, manualTrinity.progressPsql());
+            assertEquals(1, manualTrinity.progressLucene());
+            assertEquals(1, manualTrinity.progressPsql());
 
             Message simeonHey = new Message("Simeon", "Hey");
 
@@ -196,8 +198,8 @@ public class FullSystemTest {
     public void aLotOfSD() throws Exception {
         try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization(1)) {
 
-            int messagesToPost = 5; //50;
-            int messagesToSearch = 30; //300;
+            int messagesToPost = 100;
+            int messagesToSearch = 500;
 
             // Post messages
             for (int i=1; i<=messagesToPost; i++) {
@@ -224,5 +226,5 @@ public class FullSystemTest {
                 assertEquals(targetText, actualMessage.getMessageText());
             }
         }
-    }*/
+    }
 }
