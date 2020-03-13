@@ -12,14 +12,14 @@ class Utils {
     private static Trinity savedInstance;
 
     static class Trinity implements AutoCloseable{
-        public final JointStorageSystem<Connection> psqlSerReads;
-        public final JointStorageSystem<IndexReader> luceneSerReads;
+        public final JointStorageSystem<Connection> psqlSdRequestNoSession;
+        public final JointStorageSystem<IndexReader> luceneSdRequestNoSession;
         public final StorageAPI storageAPI;
 
-        Trinity(JointStorageSystem<Connection> psqlSerReads, JointStorageSystem<IndexReader> luceneSerReads,
+        Trinity(JointStorageSystem<Connection> psqlSdRequestNoSession, JointStorageSystem<IndexReader> luceneSdRequestNoSession,
                 StorageAPI storageAPI) {
-            this.psqlSerReads = psqlSerReads;
-            this.luceneSerReads = luceneSerReads;
+            this.psqlSdRequestNoSession = psqlSdRequestNoSession;
+            this.luceneSdRequestNoSession = luceneSdRequestNoSession;
             this.storageAPI = storageAPI;
         }
 
@@ -40,12 +40,12 @@ class Utils {
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerLucene;
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerPsql;
 
-        ManualTrinity(JointStorageSystem<Connection> psqlSerReads,
-                      JointStorageSystem<IndexReader> luceneSerReads,
+        ManualTrinity(JointStorageSystem<Connection> psqlSdRequestNoSession,
+                      JointStorageSystem<IndexReader> luceneSdRequestNoSession,
                       StorageAPI storageAPI,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerLucene,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerPsql) {
-            super(psqlSerReads, luceneSerReads, storageAPI);
+            super(psqlSdRequestNoSession, luceneSdRequestNoSession, storageAPI);
             this.manualConsumerLucene = manualConsumerLucene;
             this.manualConsumerPsql = manualConsumerPsql;
         }
@@ -71,8 +71,8 @@ class Utils {
             this.manualConsumerLucene.close();
 
             this.storageAPI.close();
-            this.psqlSerReads.close();
-            this.luceneSerReads.close();
+            this.psqlSdRequestNoSession.close();
+            this.luceneSdRequestNoSession.close();
         }
     }
 
@@ -83,10 +83,10 @@ class Utils {
         }
 
         JointStorageSystem<Connection> psqlConcurrentSnapshots =
-            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).serReads();
+            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).sdRequestNoSession();
 
         JointStorageSystem<IndexReader> luceneStorageSystem =
-            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).serReads();
+            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).sdRequestNoSession();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultValues();
         StorageAPI storageAPI = StorageAPIUtils.initFromArgs(storageAPIInitArgs);
@@ -121,12 +121,12 @@ class Utils {
             readerThreads);
 
         JointStorageSystem<Connection> psqlConcurrentSnapshots =
-            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).serReads();
+            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).sdRequestNoSession();
         ManualConsumer<Long, StupidStreamObject> manualConsumerPsql =
             new ManualConsumer<>(new DummyConsumer("PSQL"));
 
         JointStorageSystem<IndexReader> luceneStorageSystem =
-            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).serReads();
+            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).sdRequestNoSession();
         ManualConsumer<Long, StupidStreamObject> manualConsumerLucene =
             new ManualConsumer<>(new DummyConsumer("Lucene"));
 //        manualConsumerLucene.subscribe(luceneStorageSystem);

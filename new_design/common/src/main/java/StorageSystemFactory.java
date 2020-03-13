@@ -32,6 +32,8 @@ public abstract class StorageSystemFactory<T extends AutoCloseable> implements A
 
     abstract JointStorageSystem<T> serReads();
 
+    abstract JointStorageSystem<T> sdRequestNoSession();
+
     @Override
     public void close() throws Exception {
         executorServiceForLoopingListener.shutdownNow();

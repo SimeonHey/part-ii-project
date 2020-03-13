@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class FullSystemTest {
@@ -106,13 +107,13 @@ public class FullSystemTest {
         }
     }
 
-    /*
+
     @Test
     public void searchAndDetailsNoOccurrences() throws Exception {
         try (Utils.Trinity trinity = Utils.basicInitialization()) {
             StorageAPI storageAPI = trinity.storageAPI;
 
-            Utils.letThatSinkIn(() -> {
+            Utils.letThatSinkIn(storageAPI, () -> {
                 storageAPI.postMessage(new Message("Simeon", "Hey"));
                 storageAPI.postMessage(new Message("Simeon", "What's up"));
             });
@@ -131,7 +132,7 @@ public class FullSystemTest {
 
             Message simeonHey = new Message("Simeon", "Hey");
 
-            Utils.letThatSinkIn(() -> {
+            Utils.letThatSinkIn(storageAPI, () -> {
                 storageAPI.postMessage(simeonHey);
                 storageAPI.postMessage(new Message("Simeon", "What's up"));
             });
@@ -143,6 +144,7 @@ public class FullSystemTest {
         }
     }
 
+    /*
     @Test
     public void searchAndDetailsSnapshotIsolated() throws Exception {
         try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization(2)) {

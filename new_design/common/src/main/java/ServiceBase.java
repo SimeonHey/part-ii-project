@@ -15,5 +15,6 @@ public abstract class ServiceBase<Snap extends AutoCloseable> {
 
     abstract void handleRequest(StupidStreamObject request,
                                 WrappedSnapshottedStorageSystem<Snap> wrapper,
-                                Consumer<MultithreadedResponse> responseCallback);
+                                Consumer<MultithreadedResponse> responseCallback,
+                                JointStorageSystem<Snap> self);
 }

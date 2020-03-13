@@ -156,6 +156,12 @@ public class StorageAPI implements AutoCloseable {
         );
     }
 
+    public ResponseMessageDetails searchAndDetails(String searchText) {
+        return kafkaRequestResponse(//Constants.LUCENE_REQUEST_ADDRESS,
+            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
+            ResponseMessageDetails.class);
+    }
+
     // Writes
     public long postMessage(Message message) {
         LOGGER.info("Posting message " + message);

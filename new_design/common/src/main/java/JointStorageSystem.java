@@ -76,11 +76,11 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
                                    Consumer<MultithreadedResponse> responseCallback) {
         if (serviceHandler.handleAsyncWithSnapshot) {
             new Thread(() ->
-                serviceHandler.handleRequest(sso, wrapper, responseCallback)
+                serviceHandler.handleRequest(sso, wrapper, responseCallback, this)
             ).start();
         } else {
             LOGGER.info(name + " calls the handler for request of type " + sso.getObjectType());
-            serviceHandler.handleRequest(sso, wrapper, responseCallback);
+            serviceHandler.handleRequest(sso, wrapper, responseCallback, this);
         }
     }
 
@@ -102,8 +102,14 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 //        throw new RuntimeException("No relevant handler for object type " + sso.getObjectType());
     }
 
-    private <T> T waitForContact(long channel, Class<T> classOfResponse) throws InterruptedException {
-        String serialized = multithreadedCommunication.consumeAndDestroy(channel);
+    protected <T> T waitForContact(long channel, Class<T> classOfResponse) {
+        String serialized;
+        try {
+            serialized = multithreadedCommunication.consumeAndDestroy(channel);
+        } catch (InterruptedException e) {
+            LOGGER.warning("Error in " + name + " while waiting on channel " + channel + " for external contact");
+            throw new RuntimeException(e);
+        }
         return Constants.gson.fromJson(serialized, classOfResponse);
     }
 

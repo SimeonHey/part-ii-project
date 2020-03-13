@@ -23,9 +23,9 @@ public class Constants {
     public static final String LUCENE_DEFAULT_INDEX_DEST = "./luceneindex/index_output";
     public static final String LUCENE_TEST_INDEX_DEST  = "./luceneindex/text_index_output";
     public static final String LUCENE_PSQL_CONTACT_ENDPOINT = "http://localhost:" + PSQL_LISTEN_PORT +
-        "/psql/luceneContact";
+        "/psql/contact";
     public static final String LUCENE_PSQL_CONTACT_ENDPOINT_ALT = "http://localhost:" + PSQL_LISTEN_PORT_ALT +
-        "/psql/luceneContact";
+        "/psql/contact";
     public static final int LUCENE_MAX_READERS = 50;
 
     public static final int STORAGEAPI_PORT = 8000;

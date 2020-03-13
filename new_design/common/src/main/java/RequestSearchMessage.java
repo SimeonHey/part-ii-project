@@ -7,13 +7,14 @@ public class RequestSearchMessage extends Addressable {
     private final String searchText;
 
     public static RequestSearchMessage fromStupidStreamObject(StupidStreamObject stupidStreamObject) {
-        if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.SEARCH_MESSAGES) {
+        // Either one of Search or S&D is fine
+        if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.SEARCH_MESSAGES &&
+            stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.SEARCH_AND_DETAILS) {
             LOGGER.warning("StupidStreamObject doesn't have the correct object type");
             throw new RuntimeException("Incorrect object type");
         }
 
         String searchText = stupidStreamObject.getProperty(KEY_SEARCH_TEXT);
-
         return new RequestSearchMessage(searchText, stupidStreamObject.getResponseAddress());
     }
 
