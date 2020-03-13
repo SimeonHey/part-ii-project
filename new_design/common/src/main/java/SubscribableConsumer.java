@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 public class SubscribableConsumer<K, V> {
@@ -12,12 +13,11 @@ public class SubscribableConsumer<K, V> {
 
     static final long DEFAULT_BLOCK_ON_POLL_MS = 10 * 1000; // TODO: Check
 
-    List<KafkaConsumerObserver<K, V>> subscribers;
+    List<KafkaConsumerObserver<K, V>> subscribers = new CopyOnWriteArrayList<>();
     protected Consumer<K, V> kafkaConsumer;
     private final long blockOnPollMs;
 
     SubscribableConsumer(Consumer<K, V> kafkaConsumer, long blockOnPollMs) {
-        this.subscribers = new ArrayList<>();
         this.kafkaConsumer = kafkaConsumer;
         this.blockOnPollMs = blockOnPollMs;
     }

@@ -1,4 +1,3 @@
-import com.google.gson.Gson;
 import org.apache.kafka.clients.producer.Producer;
 
 import java.io.IOException;
@@ -11,12 +10,11 @@ public class StorageAPI implements AutoCloseable {
     private static final String ENDPOINT_RESPONSE = "response";
     private static final String ENDPOINT_CONFIRMATION = "confirmation";
 
-    public final String ADDRESS_CONFIRMATION;
-    public final String ADDRESS_RESPONSE;
+    private final String ADDRESS_CONFIRMATION;
+    private final String ADDRESS_RESPONSE;
 
     private final Producer<Long, StupidStreamObject> producer;
     private final String transactionsTopic;
-    private final Gson gson;
 
     private final MultithreadedCommunication multithreadedCommunication;
     private final HttpStorageSystem httpStorageSystem;
@@ -25,11 +23,9 @@ public class StorageAPI implements AutoCloseable {
 
     private List<Long> confirmationChannelsList = new ArrayList<>(); // Keeps track of all writes' channel ids
 
-    StorageAPI(Gson gson,
-               Producer<Long, StupidStreamObject> producer,
+    StorageAPI(Producer<Long, StupidStreamObject> producer,
                HttpStorageSystem httpStorageSystem,
                String transactionsTopic) {
-        this.gson = gson;
         this.producer = producer;
         this.transactionsTopic = transactionsTopic;
         this.httpStorageSystem = httpStorageSystem;
@@ -48,7 +44,7 @@ public class StorageAPI implements AutoCloseable {
         LOGGER.info("Address response: " + ADDRESS_RESPONSE);
     }
 
-    private <T>T kafkaRequestResponse(StupidStreamObject request, Class<T> responseType) throws InterruptedException {
+    private <T>T kafkaRequestResponse(StupidStreamObject request, Class<T> responseType) {
         long offset = KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,
@@ -57,7 +53,13 @@ public class StorageAPI implements AutoCloseable {
         LOGGER.info("Waiting for response on channel with uuid " + offset);
 
         // Will block until a response is received
-        String serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
+        String serializedResponse;
+        try {
+            serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
+        } catch (InterruptedException e) {
+            LOGGER.warning("Error when waiting on channel " + offset + ": " + e);
+            throw new RuntimeException(e);
+        }
         return Constants.gson.fromJson(serializedResponse, responseType);
     }
 
@@ -136,19 +138,19 @@ public class StorageAPI implements AutoCloseable {
     }*/
 
     public ResponseSearchMessage searchMessage(String searchText) {
-        return httpRequestMultithreadedResponse(Constants.LUCENE_REQUEST_ADDRESS,
+        return kafkaRequestResponse(//Constants.LUCENE_REQUEST_ADDRESS,
             RequestSearchMessage.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
             ResponseSearchMessage.class);
     }
 
     public ResponseMessageDetails messageDetails(Long uuid) {
-        return httpRequestMultithreadedResponse(Constants.PSQL_REQUEST_ADDRESS,
+        return kafkaRequestResponse(//Constants.PSQL_REQUEST_ADDRESS,
             RequestMessageDetails.getStupidStreamObject(uuid, new Addressable(ADDRESS_RESPONSE)),
             ResponseMessageDetails.class);
     }
 
     public ResponseAllMessages allMessages() {
-        return httpRequestMultithreadedResponse(Constants.PSQL_REQUEST_ADDRESS,
+        return kafkaRequestResponse(//Constants.PSQL_REQUEST_ADDRESS,
             new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, new Addressable(ADDRESS_RESPONSE)),
             ResponseAllMessages.class
         );
@@ -208,12 +210,12 @@ public class StorageAPI implements AutoCloseable {
         return "StorageAPI{" +
             "producer=" + producer +
             ", transactionsTopic='" + transactionsTopic + '\'' +
-            ", gson=" + gson +
             '}';
     }
 
     @Override
     public void close() throws Exception {
+        this.waitForAllConfirmations();
         httpStorageSystem.close();
     }
 }

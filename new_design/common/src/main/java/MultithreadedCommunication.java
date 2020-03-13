@@ -30,7 +30,6 @@ public class MultithreadedCommunication {
             .get(uuid)
             .poll(Constants.STORAGE_SYSTEMS_POLL_TIMEOUT, Constants.STORAGE_SYSTEMS_POLL_UNIT);
 
-
         if (response == null) {
             throw new RuntimeException("Error: Timeout while waiting for a response on channel " + uuid);
         }

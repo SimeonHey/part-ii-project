@@ -12,14 +12,14 @@ class Utils {
     private static Trinity savedInstance;
 
     static class Trinity implements AutoCloseable{
-        public final JointStorageSystem<Connection> psqlSimpleOlep;
-        public final JointStorageSystem<IndexReader> luceneSimpleOlep;
+        public final JointStorageSystem<Connection> psqlSerReads;
+        public final JointStorageSystem<IndexReader> luceneSerReads;
         public final StorageAPI storageAPI;
 
-        Trinity(JointStorageSystem<Connection> psqlSimpleOlep, JointStorageSystem<IndexReader> luceneSimpleOlep,
+        Trinity(JointStorageSystem<Connection> psqlSerReads, JointStorageSystem<IndexReader> luceneSerReads,
                 StorageAPI storageAPI) {
-            this.psqlSimpleOlep = psqlSimpleOlep;
-            this.luceneSimpleOlep = luceneSimpleOlep;
+            this.psqlSerReads = psqlSerReads;
+            this.luceneSerReads = luceneSerReads;
             this.storageAPI = storageAPI;
         }
 
@@ -40,12 +40,12 @@ class Utils {
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerLucene;
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerPsql;
 
-        ManualTrinity(JointStorageSystem<Connection> psqlSimpleOlep,
-                      JointStorageSystem<IndexReader> luceneSimpleOlep,
+        ManualTrinity(JointStorageSystem<Connection> psqlSerReads,
+                      JointStorageSystem<IndexReader> luceneSerReads,
                       StorageAPI storageAPI,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerLucene,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerPsql) {
-            super(psqlSimpleOlep, luceneSimpleOlep, storageAPI);
+            super(psqlSerReads, luceneSerReads, storageAPI);
             this.manualConsumerLucene = manualConsumerLucene;
             this.manualConsumerPsql = manualConsumerPsql;
         }
@@ -71,8 +71,8 @@ class Utils {
             this.manualConsumerLucene.close();
 
             this.storageAPI.close();
-            this.psqlSimpleOlep.close();
-            this.luceneSimpleOlep.close();
+            this.psqlSerReads.close();
+            this.luceneSerReads.close();
         }
     }
 
@@ -83,10 +83,10 @@ class Utils {
         }
 
         JointStorageSystem<Connection> psqlConcurrentSnapshots =
-            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).simpleOlep();
+            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).serReads();
 
         JointStorageSystem<IndexReader> luceneStorageSystem =
-            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).simpleOlep();
+            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).serReads();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultValues();
         StorageAPI storageAPI = StorageAPIUtils.initFromArgs(storageAPIInitArgs);
@@ -121,12 +121,12 @@ class Utils {
             readerThreads);
 
         JointStorageSystem<Connection> psqlConcurrentSnapshots =
-            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).simpleOlep();
+            new PsqlStorageSystemsFactory(Executors.newFixedThreadPool(1)).serReads();
         ManualConsumer<Long, StupidStreamObject> manualConsumerPsql =
             new ManualConsumer<>(new DummyConsumer("PSQL"));
 
         JointStorageSystem<IndexReader> luceneStorageSystem =
-            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).simpleOlep();
+            new LuceneStorageSystemFactory(Executors.newFixedThreadPool(1)).serReads();
         ManualConsumer<Long, StupidStreamObject> manualConsumerLucene =
             new ManualConsumer<>(new DummyConsumer("Lucene"));
 //        manualConsumerLucene.subscribe(luceneStorageSystem);
@@ -148,7 +148,7 @@ class Utils {
 
     static void letThatSinkIn(StorageAPI storageAPI, Runnable r) throws InterruptedException {
         r.run();
-        storageAPI.waitForAllConfirmations();
+        // storageAPI.waitForAllConfirmations();
     }
 
     static void letThatSinkInManually(ManualTrinity manualTrinity, Runnable r) {

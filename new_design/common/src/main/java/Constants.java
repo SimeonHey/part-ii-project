@@ -28,10 +28,10 @@ public class Constants {
         "/psql/luceneContact";
     public static final int LUCENE_MAX_READERS = 50;
 
-    public static final String STORAGEAPI_PORT = "8000";
-    public static final String STORAGEAPI_PORT_ALT = "8020";
-    public static final String STORAGEAPI_ADDRESS = String.format("http://localhost:%s/server", STORAGEAPI_PORT);
-    public static final String STORAGEAPI_ADDRESS_ALT = String.format("http://localhost:%s/server",
+    public static final int STORAGEAPI_PORT = 8000;
+    public static final int STORAGEAPI_PORT_ALT = 8020;
+    public static final String STORAGEAPI_ADDRESS = String.format("http://localhost:%d/server", STORAGEAPI_PORT);
+    public static final String STORAGEAPI_ADDRESS_ALT = String.format("http://localhost:%d/server",
         STORAGEAPI_PORT_ALT);
 
     public static final String PROJECT_NAME = "new_design";

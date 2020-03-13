@@ -1,21 +1,22 @@
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
-public abstract class StorageSystemFactory<T extends AutoCloseable> {
+public abstract class StorageSystemFactory<T extends AutoCloseable> implements AutoCloseable {
     final LoopingConsumer<Long, StupidStreamObject> loopingKafka;
     final HttpStorageSystem httpStorageSystem;
-    final ExecutorService executorService;
+    final ExecutorService executorServiceForLoopingListener;
     final WrappedSnapshottedStorageSystem<T> snapshottedWrapper;
 
     private void initProcedure() {
         this.snapshottedWrapper.deleteAllMessages();
+        this.executorServiceForLoopingListener.submit(this.loopingKafka::listenBlockingly);
     }
 
     public StorageSystemFactory(String name,
-                                ExecutorService executorService,
+                                ExecutorService executorServiceForLoopingListener,
                                 WrappedSnapshottedStorageSystem<T> snapshottedWrapper,
                                 int httpListenPort) throws IOException {
-        this.executorService = executorService;
+        this.executorServiceForLoopingListener = executorServiceForLoopingListener;
         this.snapshottedWrapper = snapshottedWrapper;
 
         this.loopingKafka =
@@ -27,5 +28,12 @@ public abstract class StorageSystemFactory<T extends AutoCloseable> {
         initProcedure();
     }
 
-    abstract JointStorageSystem<T> simpleOlep() throws Exception;
+    abstract JointStorageSystem<T> simpleOlep();
+
+    abstract JointStorageSystem<T> serReads();
+
+    @Override
+    public void close() throws Exception {
+        executorServiceForLoopingListener.shutdownNow();
+    }
 }

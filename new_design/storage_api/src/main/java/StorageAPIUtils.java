@@ -1,4 +1,3 @@
-import com.google.gson.Gson;
 import org.apache.kafka.clients.producer.Producer;
 
 import java.io.IOException;
@@ -10,14 +9,14 @@ class StorageAPIUtils {
     static class StorageAPIInitArgs {
         public String kafkaAddress;
         public String transactionsTopic;
-        public String listeningPort;
+        public int listeningPort;
 
         private StorageAPIInitArgs () {
 
         }
 
         public static StorageAPIInitArgs customValues(String argKafkaAddress, String argTransactionsTopic,
-                                          String argListeningPort) {
+                                          int argListeningPort) {
             StorageAPIInitArgs ret = new StorageAPIInitArgs();
 
             ret.kafkaAddress = argKafkaAddress;
@@ -45,10 +44,10 @@ class StorageAPIUtils {
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);
         HttpStorageSystem httpStorageSystem = new HttpStorageSystem("server",
-            HttpUtils.initHttpServer(Integer.parseInt(initArgs.listeningPort)));
+            HttpUtils.initHttpServer(initArgs.listeningPort));
 
         StorageAPI ret =
-            new StorageAPI(new Gson(), producer, httpStorageSystem, initArgs.transactionsTopic);
+            new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic);
 
         LOGGER.info("Successfully initialized storage api " + ret);
         return ret;
@@ -66,10 +65,10 @@ class StorageAPIUtils {
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);
         HttpStorageSystem httpStorageSystem = new HttpStorageSystem("server",
-            HttpUtils.initHttpServer(Integer.parseInt(initArgs.listeningPort)));
+            HttpUtils.initHttpServer(initArgs.listeningPort));
 
         StorageAPI ret =
-            new StorageAPI(new Gson(), producer, httpStorageSystem, initArgs.transactionsTopic);
+            new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic);
 
         LOGGER.info("Successfully initialized storage api " + ret);
         return ret;
