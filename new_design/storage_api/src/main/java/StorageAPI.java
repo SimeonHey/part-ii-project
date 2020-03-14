@@ -24,6 +24,8 @@ public class StorageAPI implements AutoCloseable {
 
     private List<Long> confirmationChannelsList = new ArrayList<>(); // Keeps track of all writes' channel ids
 
+    private List<ConfirmationListener> confirmationListeners = new ArrayList<>();
+
     StorageAPI(Producer<Long, StupidStreamObject> producer,
                HttpStorageSystem httpStorageSystem,
                String transactionsTopic) {
@@ -142,10 +144,17 @@ public class StorageAPI implements AutoCloseable {
         return ("Received response " + serializedResponse).getBytes();
     }
 
+    public void registerConfirmationListener(ConfirmationListener confirmationListener) {
+        confirmationListeners.add(confirmationListener);
+    }
+
     private byte[] receiveConfirmation(String serializedResponse) {
         LOGGER.info(String.format("Received confirmation: %s", serializedResponse));
         try {
-            multithreadedCommunication.registerResponse(serializedResponse);
+            ConfirmationResponse confirmationResponse =
+                multithreadedCommunication.registerResponse(serializedResponse, ConfirmationResponse.class);
+            // Notify all listeners
+            confirmationListeners.forEach(listener -> listener.receivedConfirmation(confirmationResponse));
         } catch (Exception e) {
             LOGGER.warning("Error while trying to register a confirmation in the StorageAPI: " + e);
             throw new RuntimeException(e);

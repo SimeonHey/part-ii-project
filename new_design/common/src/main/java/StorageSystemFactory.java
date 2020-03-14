@@ -39,6 +39,8 @@ public abstract class StorageSystemFactory<T extends AutoCloseable> implements A
 
     abstract JointStorageSystem<T> sdRequestSeparateSession();
 
+    abstract JointStorageSystem<T> concurReads();
+
     @Override
     public void close() throws Exception {
 

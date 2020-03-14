@@ -23,6 +23,13 @@ public class MultithreadedCommunication {
         channels.get(response.getChannelUuid()).add(response.getSerializedResponse());
     }
 
+    public <T>T registerResponse(String serializedResponse, Class<T> typeOfResponse) {
+        MultithreadedResponse response = gson.fromJson(serializedResponse, MultithreadedResponse.class);
+        createChannelIfAbsent(response.getChannelUuid());
+        channels.get(response.getChannelUuid()).add(response.getSerializedResponse());
+        return gson.fromJson(response.getSerializedResponse(), typeOfResponse);
+    }
+
     public String consume(long uuid) throws InterruptedException {
         createChannelIfAbsent(uuid);
 

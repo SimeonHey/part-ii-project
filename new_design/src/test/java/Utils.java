@@ -12,14 +12,14 @@ class Utils {
     private static Trinity savedInstance;
 
     static class Trinity implements AutoCloseable{
-        public final JointStorageSystem<Connection> psqlSdRequestSeparateSession;
-        public final JointStorageSystem<IndexReader> luceneSdRequestSeparateSession;
+        public final JointStorageSystem<Connection> psqlConcurReads;
+        public final JointStorageSystem<IndexReader> luceneConcurReads;
         public final StorageAPI storageAPI;
 
-        Trinity(JointStorageSystem<Connection> psqlSdRequestSeparateSession, JointStorageSystem<IndexReader> luceneSdRequestSeparateSession,
+        Trinity(JointStorageSystem<Connection> psqlConcurReads, JointStorageSystem<IndexReader> luceneConcurReads,
                 StorageAPI storageAPI) {
-            this.psqlSdRequestSeparateSession = psqlSdRequestSeparateSession;
-            this.luceneSdRequestSeparateSession = luceneSdRequestSeparateSession;
+            this.psqlConcurReads = psqlConcurReads;
+            this.luceneConcurReads = luceneConcurReads;
             this.storageAPI = storageAPI;
         }
 
@@ -42,12 +42,12 @@ class Utils {
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerPsql;
         public final ManualConsumer<Long, StupidStreamObject> manualConsumerLucene;
 
-        ManualTrinity(JointStorageSystem<Connection> psqlSdRequestSeparateSession,
-                      JointStorageSystem<IndexReader> luceneSdRequestSeparateSession,
+        ManualTrinity(JointStorageSystem<Connection> psqlConcurReads,
+                      JointStorageSystem<IndexReader> luceneConcurReads,
                       StorageAPI storageAPI,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerPsql,
                       ManualConsumer<Long, StupidStreamObject> manualConsumerLucene) {
-            super(psqlSdRequestSeparateSession, luceneSdRequestSeparateSession, storageAPI);
+            super(psqlConcurReads, luceneConcurReads, storageAPI);
             this.manualConsumerPsql = manualConsumerPsql;
             this.manualConsumerLucene = manualConsumerLucene;
         }
@@ -74,8 +74,8 @@ class Utils {
             this.manualConsumerLucene.close();
 
             this.storageAPI.close();
-            this.psqlSdRequestSeparateSession.close();
-            this.luceneSdRequestSeparateSession.close();
+            this.psqlConcurReads.close();
+            this.luceneConcurReads.close();
         }
     }
 
@@ -86,11 +86,11 @@ class Utils {
         }
 
         var psqlFactory = new PsqlStorageSystemsFactory(LoopingConsumer.fresh("psql"));
-        JointStorageSystem<Connection> psqlConcurrentSnapshots = psqlFactory.sdRequestSeparateSession();
+        JointStorageSystem<Connection> psqlConcurrentSnapshots = psqlFactory.concurReads();
         psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
         var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene"));
-        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.sdRequestSeparateSession();
+        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.concurReads();
         luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultValues();
@@ -102,27 +102,18 @@ class Utils {
         return savedInstance;
     }
 
-    static ManualTrinity manualConsumerInitialization(int readerThreads) throws IOException {
+    static ManualTrinity manualConsumerInitialization() throws IOException {
         /*if (savedInstanceManual != null) {
             return savedInstanceManual;
         }*/
 
-        PsqlUtils.PsqlInitArgs psqlInitArgs = PsqlUtils.PsqlInitArgs.customValues(
-            Constants.PSQL_ADDRESS,
-            Constants.PSQL_USER_PASS,
-            Constants.KAFKA_ADDRESS,
-            Constants.KAFKA_TOPIC,
-            Constants.STORAGEAPI_ADDRESS_ALT,
-            Constants.PSQL_LISTEN_PORT_ALT,
-            readerThreads);
-
         var psqlFactory = new PsqlStorageSystemsFactory(
             new LoopingConsumer<>(new DummyConsumer("psql")));
-        JointStorageSystem<Connection> psqlStorageSystem = psqlFactory.sdRequestSeparateSession();
+        JointStorageSystem<Connection> psqlStorageSystem = psqlFactory.concurReads();
 
         var luceneFactory = new LuceneStorageSystemFactory(
             new LoopingConsumer<>(new DummyConsumer("lucene")));
-        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.sdRequestSeparateSession();
+        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.concurReads();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(
             Constants.KAFKA_ADDRESS,

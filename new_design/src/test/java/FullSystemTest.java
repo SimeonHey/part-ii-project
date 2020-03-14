@@ -2,6 +2,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -149,7 +150,7 @@ public class FullSystemTest {
 
     @Test
     public void searchAndDetailsSnapshotIsolated() throws Exception {
-        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization(2)) {
+        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization()) {
             ExecutorService executorService = Executors.newFixedThreadPool(2);
 
             StorageAPI storageAPI = manualTrinity.storageAPI;
@@ -196,8 +197,7 @@ public class FullSystemTest {
 
     @Test
     public void aLotOfSD() throws Exception {
-        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization(1)) {
-
+        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization()) {
             int messagesToPost = 100;
             int messagesToSearch = 500;
 
@@ -224,6 +224,44 @@ public class FullSystemTest {
                 Message actualMessage =  futureDetails.get(i).get().getMessage();
 
                 assertEquals(targetText, actualMessage.getMessageText());
+            }
+        }
+    }
+
+    @Test
+    public void confirmationListenersWork() throws Exception {
+        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization()) {
+            int numRequests = 100;
+            ArrayBlockingQueue<ConfirmationResponse> confirmationResponses =
+                new ArrayBlockingQueue<>(numRequests);
+            manualTrinity.storageAPI.registerConfirmationListener(confirmationResponse -> {
+                try {
+                    confirmationResponses.put(confirmationResponse);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+
+            for (int i=0; i<100; i++) {
+                manualTrinity.storageAPI.postMessage(new Message("Simeon", "love J Cole"));
+            }
+
+            manualTrinity.progressPsql();
+            assertEquals(numRequests, confirmationResponses.size());
+            while (confirmationResponses.size() > 0) {
+                ConfirmationResponse current = confirmationResponses.take();
+
+                assertTrue(current.getFromStorageSystem().startsWith("psql"));
+                assertEquals(StupidStreamObject.ObjectType.POST_MESSAGE, current.getObjectType());
+            }
+
+            manualTrinity.progressLucene();
+            assertEquals(numRequests, confirmationResponses.size());
+            while (confirmationResponses.size() > 0) {
+                ConfirmationResponse current = confirmationResponses.take();
+
+                assertTrue(current.getFromStorageSystem().startsWith("lucene"));
+                assertEquals(StupidStreamObject.ObjectType.POST_MESSAGE, current.getObjectType());
             }
         }
     }
