@@ -1,0 +1,26 @@
+plugins {
+    id 'java-library'
+    id 'application'
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.12'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.1.0'
+    testImplementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+
+    api group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
+
+    implementation group: 'org.apache.lucene', name: 'lucene-core', version: '8.3.0'
+    implementation group: 'org.apache.lucene', name: 'lucene-queryparser', version: '8.3.0'
+
+
+    api project(':new_design:common')
+    api project(':new_design:storage_systems:lucene')
+    api project(':new_design:storage_systems:psql')
+    api project(':new_design:storage_api')
+}
+
+test {
+    useJUnit()
+    maxHeapSize = '1G'
+}
