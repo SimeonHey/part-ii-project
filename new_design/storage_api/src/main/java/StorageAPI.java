@@ -169,18 +169,33 @@ public class StorageAPI implements AutoCloseable {
     }*/
 
     public ResponseSearchMessage searchMessage(String searchText) {
+        if (Constants.DRY_RUN) {
+            LOGGER.info("DRY RUN: Searching for messages with text: " + searchText);
+            return null;
+        }
+
         return kafkaRequestResponse(//Constants.LUCENE_REQUEST_ADDRESS,
             RequestSearchMessage.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
             ResponseSearchMessage.class);
     }
 
     public ResponseMessageDetails messageDetails(Long uuid) {
+        if (Constants.DRY_RUN) {
+            LOGGER.info("DRY RUN: Details for message with uuid: " + uuid);
+            return null;
+        }
+
         return kafkaRequestResponse(//Constants.PSQL_REQUEST_ADDRESS,
             RequestMessageDetails.getStupidStreamObject(uuid, new Addressable(ADDRESS_RESPONSE)),
             ResponseMessageDetails.class);
     }
 
     public ResponseAllMessages allMessages() {
+        if (Constants.DRY_RUN) {
+            LOGGER.info("DRY RUN: Getting all messages");
+            return null;
+        }
+
         return kafkaRequestResponse(//Constants.PSQL_REQUEST_ADDRESS,
             new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, new Addressable(ADDRESS_RESPONSE)),
             ResponseAllMessages.class
@@ -188,19 +203,34 @@ public class StorageAPI implements AutoCloseable {
     }
 
     public ResponseMessageDetails searchAndDetails(String searchText) {
+        if (Constants.DRY_RUN) {
+            LOGGER.info("DRY RUN: Searching AND details for messages with text " + searchText);
+            return null;
+        }
+
         return kafkaRequestResponse(//Constants.LUCENE_REQUEST_ADDRESS,
             RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
             ResponseMessageDetails.class);
     }
 
     public CompletableFuture<ResponseMessageDetails> searchAndDetailsFuture(String searchText) {
+        if (Constants.DRY_RUN) {
+            LOGGER.info("DRY RUN: Searching AND details for messages with text " + searchText);
+            return null;
+        }
+
         return kafkaRequestResponseFuture(//Constants.LUCENE_REQUEST_ADDRESS,
             RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
             ResponseMessageDetails.class);
     }
 
     // Writes
-    public long postMessage(Message message) {
+    public Long postMessage(Message message) {
+        if (Constants.DRY_RUN) {
+            LOGGER.info("DRY RUN: Posting message " + message);
+            return null;
+        }
+
         LOGGER.info("Posting message " + message);
         long curId = KafkaUtils.produceMessage(this.producer,
             this.transactionsTopic,
@@ -211,7 +241,12 @@ public class StorageAPI implements AutoCloseable {
         return curId;
     }
 
-    public long deleteAllMessages() {
+    public Long deleteAllMessages() {
+        if (Constants.DRY_RUN) {
+            LOGGER.info("DRY RUN: Deleting all messages");
+            return null;
+        }
+
         long curId = KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,

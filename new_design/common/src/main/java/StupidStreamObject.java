@@ -9,10 +9,10 @@ public class StupidStreamObject implements Serializable {
     public enum ObjectType {
         NOP,
         POST_MESSAGE,
-        SEARCH_MESSAGES,
         DELETE_ALL_MESSAGES,
-        GET_MESSAGE_DETAILS,
         GET_ALL_MESSAGES,
+        SEARCH_MESSAGES,
+        GET_MESSAGE_DETAILS,
         SEARCH_AND_DETAILS
     }
 

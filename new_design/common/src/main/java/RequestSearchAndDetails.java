@@ -31,6 +31,10 @@ public class RequestSearchAndDetails extends Addressable {
             .setProperty(KEY_SEARCH_TEXT, searchText);
     }
 
+    public StupidStreamObject toStupidStreamObject() {
+        return getStupidStreamObject(searchText, this);
+    }
+
     public String getSearchText() {
         return searchText;
     }

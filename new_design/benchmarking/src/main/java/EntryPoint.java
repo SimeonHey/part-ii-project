@@ -1,18 +1,35 @@
+import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricFilter;
+import com.codahale.metrics.graphite.Graphite;
+import com.codahale.metrics.graphite.GraphiteReporter;
+
+import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.LogManager;
 
 public class EntryPoint {
-    public static void main(String[] args) {
+    private static final Counter psqlConfirmationCounter =
+        Constants.METRIC_REGISTRY.counter("counter.confirmations.psql");
+    private static final Counter luceneConfirmationCounter =
+        Constants.METRIC_REGISTRY.counter("counter.confirmations.lucene");
 
+    private static final Meter psqlConfirmationMeter =
+        Constants.METRIC_REGISTRY.meter("meter.confirmations.psql");
+    private static final Meter luceneConfirmationMeter =
+        Constants.METRIC_REGISTRY.meter("meter.confirmations.lucene");
+
+    private static void heyBabe(LoadFaker loadFaker) {
         String selfAddress = "192.168.1.12";
+        String psqlAddress = "http://localhost:1234"; //
 
-        var producer = KafkaUtils.createProducer(Constants.TEST_KAFKA_ADDRESS, "JUST TESTING");
-        KafkaUtils.produceMessage(producer, Constants.KAFKA_TOPIC,
-            RequestNOP.toStupidStreamObject(Constants.NO_RESPONSE));
-
-        try (var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene",
-            Constants.TEST_KAFKA_ADDRESS),
-                 "http://192.168.1.8:1234/psql/contact");
-//             var ignored = psqlFactory.serReads();
+        try (var psqlFactory = new PsqlStorageSystemsFactory(LoopingConsumer.fresh("psql",
+            Constants.TEST_KAFKA_ADDRESS), 1234);
+            var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene",
+            Constants.TEST_KAFKA_ADDRESS), psqlAddress + "/psql/contact");
+             var ignored = psqlFactory.concurReads();
              var ignored1 = luceneFactory.concurReads();
              var storageApi = new StorageAPI(
                  KafkaUtils.createProducer(Constants.TEST_KAFKA_ADDRESS, "StorageApi"),
@@ -21,21 +38,59 @@ public class EntryPoint {
                      HttpUtils.initHttpServer(Constants.STORAGEAPI_PORT)),
                  Constants.KAFKA_TOPIC, selfAddress)) {
 
-//            psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
+            storageApi.registerConfirmationListener((confirmationResponse -> {
+                if (confirmationResponse.getFromStorageSystem().startsWith("psql")) {
+                    psqlConfirmationCounter.inc();
+                    psqlConfirmationMeter.mark();
+                } else {
+                    luceneConfirmationCounter.inc();
+                    luceneConfirmationMeter.mark();
+                }
+            }));
+
+            psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
             luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
-            int cnt = 0;
-            while (true) {
-                for (int i = 0; i < 200; i++, cnt++) {
-                    storageApi.postMessage(new Message(String.valueOf(cnt), String.valueOf(cnt)));
-                }
-
-                System.out.println("Waiting for THE QUERY");
-                System.out.println(storageApi.searchAndDetails(String.valueOf(cnt-1)));
-            }
+            fakeWithLoad(loadFaker, storageApi);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void sendNOP() {
+        var producer = KafkaUtils.createProducer(Constants.TEST_KAFKA_ADDRESS, "JUST TESTING");
+        KafkaUtils.produceMessage(producer, Constants.KAFKA_TOPIC,
+            RequestNOP.toStupidStreamObject(Constants.NO_RESPONSE));
+    }
+
+    private static void fakeWithLoad(LoadFaker loadFaker, StorageAPI storageAPI) {
+        while (true) {
+            loadFaker.nextRequest(storageAPI);
+        }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        System.out.println("HELLO!");
+        LogManager.getLogManager().reset();
+
+        ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(Constants.METRIC_REGISTRY)
+            .convertRatesTo(TimeUnit.SECONDS)
+            .convertDurationsTo(TimeUnit.MILLISECONDS)
+            .build();
+        consoleReporter.start(1, TimeUnit.SECONDS);
+
+        Graphite graphite = new Graphite(new InetSocketAddress("localhost", 2003));
+        GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(Constants.METRIC_REGISTRY)
+            .prefixedWith("graphite")
+            .convertRatesTo(TimeUnit.SECONDS)
+            .convertDurationsTo(TimeUnit.MILLISECONDS)
+            .filter(MetricFilter.ALL)
+            .build(graphite);
+        graphiteReporter.start(1, TimeUnit.SECONDS);
+
+        heyBabe(new NonDeleteUniformLoadFaker());
+
+        Thread.sleep(100 * 1000);
     }
 }

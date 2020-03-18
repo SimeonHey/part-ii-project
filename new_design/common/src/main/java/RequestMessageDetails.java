@@ -28,6 +28,10 @@ public class RequestMessageDetails extends Addressable {
             .setProperty(KEY_MESSAGE_UUID, String.valueOf(messageUUID));
     }
 
+    public StupidStreamObject toStupidStreamObject() {
+        return getStupidStreamObject(messageUUID, this);
+    }
+
     public Long getMessageUUID() {
         return this.messageUUID;
     }

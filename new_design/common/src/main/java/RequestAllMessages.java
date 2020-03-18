@@ -16,7 +16,7 @@ public class RequestAllMessages extends Addressable {
         return new RequestAllMessages(stupidStreamObject.getResponseAddress());
     }
 
-    public static StupidStreamObject getStupidStreamObject(Addressable responseEndpoint) {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, responseEndpoint);
+    public StupidStreamObject toStupidStreamObject() {
+        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, this);
     }
 }

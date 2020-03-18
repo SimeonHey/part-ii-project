@@ -1,8 +1,11 @@
+import com.codahale.metrics.MetricRegistry;
 import com.google.gson.Gson;
 
 import java.util.concurrent.TimeUnit;
 
 public class Constants {
+
+    public static final boolean DRY_RUN = false;
 
     public static final String KAFKA_TOPIC = "transactions";
     public static final int KAFKA_CONSUME_DELAY_MS = 100;
@@ -41,4 +44,10 @@ public class Constants {
         STORAGEAPI_PORT_ALT);
     public static final String TEST_LUCENE_PSQL_CONTACT_ENDPOINT = "http://localhost:" + PSQL_LISTEN_PORT +
         "/psql/luceneContact";
+
+    public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+
+    public static String getStorageSystemBaseName(String fullName) {
+        return fullName.split(" ")[0];
+    }
 }
