@@ -26,7 +26,7 @@ public class EntryPoint {
 
             int cnt = 0;
             while (true) {
-                for (int i = 0; i < 1000; i++, cnt++) {
+                for (int i = 0; i < 200; i++, cnt++) {
                     storageApi.postMessage(new Message(String.valueOf(cnt), String.valueOf(cnt)));
                 }
 

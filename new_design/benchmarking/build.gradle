@@ -17,6 +17,8 @@ dependencies {
     implementation project(':new_design:storage_api')
     implementation project(':new_design:storage_systems:lucene')
     implementation project(':new_design:storage_systems:psql')
+
+    implementation group: 'com.codahale.metrics', name: 'metrics-graphite', version: '3.0.2'
 }
 
 test {
