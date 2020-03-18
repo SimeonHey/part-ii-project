@@ -20,5 +20,7 @@ dependencies {
 
     implementation project(path: ':new_design:common')
 
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
+
     testImplementation 'junit:junit:4.12'
 }

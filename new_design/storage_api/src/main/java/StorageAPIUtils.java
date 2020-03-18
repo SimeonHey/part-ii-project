@@ -26,12 +26,12 @@ class StorageAPIUtils {
             return ret;
         }
 
-        public static StorageAPIInitArgs defaultValues() {
-            return customValues(Constants.KAFKA_ADDRESS, Constants.KAFKA_TOPIC, Constants.STORAGEAPI_PORT);
+        public static StorageAPIInitArgs defaultTestValues() {
+            return customValues(Constants.TEST_KAFKA_ADDRESS, Constants.KAFKA_TOPIC, Constants.STORAGEAPI_PORT);
         }
     }
 
-    static StorageAPI initFromArgs(StorageAPIInitArgs initArgs) throws IOException {
+    static StorageAPI initFromArgsForTests(StorageAPIInitArgs initArgs) throws IOException {
         LOGGER.info("Initializing storage API......");
 
         // Setup connections
@@ -39,7 +39,7 @@ class StorageAPIUtils {
         Producer<Long, StupidStreamObject> producer =
             KafkaUtils.createProducer(initArgs.kafkaAddress, "storageAPI");
         KafkaUtils.produceMessage(producer, initArgs.transactionsTopic,
-            RequestNOP.toStupidStreamObject(new Addressable(Constants.STORAGEAPI_ADDRESS, 0L)));
+            RequestNOP.toStupidStreamObject(new Addressable(Constants.TEST_STORAGEAPI_ADDRESS, 0L)));
         LOGGER.info("Success");
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);
@@ -47,20 +47,20 @@ class StorageAPIUtils {
             HttpUtils.initHttpServer(initArgs.listeningPort));
 
         StorageAPI ret =
-            new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic);
+            new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic, "localhost");
 
         LOGGER.info("Successfully initialized storage api " + ret);
         return ret;
     }
 
-    static StorageAPI initFromArgsWithDummyKafka(StorageAPIInitArgs initArgs) throws IOException {
+    static StorageAPI initFromArgsWithDummyKafkaForTests(StorageAPIInitArgs initArgs) throws IOException {
         LOGGER.info("Initializing storage API......");
 
         // Setup connections
         LOGGER.info("Initializing a Kafka producer...");
         Producer<Long, StupidStreamObject> producer = new DummyProducer();
         KafkaUtils.produceMessage(producer, initArgs.transactionsTopic,
-            RequestNOP.toStupidStreamObject(new Addressable(Constants.STORAGEAPI_ADDRESS, 0L)));
+            RequestNOP.toStupidStreamObject(new Addressable(Constants.TEST_STORAGEAPI_ADDRESS, 0L)));
         LOGGER.info("Success");
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);
@@ -68,7 +68,7 @@ class StorageAPIUtils {
             HttpUtils.initHttpServer(initArgs.listeningPort));
 
         StorageAPI ret =
-            new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic);
+            new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic, "localhost");
 
         LOGGER.info("Successfully initialized storage api " + ret);
         return ret;

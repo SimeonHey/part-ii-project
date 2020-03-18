@@ -12,7 +12,7 @@ public class MessageAppEntryPoint {
         StorageAPIUtils.StorageAPIInitArgs initArgs = new StorageAPIUtils.StorageAPIInitArgs(args);
 
         StorageAPI storageAPI =
-            StorageAPIUtils.initFromArgs(initArgs);
+            StorageAPIUtils.initFromArgsForTests(initArgs);
 
         LOGGER.info("Deleting all previous messages");
         storageAPI.deleteAllMessages();

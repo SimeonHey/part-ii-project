@@ -35,8 +35,8 @@ public class LoopingConsumer<K, V> extends ManualConsumer<K, V>{
         }
     }
 
-    public static LoopingConsumer<Long, StupidStreamObject> fresh(String consumerGroup) {
+    public static LoopingConsumer<Long, StupidStreamObject> fresh(String consumerGroup, String kafkaAddress) {
         return new LoopingConsumer<>(
-            KafkaUtils.createConsumer(consumerGroup, Constants.KAFKA_ADDRESS, Constants.KAFKA_TOPIC));
+            KafkaUtils.createConsumer(consumerGroup, kafkaAddress, Constants.KAFKA_TOPIC));
     }
 }

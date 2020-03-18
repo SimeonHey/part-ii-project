@@ -85,16 +85,18 @@ class Utils {
             return savedInstance;
         }
 
-        var psqlFactory = new PsqlStorageSystemsFactory(LoopingConsumer.fresh("psql"));
+        var psqlFactory = new PsqlStorageSystemsFactory(LoopingConsumer.fresh("psql",
+            Constants.TEST_KAFKA_ADDRESS));
         JointStorageSystem<Connection> psqlConcurrentSnapshots = psqlFactory.concurReads();
         psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
-        var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene"));
+        var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene",
+            Constants.TEST_KAFKA_ADDRESS));
         JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.concurReads();
         luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
-        StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultValues();
-        StorageAPI storageAPI = StorageAPIUtils.initFromArgs(storageAPIInitArgs);
+        StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultTestValues();
+        StorageAPI storageAPI = StorageAPIUtils.initFromArgsForTests(storageAPIInitArgs);
 
         Thread.sleep(1000);
 
@@ -116,10 +118,10 @@ class Utils {
         JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.concurReads();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(
-            Constants.KAFKA_ADDRESS,
+            Constants.TEST_KAFKA_ADDRESS,
             Constants.KAFKA_TOPIC,
             Constants.STORAGEAPI_PORT_ALT);
-        StorageAPI storageAPI = StorageAPIUtils.initFromArgsWithDummyKafka(storageAPIInitArgs);
+        StorageAPI storageAPI = StorageAPIUtils.initFromArgsWithDummyKafkaForTests(storageAPIInitArgs);
 
         savedInstanceManual = new ManualTrinity(psqlStorageSystem, luceneStorageSystem, storageAPI,
             psqlFactory.getManualConsumer(), luceneFactory.getManualConsumer());

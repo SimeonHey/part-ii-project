@@ -14,10 +14,10 @@ public class LuceneUtils {
 
         public static LuceneInitArgs defaultValues() {
             return fromValues(
-                Constants.KAFKA_ADDRESS,
+                Constants.TEST_KAFKA_ADDRESS,
                 Constants.KAFKA_TOPIC,
-                Constants.STORAGEAPI_ADDRESS,
-                Constants.LUCENE_PSQL_CONTACT_ENDPOINT,
+                Constants.TEST_STORAGEAPI_ADDRESS,
+                Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT,
                 Constants.LUCENE_MAX_READERS);
         }
 

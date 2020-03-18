@@ -7,8 +7,13 @@ import java.util.logging.Logger;
 public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader> {
     private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystemFactory.class.getName());
 
-    public LuceneStorageSystemFactory(LoopingConsumer<Long, StupidStreamObject> loopingConsumer) throws IOException {
+    private final String psqlContactAddress;
+
+
+    public LuceneStorageSystemFactory(LoopingConsumer<Long, StupidStreamObject> loopingConsumer,
+                                      String psqlContactAddress) throws IOException {
         super("lucene", new LuceneSnapshottedWrapper(), Constants.LUCENE_LISTEN_PORT, loopingConsumer);
+        this.psqlContactAddress = psqlContactAddress;
     }
 
     @Override
@@ -25,7 +30,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -40,7 +45,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -114,7 +119,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -129,7 +134,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -203,7 +208,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -218,7 +223,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -285,7 +290,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         new MultithreadedResponse(request.getResponseAddress().getChannelID(), nextRequest));
 
                     try {
-                        HttpUtils.httpRequestResponse(Constants.LUCENE_PSQL_CONTACT_ENDPOINT, serialized);
+                        HttpUtils.httpRequestResponse(psqlContactAddress, serialized);
                     } catch (IOException e) {
                         LOGGER.warning("Error when trying to contact psql for next hop of the request");
                         throw new RuntimeException(e);
@@ -320,7 +325,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -335,7 +340,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -402,7 +407,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     String serialized = Constants.gson.toJson(
                         new MultithreadedResponse(request.getResponseAddress().getChannelID(), nextRequest));
                     try {
-                        HttpUtils.httpRequestResponse(Constants.LUCENE_PSQL_CONTACT_ENDPOINT, serialized);
+                        HttpUtils.httpRequestResponse(psqlContactAddress, serialized);
                     } catch (IOException e) {
                         LOGGER.warning("Error when trying to contact psql for next hop of the request");
                         throw new RuntimeException(e);
@@ -437,7 +442,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -452,7 +457,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(), 
+                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.name, request.getObjectType()));
                     responseCallback.accept(response);
                 }
@@ -519,7 +524,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     String serialized = Constants.gson.toJson(
                         new MultithreadedResponse(request.getResponseAddress().getChannelID(), nextRequest));
                     try {
-                        HttpUtils.httpRequestResponse(Constants.LUCENE_PSQL_CONTACT_ENDPOINT, serialized);
+                        HttpUtils.httpRequestResponse(psqlContactAddress, serialized);
                     } catch (IOException e) {
                         LOGGER.warning("Error when trying to contact psql for next hop of the request");
                         throw new RuntimeException(e);

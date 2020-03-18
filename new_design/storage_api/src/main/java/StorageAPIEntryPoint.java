@@ -7,10 +7,10 @@ import java.util.logging.Logger;
 public class StorageAPIEntryPoint {
     private static final Logger LOGGER = Logger.getLogger(StorageAPIEntryPoint.class.getName());
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException {
         LOGGER.info("Starting StorageAPI with params " + Arrays.toString(args));
-        StorageAPIUtils.StorageAPIInitArgs initArgs = StorageAPIUtils.StorageAPIInitArgs.defaultValues();
-        StorageAPI storageAPI = StorageAPIUtils.initFromArgs(initArgs);
+        StorageAPIUtils.StorageAPIInitArgs initArgs = StorageAPIUtils.StorageAPIInitArgs.defaultTestValues();
+        StorageAPI storageAPI = StorageAPIUtils.initFromArgsForTests(initArgs);
 
         // Take user commands and perform actions
         Scanner scanner = new Scanner(System.in);

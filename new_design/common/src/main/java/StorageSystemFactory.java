@@ -8,6 +8,7 @@ public abstract class StorageSystemFactory<T extends AutoCloseable> implements A
 
     private void initProcedure() {
         this.snapshottedWrapper.deleteAllMessages();
+        this.kafka.moveAllToLatest();
     }
 
     public StorageSystemFactory(String name,
@@ -17,8 +18,7 @@ public abstract class StorageSystemFactory<T extends AutoCloseable> implements A
         this.snapshottedWrapper = snapshottedWrapper;
 
         this.kafka = kafka;
-        this.httpStorageSystem = new HttpStorageSystem(name,
-            HttpUtils.initHttpServer(httpListenPort));
+        this.httpStorageSystem = new HttpStorageSystem(name, HttpUtils.initHttpServer(httpListenPort));
 
         initProcedure();
     }

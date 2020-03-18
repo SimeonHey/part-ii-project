@@ -17,7 +17,7 @@ public class StorageAPI implements AutoCloseable {
     private final Producer<Long, StupidStreamObject> producer;
     private final String transactionsTopic;
 
-    private final MultithreadedCommunication multithreadedCommunication;
+    private final MultithreadedCommunication multithreadedCommunication = new MultithreadedCommunication();
     private final HttpStorageSystem httpStorageSystem;
 
     private long httpRequestsUid = 0; // Decreases to remove conflicts with Kafka ids
@@ -28,7 +28,8 @@ public class StorageAPI implements AutoCloseable {
 
     StorageAPI(Producer<Long, StupidStreamObject> producer,
                HttpStorageSystem httpStorageSystem,
-               String transactionsTopic) {
+               String transactionsTopic,
+               String selfAddress) {
         this.producer = producer;
         this.transactionsTopic = transactionsTopic;
         this.httpStorageSystem = httpStorageSystem;
@@ -36,12 +37,10 @@ public class StorageAPI implements AutoCloseable {
         this.httpStorageSystem.registerHandler(ENDPOINT_RESPONSE, this::receiveResponse);
         this.httpStorageSystem.registerHandler(ENDPOINT_CONFIRMATION, this::receiveConfirmation);
 
-        this.multithreadedCommunication = new MultithreadedCommunication();
-
-        this.ADDRESS_CONFIRMATION =  String.format("http://localhost:%s/%s/%s",
-            httpStorageSystem.getPort(), httpStorageSystem.getStorageSystemName(), ENDPOINT_CONFIRMATION);
-        this.ADDRESS_RESPONSE =  String.format("http://localhost:%s/%s/%s",
-            httpStorageSystem.getPort(), httpStorageSystem.getStorageSystemName(), ENDPOINT_RESPONSE);
+        this.ADDRESS_CONFIRMATION =  String.format("%s/%s", httpStorageSystem.getFullAddress(selfAddress),
+            ENDPOINT_CONFIRMATION);
+        this.ADDRESS_RESPONSE =  String.format("%s/%s", httpStorageSystem.getFullAddress(selfAddress),
+            ENDPOINT_RESPONSE);
 
         LOGGER.info("Address confirmation: " + ADDRESS_CONFIRMATION);
         LOGGER.info("Address response: " + ADDRESS_RESPONSE);

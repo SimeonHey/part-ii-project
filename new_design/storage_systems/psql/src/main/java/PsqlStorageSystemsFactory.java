@@ -10,6 +10,11 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         super("psql", new PsqlSnapshottedWrapper(), Constants.PSQL_LISTEN_PORT, loopingConsumer);
     }
 
+    public PsqlStorageSystemsFactory(LoopingConsumer<Long, StupidStreamObject> loopingConsumer,
+                                     int psqlListenPort) throws IOException {
+        super("psql", new PsqlSnapshottedWrapper(), psqlListenPort, loopingConsumer);
+    }
+
     @Override
     public JointStorageSystem<Connection> simpleOlep() {
         return new JointStorageSystem<>("psql simple olep", kafka, httpStorageSystem, snapshottedWrapper)
