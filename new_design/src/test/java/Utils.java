@@ -91,7 +91,7 @@ class Utils {
         psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
         var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene",
-            Constants.TEST_KAFKA_ADDRESS));
+            Constants.TEST_KAFKA_ADDRESS), Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT);
         JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.concurReads();
         luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
@@ -114,7 +114,7 @@ class Utils {
         JointStorageSystem<Connection> psqlStorageSystem = psqlFactory.concurReads();
 
         var luceneFactory = new LuceneStorageSystemFactory(
-            new LoopingConsumer<>(new DummyConsumer("lucene")));
+            new LoopingConsumer<>(new DummyConsumer("lucene")), Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT);
         JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.concurReads();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(

@@ -1,6 +1,4 @@
 import com.codahale.metrics.ConsoleReporter;
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
@@ -11,17 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.LogManager;
 
 public class EntryPoint {
-    private static final Counter psqlConfirmationCounter =
-        Constants.METRIC_REGISTRY.counter("counter.confirmations.psql");
-    private static final Counter luceneConfirmationCounter =
-        Constants.METRIC_REGISTRY.counter("counter.confirmations.lucene");
-
-    private static final Meter psqlConfirmationMeter =
-        Constants.METRIC_REGISTRY.meter("meter.confirmations.psql");
-    private static final Meter luceneConfirmationMeter =
-        Constants.METRIC_REGISTRY.meter("meter.confirmations.lucene");
-
-    private static void heyBabe(LoadFaker loadFaker) {
+    private static void makeItDance(LoadFaker loadFaker) {
         String selfAddress = "192.168.1.12";
         String psqlAddress = "http://localhost:1234"; //
 
@@ -73,6 +61,6 @@ public class EntryPoint {
             .build(graphite);
         graphiteReporter.start(1, TimeUnit.SECONDS);
 
-        heyBabe(new PostOnlyLoadFaker());
+        makeItDance(new NonDeleteUniformLoadFaker());
     }
 }

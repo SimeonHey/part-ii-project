@@ -10,13 +10,13 @@ public abstract class LoadFaker {
         if (id == StupidStreamObject.ObjectType.POST_MESSAGE.ordinal()) {
             storageAPI.postMessage(getRandomMessage());
         } else if (id == StupidStreamObject.ObjectType.GET_ALL_MESSAGES.ordinal()) {
-            storageAPI.allMessages();
+            storageAPI.allMessagesFuture();
         } else if (id == StupidStreamObject.ObjectType.SEARCH_MESSAGES.ordinal()) {
-            storageAPI.searchMessage(getRandomWord());
+            storageAPI.searchMessageFuture(getRandomWord());
         } else if (id == StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS.ordinal()) {
-            storageAPI.messageDetails((long) (random.nextInt(currentRequests) % currentRequests));
+            storageAPI.messageDetailsFuture((long) (random.nextInt(currentRequests) % currentRequests));
         } else if (id == StupidStreamObject.ObjectType.SEARCH_AND_DETAILS.ordinal()) {
-            storageAPI.searchAndDetails(getRandomWord());
+            storageAPI.searchAndDetailsFuture(getRandomWord());
         } else if (id == StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES.ordinal()) {
             storageAPI.deleteAllMessages();
         } else {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Logger;
 
 public class StorageAPI implements AutoCloseable {
@@ -168,55 +169,74 @@ public class StorageAPI implements AutoCloseable {
     }
 
     // Reads
-    /*public ResponseMessageDetails searchAndDetails(String searchText) throws InterruptedException {
-        return kafkaRequestResponse(
-            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
-            ResponseMessageDetails.class);
-    }*/
-
     public ResponseSearchMessage searchMessage(String searchText) {
+        try {
+            return searchMessageFuture(searchText).get();
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.warning("Error when getting the future");
+            throw new RuntimeException(e);
+        }
+    }
+
+    public CompletableFuture<ResponseSearchMessage> searchMessageFuture(String searchText) {
         if (Constants.DRY_RUN) {
             LOGGER.info("DRY RUN: Searching for messages with text: " + searchText);
             return null;
         }
 
-        return kafkaRequestResponse(//Constants.LUCENE_REQUEST_ADDRESS,
+        return kafkaRequestResponseFuture(//Constants.LUCENE_REQUEST_ADDRESS,
             RequestSearchMessage.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
             ResponseSearchMessage.class);
     }
 
     public ResponseMessageDetails messageDetails(Long uuid) {
+        try {
+            return messageDetailsFuture(uuid).get();
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.warning("Error when getting the future");
+            throw new RuntimeException(e);
+        }
+    }
+
+    public CompletableFuture<ResponseMessageDetails> messageDetailsFuture(Long uuid) {
         if (Constants.DRY_RUN) {
             LOGGER.info("DRY RUN: Details for message with uuid: " + uuid);
             return null;
         }
 
-        return kafkaRequestResponse(//Constants.PSQL_REQUEST_ADDRESS,
+        return kafkaRequestResponseFuture(//Constants.PSQL_REQUEST_ADDRESS,
             RequestMessageDetails.getStupidStreamObject(uuid, new Addressable(ADDRESS_RESPONSE)),
             ResponseMessageDetails.class);
     }
 
     public ResponseAllMessages allMessages() {
+        try {
+            return allMessagesFuture().get();
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.warning("Error when getting the future");
+            throw new RuntimeException(e);
+        }
+    }
+
+    public CompletableFuture<ResponseAllMessages> allMessagesFuture() {
         if (Constants.DRY_RUN) {
             LOGGER.info("DRY RUN: Getting all messages");
             return null;
         }
 
-        return kafkaRequestResponse(//Constants.PSQL_REQUEST_ADDRESS,
+        return kafkaRequestResponseFuture(//Constants.PSQL_REQUEST_ADDRESS,
             new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, new Addressable(ADDRESS_RESPONSE)),
             ResponseAllMessages.class
         );
     }
 
     public ResponseMessageDetails searchAndDetails(String searchText) {
-        if (Constants.DRY_RUN) {
-            LOGGER.info("DRY RUN: Searching AND details for messages with text " + searchText);
-            return null;
+        try {
+            return searchAndDetailsFuture(searchText).get();
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.warning("Error when getting the future");
+            throw new RuntimeException(e);
         }
-
-        return kafkaRequestResponse(//Constants.LUCENE_REQUEST_ADDRESS,
-            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
-            ResponseMessageDetails.class);
     }
 
     public CompletableFuture<ResponseMessageDetails> searchAndDetailsFuture(String searchText) {

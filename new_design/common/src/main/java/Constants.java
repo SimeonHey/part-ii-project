@@ -42,7 +42,7 @@ public class Constants {
     public static final String TEST_STORAGEAPI_ADDRESS_ALT = String.format("http://localhost:%d/server",
         STORAGEAPI_PORT_ALT);
     public static final String TEST_LUCENE_PSQL_CONTACT_ENDPOINT = "http://localhost:" + PSQL_LISTEN_PORT +
-        "/psql/luceneContact";
+        "/psql/contact";
 
     public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
 

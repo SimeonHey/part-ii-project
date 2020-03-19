@@ -1,10 +1,10 @@
 import java.util.HashMap;
 
-public class BunchTimeMeasurements {
+public class NamedTimeMeasurements {
     private final String rootName;
     private final HashMap<String, TimeMeasurement> timeMeasurements = new HashMap<>();
 
-    public BunchTimeMeasurements(String rootName) {
+    public NamedTimeMeasurements(String rootName) {
         this.rootName = rootName;
     }
 
