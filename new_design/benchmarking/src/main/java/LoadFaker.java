@@ -7,23 +7,27 @@ public abstract class LoadFaker {
     int currentRequests = 0;
 
     void callFromId(int id, StorageAPI storageAPI) {
-        if (id == 0) {
+        if (id == StupidStreamObject.ObjectType.POST_MESSAGE.ordinal()) {
             storageAPI.postMessage(getRandomMessage());
-        } else if (id == 1) {
+        } else if (id == StupidStreamObject.ObjectType.GET_ALL_MESSAGES.ordinal()) {
             storageAPI.allMessages();
-        } else if (id == 2) {
+        } else if (id == StupidStreamObject.ObjectType.SEARCH_MESSAGES.ordinal()) {
             storageAPI.searchMessage(getRandomWord());
-        } else if (id == 3) {
+        } else if (id == StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS.ordinal()) {
             storageAPI.messageDetails((long) (random.nextInt(currentRequests) % currentRequests));
-        } else if (id == 4) {
+        } else if (id == StupidStreamObject.ObjectType.SEARCH_AND_DETAILS.ordinal()) {
             storageAPI.searchAndDetails(getRandomWord());
-        } else if (id == 5) {
+        } else if (id == StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES.ordinal()) {
             storageAPI.deleteAllMessages();
         } else {
             throw new RuntimeException("The universe is broken");
         }
 
         currentRequests += 1;
+    }
+
+    void callFromObjectType(StupidStreamObject.ObjectType objectType, StorageAPI storageAPI) {
+        callFromId(objectType.ordinal(), storageAPI);
     }
 
     String getRandomWord() {

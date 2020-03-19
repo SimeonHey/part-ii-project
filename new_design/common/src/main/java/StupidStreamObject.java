@@ -7,13 +7,13 @@ import java.util.HashMap;
  */
 public class StupidStreamObject implements Serializable {
     public enum ObjectType {
-        NOP,
         POST_MESSAGE,
-        DELETE_ALL_MESSAGES,
         GET_ALL_MESSAGES,
         SEARCH_MESSAGES,
         GET_MESSAGE_DETAILS,
-        SEARCH_AND_DETAILS
+        SEARCH_AND_DETAILS,
+        DELETE_ALL_MESSAGES,
+        NOP
     }
 
     private final ObjectType objectType;

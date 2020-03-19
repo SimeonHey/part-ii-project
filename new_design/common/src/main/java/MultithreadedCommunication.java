@@ -1,11 +1,8 @@
-import com.google.gson.Gson;
-
 import java.util.HashMap;
 import java.util.concurrent.ArrayBlockingQueue;
 
 public class MultithreadedCommunication {
     private final HashMap<Long, ArrayBlockingQueue<String>> channels;
-    private final Gson gson = new Gson();
 
     public MultithreadedCommunication() {
         channels = new HashMap<>();
@@ -17,17 +14,18 @@ public class MultithreadedCommunication {
         }
     }
 
-    public void registerResponse(String serializedResponse) {
-        MultithreadedResponse response = gson.fromJson(serializedResponse, MultithreadedResponse.class);
+    public MultithreadedResponse registerResponse(String serializedResponse) {
+        MultithreadedResponse response = Constants.gson.fromJson(serializedResponse, MultithreadedResponse.class);
         createChannelIfAbsent(response.getChannelUuid());
         channels.get(response.getChannelUuid()).add(response.getSerializedResponse());
+        return response;
     }
 
     public <T>T registerResponse(String serializedResponse, Class<T> typeOfResponse) {
-        MultithreadedResponse response = gson.fromJson(serializedResponse, MultithreadedResponse.class);
+        MultithreadedResponse response = Constants.gson.fromJson(serializedResponse, MultithreadedResponse.class);
         createChannelIfAbsent(response.getChannelUuid());
         channels.get(response.getChannelUuid()).add(response.getSerializedResponse());
-        return gson.fromJson(response.getSerializedResponse(), typeOfResponse);
+        return Constants.gson.fromJson(response.getSerializedResponse(), typeOfResponse);
     }
 
     public String consume(long uuid) throws InterruptedException {

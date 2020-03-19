@@ -30,8 +30,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -45,8 +46,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -87,7 +89,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         RequestSearchMessage.fromStupidStreamObject(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
-                        new MultithreadedResponse(request.getResponseAddress().getChannelID(), dbResponse)
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
             })
@@ -100,7 +103,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    LOGGER.info(self.name + " received NOP");
+                    LOGGER.info(self.fullName + " received NOP");
                 }
             });
     }
@@ -119,8 +122,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -134,8 +138,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -176,7 +181,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         RequestSearchMessage.fromStupidStreamObject(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
-                        new MultithreadedResponse(request.getResponseAddress().getChannelID(), dbResponse)
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
             })
@@ -189,7 +195,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    LOGGER.info(self.name + " received NOP");
+                    LOGGER.info(self.fullName + " received NOP");
                 }
             });
     }
@@ -208,8 +214,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -223,8 +230,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -265,7 +273,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         RequestSearchMessage.fromStupidStreamObject(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
-                        new MultithreadedResponse(request.getResponseAddress().getChannelID(), dbResponse)
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
             })
@@ -287,7 +296,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         : responseSearchMessage.getOccurrences().get(0);
                     var nextRequest = new RequestMessageDetails(idToLookFor, request.getResponseAddress());
                     String serialized = Constants.gson.toJson(
-                        new MultithreadedResponse(request.getResponseAddress().getChannelID(), nextRequest));
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), nextRequest));
 
                     try {
                         HttpUtils.httpRequestResponse(psqlContactAddress, serialized);
@@ -306,7 +316,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    LOGGER.info(self.name + " received NOP");
+                    LOGGER.info(self.fullName + " received NOP");
                 }
             });
     }
@@ -325,8 +335,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -340,8 +351,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -382,7 +394,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         RequestSearchMessage.fromStupidStreamObject(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
-                        new MultithreadedResponse(request.getResponseAddress().getChannelID(), dbResponse)
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
             })
@@ -405,7 +418,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     LOGGER.info("Contacting PSQL with details request: " + nextRequest);
 
                     String serialized = Constants.gson.toJson(
-                        new MultithreadedResponse(request.getResponseAddress().getChannelID(), nextRequest));
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), nextRequest));
                     try {
                         HttpUtils.httpRequestResponse(psqlContactAddress, serialized);
                     } catch (IOException e) {
@@ -423,7 +437,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    LOGGER.info(self.name + " received NOP");
+                    LOGGER.info(self.fullName + " received NOP");
                 }
             });
     }
@@ -442,8 +456,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -457,8 +472,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.name, request.getObjectType()));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
@@ -499,7 +515,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         RequestSearchMessage.fromStupidStreamObject(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
-                        new MultithreadedResponse(request.getResponseAddress().getChannelID(), dbResponse)
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
             })
@@ -522,7 +539,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     LOGGER.info("Contacting PSQL with details request: " + nextRequest);
 
                     String serialized = Constants.gson.toJson(
-                        new MultithreadedResponse(request.getResponseAddress().getChannelID(), nextRequest));
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), nextRequest));
                     try {
                         HttpUtils.httpRequestResponse(psqlContactAddress, serialized);
                     } catch (IOException e) {
@@ -540,7 +558,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    LOGGER.info(self.name + " received NOP");
+                    LOGGER.info(self.fullName + " received NOP");
                 }
             });
     }

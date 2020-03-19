@@ -130,12 +130,21 @@ public class StorageAPI implements AutoCloseable {
         }
     }
 
+    public void registerConfirmationListener(ConfirmationListener confirmationListener) {
+        confirmationListeners.add(confirmationListener);
+    }
+
 
     private byte[] receiveResponse(String serializedResponse) {
         LOGGER.info(String.format("Received response %s", serializedResponse));
 
         try {
-            this.multithreadedCommunication.registerResponse(serializedResponse);
+            MultithreadedResponse response = this.multithreadedCommunication.registerResponse(serializedResponse);
+
+            // Notify all confirmation listeners as this is a response anyways
+            ConfirmationResponse confirmationResponse = new ConfirmationResponse(response.getFromStorageSystem(),
+                response.getRequestObjectType());
+            confirmationListeners.forEach(listener -> listener.receivedConfirmation(confirmationResponse));
         } catch (Exception e) {
             LOGGER.warning("Error while trying to register a response in the StorageAPI: " + e);
             throw new RuntimeException(e);
@@ -143,15 +152,12 @@ public class StorageAPI implements AutoCloseable {
         return ("Received response " + serializedResponse).getBytes();
     }
 
-    public void registerConfirmationListener(ConfirmationListener confirmationListener) {
-        confirmationListeners.add(confirmationListener);
-    }
-
     private byte[] receiveConfirmation(String serializedResponse) {
         LOGGER.info(String.format("Received confirmation: %s", serializedResponse));
         try {
             ConfirmationResponse confirmationResponse =
                 multithreadedCommunication.registerResponse(serializedResponse, ConfirmationResponse.class);
+
             // Notify all listeners
             confirmationListeners.forEach(listener -> listener.receivedConfirmation(confirmationResponse));
         } catch (Exception e) {

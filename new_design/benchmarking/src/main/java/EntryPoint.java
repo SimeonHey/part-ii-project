@@ -38,16 +38,6 @@ public class EntryPoint {
                      HttpUtils.initHttpServer(Constants.STORAGEAPI_PORT)),
                  Constants.KAFKA_TOPIC, selfAddress)) {
 
-            storageApi.registerConfirmationListener((confirmationResponse -> {
-                if (confirmationResponse.getFromStorageSystem().startsWith("psql")) {
-                    psqlConfirmationCounter.inc();
-                    psqlConfirmationMeter.mark();
-                } else {
-                    luceneConfirmationCounter.inc();
-                    luceneConfirmationMeter.mark();
-                }
-            }));
-
             psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
             luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
@@ -58,19 +48,13 @@ public class EntryPoint {
         }
     }
 
-    private void sendNOP() {
-        var producer = KafkaUtils.createProducer(Constants.TEST_KAFKA_ADDRESS, "JUST TESTING");
-        KafkaUtils.produceMessage(producer, Constants.KAFKA_TOPIC,
-            RequestNOP.toStupidStreamObject(Constants.NO_RESPONSE));
-    }
-
     private static void fakeWithLoad(LoadFaker loadFaker, StorageAPI storageAPI) {
         while (true) {
             loadFaker.nextRequest(storageAPI);
         }
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         System.out.println("HELLO!");
         LogManager.getLogManager().reset();
 
@@ -89,8 +73,6 @@ public class EntryPoint {
             .build(graphite);
         graphiteReporter.start(1, TimeUnit.SECONDS);
 
-        heyBabe(new NonDeleteUniformLoadFaker());
-
-        Thread.sleep(100 * 1000);
+        heyBabe(new PostOnlyLoadFaker());
     }
 }

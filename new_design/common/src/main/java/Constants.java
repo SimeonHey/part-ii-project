@@ -26,7 +26,6 @@ public class Constants {
     public static final int STORAGEAPI_PORT = 8000;
     public static final int STORAGEAPI_PORT_ALT = 8020;
 
-    public static final String PROJECT_NAME = "new_design";
     public static final Addressable NO_RESPONSE = new Addressable("dontrespond", 0L);
 
     public static final long STORAGE_SYSTEMS_POLL_TIMEOUT = 30;

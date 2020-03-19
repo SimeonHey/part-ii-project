@@ -1,4 +1,5 @@
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.io.IOException;
@@ -14,22 +15,26 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private final List<ServiceBase<Snap>> kafkaServiceHandlers = new ArrayList<>();
     private final List<ServiceBase<Snap>> httpServiceHandlers = new ArrayList<>();
 
-    final String name;
+    final String fullName;
+    final String shortName;
     private WrappedSnapshottedStorageSystem<Snap> wrapper;
 
     final private BunchTimeMeasurements bunchTimeMeasurements;
     final private Counter waitForContactCounter;
+    final private Meter completedOperations;
 
-    public JointStorageSystem(String name,
+    public JointStorageSystem(String fullName,
                               ManualConsumer<Long, StupidStreamObject> eventStorageSystem,
                               HttpStorageSystem httpStorageSystem,
                               WrappedSnapshottedStorageSystem<Snap> wrapper) {
-        this.name = name;
+        this.fullName = fullName;
+        this.shortName = Constants.getStorageSystemBaseName(fullName);
         this.wrapper = wrapper;
 
-        this.bunchTimeMeasurements = new BunchTimeMeasurements(name);
+        this.bunchTimeMeasurements = new BunchTimeMeasurements(this.shortName);
         this.waitForContactCounter =
-            Constants.METRIC_REGISTRY.counter(Constants.getStorageSystemBaseName(name) + ".wait-for-contact");
+            Constants.METRIC_REGISTRY.counter(this.shortName + ".wait-for-contact");
+        this.completedOperations = Constants.METRIC_REGISTRY.meter(this.shortName + ".completed-operations");
 
         // Subscribe to kafka and http listeners
         eventStorageSystem.subscribe(this::kafkaServiceHandler);
@@ -48,7 +53,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private byte[] httpServiceHandler(String serializedQuery) {
         StupidStreamObject sso = Constants.gson.fromJson(serializedQuery, StupidStreamObject.class);
 
-        LOGGER.info(String.format("%s received an HTTP query of type %s", name, sso.getObjectType()));
+        LOGGER.info(String.format("%s received an HTTP query of type %s", fullName, sso.getObjectType()));
 
         requestArrived(this.httpServiceHandlers, sso, wrapResponseWithAddress(sso.getResponseAddress()));
         return "Thanks, processing... :)".getBytes();
@@ -56,7 +61,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     private void kafkaServiceHandler(ConsumerRecord<Long, StupidStreamObject> record) {
         StupidStreamObject sso = record.value();
-        LOGGER.info(String.format("%s received a Kafka query: %s", name, sso.getObjectType()));
+        LOGGER.info(String.format("%s received a Kafka query: %s", fullName, sso.getObjectType()));
 
         // The Kafka offset is only known after the message has been published
         sso.getResponseAddress().setChannelID(record.offset());
@@ -69,7 +74,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     }
 
     private void respond(Addressable responseAddress, MultithreadedResponse response) {
-        LOGGER.info(name + " joint storage system responds to " + responseAddress + ": " + response);
+        LOGGER.info(fullName + " joint storage system responds to " + responseAddress + ": " + response);
         String serialized = Constants.gson.toJson(response);
         try {
             HttpUtils.httpRequestResponse(responseAddress.getInternetAddress(), serialized);
@@ -84,34 +89,38 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
                                    Consumer<MultithreadedResponse> responseCallback) {
         if (serviceHandler.handleAsyncWithSnapshot) {
             Snap snapshotToUse = wrapper.getConcurrentSnapshot();
-            Runnable operation = () -> {
+            new Thread(() -> {
+                bunchTimeMeasurements.startTimer(sso.getObjectType().toString());
+
                 try {
                     serviceHandler.handleRequest(sso, wrapper, responseCallback, this, snapshotToUse);
                     snapshotToUse.close();
                 } catch (Exception e) {
-                    LOGGER.warning("Error when closing the snapshot in storage system " + name);
+                    LOGGER.warning("Error when closing the snapshot in storage system " + fullName);
                     throw new RuntimeException(e);
                 }
-            };
-            new Thread(() -> bunchTimeMeasurements.measureTime(sso.getObjectType().toString(), operation))
-                .start();
-        } else {
-            Runnable operation = () -> {
-                LOGGER.info(name + " calls the handler for request of type " + sso.getObjectType());
-                serviceHandler.handleRequest(sso, wrapper, responseCallback, this, null);
-            };
 
-            bunchTimeMeasurements.measureTime(sso.getObjectType().toString(), operation);
+                bunchTimeMeasurements.stopTimerAndPublish(sso.getObjectType().toString());
+                completedOperations.mark();
+            }).start();
+        } else {
+            bunchTimeMeasurements.startTimer(sso.getObjectType().toString());
+
+            LOGGER.info(fullName + " calls the handler for request of type " + sso.getObjectType());
+            serviceHandler.handleRequest(sso, wrapper, responseCallback, this, null);
+
+            bunchTimeMeasurements.stopTimerAndPublish(sso.getObjectType().toString());
+            completedOperations.mark();
         }
     }
 
     private void requestArrived(List<ServiceBase<Snap>> serviceHandlers,
                                 StupidStreamObject sso,
                                 Consumer<MultithreadedResponse> responseCallback) {
-        LOGGER.info("Request arrived for " + name + " of type " + sso.getObjectType());
+        LOGGER.info("Request arrived for " + fullName + " of type " + sso.getObjectType());
         for (ServiceBase<Snap> serviceHandler: serviceHandlers) {
             if (serviceHandler.couldHandle(sso)) {
-                LOGGER.info(name + " found a handler for request of type " + sso.getObjectType());
+                LOGGER.info(fullName + " found a handler for request of type " + sso.getObjectType());
                 handleWithHandler(sso, serviceHandler, responseCallback);
                 return;
             }
@@ -130,7 +139,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         try {
             serialized = multithreadedCommunication.consumeAndDestroy(channel);
         } catch (InterruptedException e) {
-            LOGGER.warning("Error in " + name + " while waiting on channel " + channel + " for external contact");
+            LOGGER.warning("Error in " + fullName + " while waiting on channel " + channel + " for external contact");
             throw new RuntimeException(e);
         }
 
