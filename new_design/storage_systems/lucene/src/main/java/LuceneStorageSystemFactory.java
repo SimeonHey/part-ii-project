@@ -29,7 +29,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                         request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -86,7 +86,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(wrapper.getDefaultSnapshot(),
-                        RequestSearchMessage.fromStupidStreamObject(request));
+                        new RequestSearchMessage(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
@@ -121,7 +121,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                         request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -178,7 +178,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(wrapper.getDefaultSnapshot(),
-                        RequestSearchMessage.fromStupidStreamObject(request));
+                        new RequestSearchMessage(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
@@ -213,7 +213,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                         request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -270,7 +270,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(wrapper.getDefaultSnapshot(),
-                        RequestSearchMessage.fromStupidStreamObject(request));
+                        new RequestSearchMessage(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
@@ -287,20 +287,22 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    RequestSearchMessage requestSearchMessage = RequestSearchMessage.fromStupidStreamObject(request);
+                    RequestSearchMessage requestSearchMessage = new RequestSearchMessage(request);
                     ResponseSearchMessage responseSearchMessage = wrapper.searchMessage(wrapper.getDefaultSnapshot(),
                         requestSearchMessage);
 
                     long idToLookFor = responseSearchMessage.getOccurrences().size() == 0
                         ? -1
                         : responseSearchMessage.getOccurrences().get(0);
-                    var nextRequest = new RequestMessageDetails(idToLookFor, request.getResponseAddress());
+                    var nextRequest = new RequestMessageDetails(idToLookFor)
+                        .toStupidStreamObject(request.getResponseAddress());
+
                     String serialized = Constants.gson.toJson(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                             request.getResponseAddress().getChannelID(), nextRequest));
 
                     try {
-                        HttpUtils.httpRequestResponse(psqlContactAddress, serialized);
+                        HttpUtils.sendHttpRequest(psqlContactAddress, serialized);
                     } catch (IOException e) {
                         LOGGER.warning("Error when trying to contact psql for next hop of the request");
                         throw new RuntimeException(e);
@@ -334,7 +336,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                         request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -391,7 +393,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(wrapper.getDefaultSnapshot(),
-                        RequestSearchMessage.fromStupidStreamObject(request));
+                        new RequestSearchMessage(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
@@ -408,20 +410,21 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    RequestSearchMessage requestSearchMessage = RequestSearchMessage.fromStupidStreamObject(request);
+                    RequestSearchMessage requestSearchMessage = new RequestSearchMessage(request);
                     ResponseSearchMessage responseSearchMessage = wrapper.searchMessage(snapshot, requestSearchMessage);
 
                     long idToLookFor = responseSearchMessage.getOccurrences().size() == 0
                         ? -1
                         : responseSearchMessage.getOccurrences().get(0);
-                    var nextRequest = new RequestMessageDetails(idToLookFor, request.getResponseAddress());
+                    var nextRequest = new RequestMessageDetails(idToLookFor)
+                        .toStupidStreamObject(request.getResponseAddress());
                     LOGGER.info("Contacting PSQL with details request: " + nextRequest);
 
                     String serialized = Constants.gson.toJson(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                             request.getResponseAddress().getChannelID(), nextRequest));
                     try {
-                        HttpUtils.httpRequestResponse(psqlContactAddress, serialized);
+                        HttpUtils.sendHttpRequest(psqlContactAddress, serialized);
                     } catch (IOException e) {
                         LOGGER.warning("Error when trying to contact psql for next hop of the request");
                         throw new RuntimeException(e);
@@ -455,7 +458,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                         request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -512,7 +515,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(wrapper.getDefaultSnapshot(),
-                        RequestSearchMessage.fromStupidStreamObject(request));
+                        new RequestSearchMessage(request));
                     LOGGER.info("Result from search: " + dbResponse);
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
@@ -529,20 +532,21 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
-                    RequestSearchMessage requestSearchMessage = RequestSearchMessage.fromStupidStreamObject(request);
+                    RequestSearchMessage requestSearchMessage = new RequestSearchMessage(request);
                     ResponseSearchMessage responseSearchMessage = wrapper.searchMessage(snapshot, requestSearchMessage);
 
                     long idToLookFor = responseSearchMessage.getOccurrences().size() == 0
                         ? -1
                         : responseSearchMessage.getOccurrences().get(0);
-                    var nextRequest = new RequestMessageDetails(idToLookFor, request.getResponseAddress());
+                    var nextRequest = new RequestMessageDetails(idToLookFor)
+                        .toStupidStreamObject(request.getResponseAddress());
                     LOGGER.info("Contacting PSQL with details request: " + nextRequest);
 
                     String serialized = Constants.gson.toJson(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                             request.getResponseAddress().getChannelID(), nextRequest));
                     try {
-                        HttpUtils.httpRequestResponse(psqlContactAddress, serialized);
+                        HttpUtils.sendHttpRequest(psqlContactAddress, serialized);
                     } catch (IOException e) {
                         LOGGER.warning("Error when trying to contact psql for next hop of the request");
                         throw new RuntimeException(e);

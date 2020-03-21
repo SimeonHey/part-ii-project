@@ -26,7 +26,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), 
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -57,7 +57,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
-                        RequestAllMessages.fromStupidStreamObject(request));
+                        new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -74,7 +74,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
-                        RequestMessageDetails.fromStupidStreamObject(request));
+                        new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
@@ -119,7 +119,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), 
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -150,7 +150,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
-                        RequestAllMessages.fromStupidStreamObject(request));
+                        new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -167,7 +167,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
-                        RequestMessageDetails.fromStupidStreamObject(request));
+                        new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
@@ -212,7 +212,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), 
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -243,7 +243,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
-                        RequestAllMessages.fromStupidStreamObject(request));
+                        new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -260,7 +260,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
-                        RequestMessageDetails.fromStupidStreamObject(request));
+                        new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
@@ -287,8 +287,8 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     // This will block until Lucene contacts us
-                    RequestMessageDetails requestMessageDetails =
-                        self.waitForContact(request.getResponseAddress().getChannelID(), RequestMessageDetails.class);
+                    RequestMessageDetails requestMessageDetails = new RequestMessageDetails(
+                        self.waitForContact(request.getResponseAddress().getChannelID(), StupidStreamObject.class));
 
                     // Once it does, repeat what get message details does
                     var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(), requestMessageDetails);
@@ -325,7 +325,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), 
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -356,7 +356,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
-                        RequestAllMessages.fromStupidStreamObject(request));
+                        new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -373,7 +373,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
-                        RequestMessageDetails.fromStupidStreamObject(request));
+                        new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
@@ -402,8 +402,8 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
 
                     LOGGER.info(self.fullName + " waits to be contacted by Lucene...");
                     // This will block until Lucene contacts us
-                    RequestMessageDetails requestMessageDetails =
-                        self.waitForContact(request.getResponseAddress().getChannelID(), RequestMessageDetails.class);
+                    RequestMessageDetails requestMessageDetails = new RequestMessageDetails(
+                        self.waitForContact(request.getResponseAddress().getChannelID(), StupidStreamObject.class));
                     LOGGER.info("Contact successful! Request is: " + requestMessageDetails);
 
                     // Once it does, repeat what get message details does
@@ -443,7 +443,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    wrapper.postMessage(RequestPostMessage.fromStupidStreamObject(request));
+                    wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), 
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
@@ -474,7 +474,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
-                        RequestAllMessages.fromStupidStreamObject(request));
+                        new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -491,7 +491,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
-                        RequestMessageDetails.fromStupidStreamObject(request));
+                        new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
@@ -520,8 +520,8 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
 
                     LOGGER.info(self.fullName + " waits to be contacted by Lucene...");
                     // This will block until Lucene contacts us
-                    RequestMessageDetails requestMessageDetails =
-                        self.waitForContact(request.getResponseAddress().getChannelID(), RequestMessageDetails.class);
+                    RequestMessageDetails requestMessageDetails = new RequestMessageDetails(
+                        self.waitForContact(request.getResponseAddress().getChannelID(), StupidStreamObject.class));
                     LOGGER.info("Contact successful! Request is: " + requestMessageDetails);
 
                     // Once it does, repeat what get message details does

@@ -12,14 +12,14 @@ class Utils {
     private static Trinity savedInstance;
 
     static class Trinity implements AutoCloseable{
-        public final JointStorageSystem<Connection> psqlConcurReads;
-        public final JointStorageSystem<IndexReader> luceneConcurReads;
+        public final JointStorageSystem<Connection> psqlStorageSystem;
+        public final JointStorageSystem<IndexReader> luceneStorageSystem;
         public final StorageAPI storageAPI;
 
-        Trinity(JointStorageSystem<Connection> psqlConcurReads, JointStorageSystem<IndexReader> luceneConcurReads,
+        Trinity(JointStorageSystem<Connection> psqlStorageSystem, JointStorageSystem<IndexReader> luceneStorageSystem,
                 StorageAPI storageAPI) {
-            this.psqlConcurReads = psqlConcurReads;
-            this.luceneConcurReads = luceneConcurReads;
+            this.psqlStorageSystem = psqlStorageSystem;
+            this.luceneStorageSystem = luceneStorageSystem;
             this.storageAPI = storageAPI;
         }
 
@@ -27,7 +27,7 @@ class Utils {
         public void close() throws Exception {
             LOGGER.info("STARTING SHUTDOWN PROCEDURE");
 
-            this.storageAPI.deleteAllMessages(); // Produces a Kafka message
+            this.storageAPI.handleRequest(new RequestDeleteAllMessages()); // Produces a Kafka message
             this.storageAPI.waitForAllConfirmations();
             Thread.sleep(1000);
 
@@ -74,8 +74,8 @@ class Utils {
             this.manualConsumerLucene.close();
 
             this.storageAPI.close();
-            this.psqlConcurReads.close();
-            this.luceneConcurReads.close();
+            this.psqlStorageSystem.close();
+            this.luceneStorageSystem.close();
         }
     }
 
@@ -87,12 +87,12 @@ class Utils {
 
         var psqlFactory = new PsqlStorageSystemsFactory(LoopingConsumer.fresh("psql",
             Constants.TEST_KAFKA_ADDRESS));
-        JointStorageSystem<Connection> psqlConcurrentSnapshots = psqlFactory.concurReads();
+        JointStorageSystem<Connection> psqlConcurrentSnapshots = psqlFactory.sdRequestSeparateSession();
         psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
         var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene",
             Constants.TEST_KAFKA_ADDRESS), Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT);
-        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.concurReads();
+        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.sdRequestSeparateSession();
         luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultTestValues();
@@ -105,17 +105,19 @@ class Utils {
     }
 
     static ManualTrinity manualConsumerInitialization() throws IOException {
-        /*if (savedInstanceManual != null) {
+        if (savedInstanceManual != null) {
+            LOGGER.info("Returning MANUAL saved instance!");
             return savedInstanceManual;
-        }*/
+        }
 
         var psqlFactory = new PsqlStorageSystemsFactory(
-            new LoopingConsumer<>(new DummyConsumer("psql")));
-        JointStorageSystem<Connection> psqlStorageSystem = psqlFactory.concurReads();
+            new LoopingConsumer<>(new DummyConsumer("psql")), Constants.PSQL_LISTEN_PORT_ALT);
+        JointStorageSystem<Connection> psqlStorageSystem = psqlFactory.sdRequestSeparateSession();
 
         var luceneFactory = new LuceneStorageSystemFactory(
-            new LoopingConsumer<>(new DummyConsumer("lucene")), Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT);
-        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.concurReads();
+            new LoopingConsumer<>(new DummyConsumer("lucene")),
+            Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT_ALT);
+        JointStorageSystem<IndexReader> luceneStorageSystem = luceneFactory.sdRequestSeparateSession();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(
             Constants.TEST_KAFKA_ADDRESS,

@@ -1,18 +1,19 @@
+import com.codahale.metrics.Counter;
+import io.vavr.Tuple2;
 import org.apache.kafka.clients.producer.Producer;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 public class StorageAPI implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(StorageAPI.class.getName());
     private static final String ENDPOINT_RESPONSE = "response";
-    private static final String ENDPOINT_CONFIRMATION = "confirmation";
 
-    private final String ADDRESS_CONFIRMATION;
     private final String ADDRESS_RESPONSE;
 
     private final Producer<Long, StupidStreamObject> producer;
@@ -21,50 +22,94 @@ public class StorageAPI implements AutoCloseable {
     private final MultithreadedCommunication multithreadedCommunication = new MultithreadedCommunication();
     private final HttpStorageSystem httpStorageSystem;
 
-    private long httpRequestsUid = 0; // Decreases to remove conflicts with Kafka ids
+    private AtomicLong httpRequestsUid = new AtomicLong(0); // Decreases to remove conflicts with Kafka ids
 
     private List<Long> confirmationChannelsList = new ArrayList<>(); // Keeps track of all writes' channel ids
 
     private List<ConfirmationListener> confirmationListeners = new ArrayList<>();
 
+    private final List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavours;
+
+    private final NamedTimeMeasurements favoursTimeMeasurers = new NamedTimeMeasurements("favours");
+    private final Counter outstandingFavoursCounter =
+        Constants.METRIC_REGISTRY.counter("favours.outstanding-count");
+    private final Semaphore outstandingFavoursSemaphore;
+
     StorageAPI(Producer<Long, StupidStreamObject> producer,
                HttpStorageSystem httpStorageSystem,
                String transactionsTopic,
-               String selfAddress) {
+               String selfAddress,
+               List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavours,
+               int maxOutstandingFavours) {
         this.producer = producer;
         this.transactionsTopic = transactionsTopic;
         this.httpStorageSystem = httpStorageSystem;
 
-        this.httpStorageSystem.registerHandler(ENDPOINT_RESPONSE, this::receiveResponse);
-        this.httpStorageSystem.registerHandler(ENDPOINT_CONFIRMATION, this::receiveConfirmation);
+        this.httpFavours = httpFavours;
 
-        this.ADDRESS_CONFIRMATION =  String.format("%s/%s", httpStorageSystem.getFullAddress(selfAddress),
-            ENDPOINT_CONFIRMATION);
+        this.httpStorageSystem.registerHandler(ENDPOINT_RESPONSE, this::receiveResponse);
+
         this.ADDRESS_RESPONSE =  String.format("%s/%s", httpStorageSystem.getFullAddress(selfAddress),
             ENDPOINT_RESPONSE);
 
-        LOGGER.info("Address confirmation: " + ADDRESS_CONFIRMATION);
+        this.outstandingFavoursSemaphore = new Semaphore(maxOutstandingFavours);
+
         LOGGER.info("Address response: " + ADDRESS_RESPONSE);
     }
 
-    private <T>T kafkaRequestResponse(StupidStreamObject request, Class<T> responseType) {
-        long offset = KafkaUtils.produceMessage(
-            this.producer,
-            this.transactionsTopic,
-            request);
+    private Tuple2<StupidStreamObject.ObjectType, String> findHttpFavour(BaseRequest request) {
+        for (var tuple: httpFavours) {
+            if (tuple._1.equals(request.getObjectType())) {
+                return tuple;
+            }
+        }
 
+        return null;
+    }
 
-        LOGGER.info("Waiting for response on channel with uuid " + offset);
-
-        // Will block until a response is received
-        String serializedResponse;
+    public <T>CompletableFuture<T> handleRequest(BaseRequest request, Class<T> responseType) {
         try {
-            serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
+            outstandingFavoursSemaphore.acquire();
+            outstandingFavoursCounter.inc();
         } catch (InterruptedException e) {
-            LOGGER.warning("Error when waiting on channel " + offset + ": " + e);
+            LOGGER.warning("Error acquiring a semaphore resource for outstanding favours: " + e);
             throw new RuntimeException(e);
         }
-        return Constants.gson.fromJson(serializedResponse, responseType);
+
+        var httpFavor = findHttpFavour(request);
+
+        if (httpFavor == null) { // I assume if it's not in the HTTP it's in the Kafka favour group
+            LOGGER.info("StorageAPI handles request " + request + " through Kafka");
+
+            var resonseAddress = new Addressable(this.ADDRESS_RESPONSE);
+            return kafkaRequestResponseFuture(request.toStupidStreamObject(resonseAddress), responseType);
+        } else {
+            LOGGER.info("StorageAPI handles request " + request + " through HTTP");
+
+            var responseAddress = new Addressable(this.ADDRESS_RESPONSE);
+            return httpRequestAsyncResponseFuture(httpFavor._2, request.toStupidStreamObject(responseAddress),
+                responseType);
+        }
+    }
+
+    public void handleRequest(BaseRequest request) {
+        handleRequest(request, Object.class);
+    }
+
+    private <T> CompletableFuture<T> consumeAndDestroyAsync(long offset, Class<T> responseType) {
+        return CompletableFuture.supplyAsync(() -> {
+            // Will block until a response is received
+            String serializedResponse;
+            try {
+                serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
+                outstandingFavoursSemaphore.release();
+                outstandingFavoursCounter.dec();
+            } catch (InterruptedException e) {
+                LOGGER.warning("Error when waiting on channel " + offset + ": " + e);
+                throw new RuntimeException(e);
+            }
+            return Constants.gson.fromJson(serializedResponse, responseType);
+        });
     }
 
     private <T> CompletableFuture<T> kafkaRequestResponseFuture(StupidStreamObject request, Class<T> responseType) {
@@ -74,57 +119,23 @@ public class StorageAPI implements AutoCloseable {
             request);
 
         LOGGER.info("Waiting for response on channel with uuid " + offset);
-
-        return CompletableFuture.supplyAsync(() -> {
-            // Will block until a response is received
-            String serializedResponse;
-            try {
-                serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
-            } catch (InterruptedException e) {
-                LOGGER.warning("Error when waiting on channel " + offset + ": " + e);
-                throw new RuntimeException(e);
-            }
-            return Constants.gson.fromJson(serializedResponse, responseType);
-        });
+        favoursTimeMeasurers.startTimer(request.getObjectType().toString(), offset);
+        return consumeAndDestroyAsync(offset, responseType);
     }
 
-    private <T>T httpRequestResponse(String address, StupidStreamObject request, Class<T> responseType) {
+    private <T>CompletableFuture<T> httpRequestAsyncResponseFuture(String address, StupidStreamObject request,
+                                                                   Class<T> responseType) {
         try {
-            // TODO : Needs more care in the multithreaded case. MVP
-            long curId = httpRequestsUid;
-            httpRequestsUid -= 1;
-            request.getResponseAddress().setChannelID(curId);
-
-            String serializedResponse =
-                HttpUtils.httpRequestResponse(address, Constants.gson.toJson(request));
-            MultithreadedResponse response =
-                Constants.gson.fromJson(serializedResponse, MultithreadedResponse.class);
-
-            LOGGER.info("Direct HTTP response received: " + response);
-            return Constants.gson.fromJson(response.getSerializedResponse(), responseType);
-        } catch (IOException e) {
-            LOGGER.warning("Error when sending request to " + address +
-                " in the storageapi http request response: " + e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
-
-    private <T>T httpRequestMultithreadedResponse(String address, StupidStreamObject request, Class<T> responseType) {
-        try {
-            // TODO : Needs more care in the multithreaded case. MVP
-            long curId = httpRequestsUid;
-            httpRequestsUid -= 1;
+            long curId = httpRequestsUid.getAndDecrement();
             request.getResponseAddress().setChannelID(curId);
 
             LOGGER.info(String.format("Sending a request of type %s through HTTP with id = %d...",
                 request.getObjectType().toString(), curId));
-            HttpUtils.httpRequestResponse(address, Constants.gson.toJson(request));
+            favoursTimeMeasurers.startTimer(request.getObjectType().toString(), curId);
+            HttpUtils.sendHttpRequest(address, Constants.gson.toJson(request));
 
-            String serializedResponse = multithreadedCommunication.consumeAndDestroy(curId); // This blocks
-            LOGGER.info(String.format("Received serialized response %s", serializedResponse));
-
-            return Constants.gson.fromJson(serializedResponse, responseType);
-        } catch (IOException | InterruptedException e) {
+            return consumeAndDestroyAsync(curId, responseType);
+        } catch (IOException e) {
             LOGGER.warning("Error when sending request to " + address +
                 " in the storageapi http request: " + e.getMessage());
             throw new RuntimeException(e);
@@ -141,6 +152,8 @@ public class StorageAPI implements AutoCloseable {
 
         try {
             MultithreadedResponse response = this.multithreadedCommunication.registerResponse(serializedResponse);
+            favoursTimeMeasurers.stopTimerAndPublish(response.getRequestObjectType().toString(),
+                response.getChannelUuid());
 
             // Notify all confirmation listeners as this is a response anyways
             ConfirmationResponse confirmationResponse = new ConfirmationResponse(response.getFromStorageSystem(),
@@ -153,138 +166,7 @@ public class StorageAPI implements AutoCloseable {
         return ("Received response " + serializedResponse).getBytes();
     }
 
-    private byte[] receiveConfirmation(String serializedResponse) {
-        LOGGER.info(String.format("Received confirmation: %s", serializedResponse));
-        try {
-            ConfirmationResponse confirmationResponse =
-                multithreadedCommunication.registerResponse(serializedResponse, ConfirmationResponse.class);
-
-            // Notify all listeners
-            confirmationListeners.forEach(listener -> listener.receivedConfirmation(confirmationResponse));
-        } catch (Exception e) {
-            LOGGER.warning("Error while trying to register a confirmation in the StorageAPI: " + e);
-            throw new RuntimeException(e);
-        }
-        return ("Thanks!").getBytes();
-    }
-
-    // Reads
-    public ResponseSearchMessage searchMessage(String searchText) {
-        try {
-            return searchMessageFuture(searchText).get();
-        } catch (InterruptedException | ExecutionException e) {
-            LOGGER.warning("Error when getting the future");
-            throw new RuntimeException(e);
-        }
-    }
-
-    public CompletableFuture<ResponseSearchMessage> searchMessageFuture(String searchText) {
-        if (Constants.DRY_RUN) {
-            LOGGER.info("DRY RUN: Searching for messages with text: " + searchText);
-            return null;
-        }
-
-        return kafkaRequestResponseFuture(//Constants.LUCENE_REQUEST_ADDRESS,
-            RequestSearchMessage.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
-            ResponseSearchMessage.class);
-    }
-
-    public ResponseMessageDetails messageDetails(Long uuid) {
-        try {
-            return messageDetailsFuture(uuid).get();
-        } catch (InterruptedException | ExecutionException e) {
-            LOGGER.warning("Error when getting the future");
-            throw new RuntimeException(e);
-        }
-    }
-
-    public CompletableFuture<ResponseMessageDetails> messageDetailsFuture(Long uuid) {
-        if (Constants.DRY_RUN) {
-            LOGGER.info("DRY RUN: Details for message with uuid: " + uuid);
-            return null;
-        }
-
-        return kafkaRequestResponseFuture(//Constants.PSQL_REQUEST_ADDRESS,
-            RequestMessageDetails.getStupidStreamObject(uuid, new Addressable(ADDRESS_RESPONSE)),
-            ResponseMessageDetails.class);
-    }
-
-    public ResponseAllMessages allMessages() {
-        try {
-            return allMessagesFuture().get();
-        } catch (InterruptedException | ExecutionException e) {
-            LOGGER.warning("Error when getting the future");
-            throw new RuntimeException(e);
-        }
-    }
-
-    public CompletableFuture<ResponseAllMessages> allMessagesFuture() {
-        if (Constants.DRY_RUN) {
-            LOGGER.info("DRY RUN: Getting all messages");
-            return null;
-        }
-
-        return kafkaRequestResponseFuture(//Constants.PSQL_REQUEST_ADDRESS,
-            new StupidStreamObject(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, new Addressable(ADDRESS_RESPONSE)),
-            ResponseAllMessages.class
-        );
-    }
-
-    public ResponseMessageDetails searchAndDetails(String searchText) {
-        try {
-            return searchAndDetailsFuture(searchText).get();
-        } catch (InterruptedException | ExecutionException e) {
-            LOGGER.warning("Error when getting the future");
-            throw new RuntimeException(e);
-        }
-    }
-
-    public CompletableFuture<ResponseMessageDetails> searchAndDetailsFuture(String searchText) {
-        if (Constants.DRY_RUN) {
-            LOGGER.info("DRY RUN: Searching AND details for messages with text " + searchText);
-            return null;
-        }
-
-        return kafkaRequestResponseFuture(//Constants.LUCENE_REQUEST_ADDRESS,
-            RequestSearchAndDetails.getStupidStreamObject(searchText, new Addressable(ADDRESS_RESPONSE)),
-            ResponseMessageDetails.class);
-    }
-
-    // Writes
-    public Long postMessage(Message message) {
-        if (Constants.DRY_RUN) {
-            LOGGER.info("DRY RUN: Posting message " + message);
-            return null;
-        }
-
-        LOGGER.info("Posting message " + message);
-        long curId = KafkaUtils.produceMessage(this.producer,
-            this.transactionsTopic,
-            new RequestPostMessage(message, new Addressable(ADDRESS_CONFIRMATION)).toStupidStreamObject()
-        );
-
-        confirmationChannelsList.add(curId);
-        return curId;
-    }
-
-    public Long deleteAllMessages() {
-        if (Constants.DRY_RUN) {
-            LOGGER.info("DRY RUN: Deleting all messages");
-            return null;
-        }
-
-        long curId = KafkaUtils.produceMessage(
-            this.producer,
-            this.transactionsTopic,
-            new StupidStreamObject(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES,
-                new Addressable(ADDRESS_CONFIRMATION))
-        );
-
-        confirmationChannelsList.add(curId);
-        return curId;
-    }
-
-    public void waitOnChannel(long channelID, boolean destroy) {
+    private void waitOnChannel(long channelID, boolean destroy) {
         try {
             if (destroy) {
                 multithreadedCommunication.consumeAndDestroy(channelID);
@@ -323,4 +205,3 @@ public class StorageAPI implements AutoCloseable {
         httpStorageSystem.close();
     }
 }
-;

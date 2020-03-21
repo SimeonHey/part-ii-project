@@ -1,38 +1,31 @@
 import java.util.logging.Logger;
 
-public class RequestSearchAndDetails extends Addressable {
+public class RequestSearchAndDetails extends BaseRequest {
     private static final Logger LOGGER = Logger.getLogger(RequestSearchAndDetails.class.getName());
     private static final String KEY_SEARCH_TEXT = "searchText";
 
     private final String searchText;
 
-    RequestSearchAndDetails(String searchText, String responseEndpoint, long requestUUID) {
-        super(responseEndpoint, requestUUID);
+    public RequestSearchAndDetails(String searchText) {
+        super(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS);
         this.searchText = searchText;
     }
 
-    public RequestSearchAndDetails(String searchText, Addressable addressable) {
-        super(addressable);
-        this.searchText = searchText;
-    }
+    public RequestSearchAndDetails(StupidStreamObject serializedRequest) {
+        super(serializedRequest);
 
-    static RequestSearchAndDetails fromStupidStreamObject(StupidStreamObject stupidStreamObject) {
-        if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.SEARCH_AND_DETAILS) {
+        if (serializedRequest.getObjectType() != StupidStreamObject.ObjectType.SEARCH_AND_DETAILS) {
             LOGGER.warning("StupidStreamObject doesn't have the correct object type");
             throw new RuntimeException("Incorrect object type");
         }
 
-        String searchText = stupidStreamObject.getProperty(KEY_SEARCH_TEXT);
-        return new RequestSearchAndDetails(searchText, stupidStreamObject.getResponseAddress());
+        this.searchText = serializedRequest.getProperty(KEY_SEARCH_TEXT);
     }
 
-    public static StupidStreamObject getStupidStreamObject(String searchText, Addressable addressable) {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, addressable)
+    @Override
+    public StupidStreamObject toStupidStreamObject(Addressable responseAddress) {
+        return new StupidStreamObject(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, responseAddress)
             .setProperty(KEY_SEARCH_TEXT, searchText);
-    }
-
-    public StupidStreamObject toStupidStreamObject() {
-        return getStupidStreamObject(searchText, this);
     }
 
     public String getSearchText() {

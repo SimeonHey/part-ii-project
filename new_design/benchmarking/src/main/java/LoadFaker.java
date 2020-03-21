@@ -2,38 +2,50 @@ import java.util.Random;
 
 public abstract class LoadFaker {
     Random random = new Random(22335577);
-    private final int charsLimit = 3;
-    private final int wordsLimit = 20;
-    int currentRequests = 0;
+    private final int charsLimit;
+    private final int wordsLimit;
+    private int currentRequests = 0;
+
+    public LoadFaker(int charsLimit, int wordsLimit) {
+        this.charsLimit = charsLimit;
+        this.wordsLimit = wordsLimit;
+    }
+
+    BaseRequest getRequestFromId(int id) {
+        try {
+            if (id == StupidStreamObject.ObjectType.POST_MESSAGE.ordinal()) {
+                return new RequestPostMessage(getRandomMessage());
+            } else if (id == StupidStreamObject.ObjectType.GET_ALL_MESSAGES.ordinal()) {
+                return new RequestAllMessages();
+            } else if (id == StupidStreamObject.ObjectType.SEARCH_MESSAGES.ordinal()) {
+                return new RequestSearchMessage(getRandomWord(charsLimit - 1));
+            } else if (id == StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS.ordinal()) {
+                long messageId = random.nextInt(currentRequests) % currentRequests;
+                return new RequestMessageDetails(messageId);
+            } else if (id == StupidStreamObject.ObjectType.SEARCH_AND_DETAILS.ordinal()) {
+                return new RequestSearchAndDetails(getRandomWord(charsLimit - 1));
+            } else if (id == StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES.ordinal()) {
+                return new RequestDeleteAllMessages();
+            } else {
+                throw new RuntimeException("The universe is broken");
+            }
+        } finally {
+            currentRequests += 1; // Need to do that after all.. a bit of a hack but hey
+        }
+    }
 
     void callFromId(int id, StorageAPI storageAPI) {
-        if (id == StupidStreamObject.ObjectType.POST_MESSAGE.ordinal()) {
-            storageAPI.postMessage(getRandomMessage());
-        } else if (id == StupidStreamObject.ObjectType.GET_ALL_MESSAGES.ordinal()) {
-            storageAPI.allMessagesFuture();
-        } else if (id == StupidStreamObject.ObjectType.SEARCH_MESSAGES.ordinal()) {
-            storageAPI.searchMessageFuture(getRandomWord());
-        } else if (id == StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS.ordinal()) {
-            storageAPI.messageDetailsFuture((long) (random.nextInt(currentRequests) % currentRequests));
-        } else if (id == StupidStreamObject.ObjectType.SEARCH_AND_DETAILS.ordinal()) {
-            storageAPI.searchAndDetailsFuture(getRandomWord());
-        } else if (id == StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES.ordinal()) {
-            storageAPI.deleteAllMessages();
-        } else {
-            throw new RuntimeException("The universe is broken");
-        }
-
-        currentRequests += 1;
+        storageAPI.handleRequest(getRequestFromId(id), Object.class); // Ignores the output anyways
     }
 
     void callFromObjectType(StupidStreamObject.ObjectType objectType, StorageAPI storageAPI) {
         callFromId(objectType.ordinal(), storageAPI);
     }
 
-    String getRandomWord() {
+    String getRandomWord(int length) {
         StringBuilder stringBuilder = new StringBuilder(charsLimit);
 
-        for (int i=0; i<charsLimit; i++) {
+        for (int i=0; i<length; i++) {
             char letter = (char)('a' + random.nextInt(26));
             stringBuilder.append(letter);
         }
@@ -45,10 +57,10 @@ public abstract class LoadFaker {
         StringBuilder messageBuilder = new StringBuilder();
 
         for (int i=0; i<wordsLimit; i++) {
-            messageBuilder.append(getRandomWord()).append(" ");
+            messageBuilder.append(getRandomWord(charsLimit - 1)).append(" ");
         }
 
-        String sender = getRandomWord();
+        String sender = getRandomWord(charsLimit * wordsLimit);
         return new Message(sender, messageBuilder.toString());
     }
 

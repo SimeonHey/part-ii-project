@@ -1,14 +1,11 @@
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
 import java.util.logging.Logger;
 
 public class StorageAPIEntryPoint {
     private static final Logger LOGGER = Logger.getLogger(StorageAPIEntryPoint.class.getName());
 
     public static void main(String[] args) throws IOException {
-        LOGGER.info("Starting StorageAPI with params " + Arrays.toString(args));
+        /*LOGGER.info("Starting StorageAPI with params " + Arrays.toString(args));
         StorageAPIUtils.StorageAPIInitArgs initArgs = StorageAPIUtils.StorageAPIInitArgs.defaultTestValues();
         StorageAPI storageAPI = StorageAPIUtils.initFromArgsForTests(initArgs);
 
@@ -50,14 +47,14 @@ public class StorageAPIEntryPoint {
                     storageAPI.deleteAllMessages();
                     System.out.println("Deleted all messages");
                     break;
-                /*case "sd":
+                case "sd":
                     ResponseMessageDetails responseMessageDetails1 =
                         storageAPI.searchAndDetails(line[1]);
                     System.out.println("Message details: " + responseMessageDetails1);
-                    break;*/
+                    break;
                 default:
                     System.out.println("Couldn't catch that");
             }
-        }
+        }*/
     }
 }

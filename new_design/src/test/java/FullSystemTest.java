@@ -3,8 +3,6 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
@@ -21,12 +19,12 @@ public class FullSystemTest {
             StorageAPI storageAPI = trinity.storageAPI;
 
             Utils.letThatSinkIn(storageAPI, () -> {
-                storageAPI.postMessage(new Message("Simeon", "Hey"));
-                storageAPI.postMessage(new Message("Simeon", "What's up"));
+                storageAPI.handleRequest(new RequestPostMessage(new Message("Simeon", "Hey")));
+                storageAPI.handleRequest(new RequestPostMessage((new Message("Simeon", "What's up"))));
             });
 
             ResponseSearchMessage responseSearchMessage =
-                storageAPI.searchMessage("non-existent");
+                storageAPI.handleRequest(new RequestSearchMessage(("non-existent")), ResponseSearchMessage.class).get();
             LOGGER.info("Tester: Response from search is " + responseSearchMessage);
             assertEquals(0, responseSearchMessage.getOccurrences().size());
         }
@@ -38,13 +36,14 @@ public class FullSystemTest {
             StorageAPI storageAPI = trinity.storageAPI;
 
             Utils.letThatSinkIn(storageAPI, () -> {
-                storageAPI.postMessage(new Message("Simeon", "Hey"));
-                storageAPI.postMessage(new Message("Simeon", "What's up"));
-                storageAPI.postMessage(new Message("Simeon", "Hey"));
-                storageAPI.postMessage(new Message("Simeon", "Hey"));
+                storageAPI.handleRequest(new RequestPostMessage((new Message("Simeon", "Hey"))));
+                storageAPI.handleRequest(new RequestPostMessage((new Message("Simeon", "What's up"))));
+                storageAPI.handleRequest(new RequestPostMessage((new Message("Simeon", "Hey"))));
+                storageAPI.handleRequest(new RequestPostMessage((new Message("Simeon", "Hey"))));
             });
 
-            ResponseSearchMessage responseSearchMessage = storageAPI.searchMessage("Hey");
+            ResponseSearchMessage responseSearchMessage =
+                storageAPI.handleRequest(new RequestSearchMessage(("Hey")), ResponseSearchMessage.class).get();
             assertEquals(3, responseSearchMessage.getOccurrences().size());
         }
     }
@@ -59,21 +58,26 @@ public class FullSystemTest {
 
             Utils.letThatSinkIn(storageAPI, () -> {
                 for (int i = 0; i < cnt; i++) {
-                    storageAPI.postMessage(toSend);
+                    storageAPI.handleRequest(new RequestPostMessage((toSend)));
 
-                    storageAPI.postMessage(new Message("Someone else", "jibberish"));
-                    storageAPI.postMessage(new Message("Someone else", "jibberish"));
-                    storageAPI.postMessage(new Message("Someone else", "jibberish"));
+                    storageAPI.handleRequest(
+                        new RequestPostMessage((new Message("Someone else", "jibberish"))));
+                    storageAPI.handleRequest(
+                        new RequestPostMessage((new Message("Someone else", "jibberish"))));
+                    storageAPI.handleRequest(
+                        new RequestPostMessage((new Message("Someone else", "jibberish"))));
                 }
             });
 
-            ResponseSearchMessage responseSearchMessage = storageAPI.searchMessage("Hey");
+            ResponseSearchMessage responseSearchMessage =
+                storageAPI.handleRequest(new RequestSearchMessage(("Hey")), ResponseSearchMessage.class).get();
             assertEquals(cnt, responseSearchMessage.getOccurrences().size());
 
             List<Long> messagesIds = responseSearchMessage.getOccurrences();
 
             for (long id : messagesIds) {
-                ResponseMessageDetails details = storageAPI.messageDetails(id);
+                ResponseMessageDetails details = storageAPI.handleRequest(new RequestMessageDetails(id),
+                    ResponseMessageDetails.class).get();
                 assertEquals(toSend, details.getMessage());
             }
         }
@@ -98,11 +102,12 @@ public class FullSystemTest {
 
             Utils.letThatSinkIn(storageAPI, () -> {
                 for (Message mes : toSend) {
-                    storageAPI.postMessage(mes);
+                    storageAPI.handleRequest(new RequestPostMessage(mes));
                 }
             });
 
-            ResponseAllMessages responseAllMessages = storageAPI.allMessages();
+            ResponseAllMessages responseAllMessages =
+                storageAPI.handleRequest(new RequestAllMessages(), ResponseAllMessages.class).get();
             System.out.println("Received " + responseAllMessages);
             assertEquals(toSend.size(), responseAllMessages.getMessages().size());
 
@@ -118,12 +123,12 @@ public class FullSystemTest {
             StorageAPI storageAPI = trinity.storageAPI;
 
             Utils.letThatSinkIn(storageAPI, () -> {
-                storageAPI.postMessage(new Message("Simeon", "Hey"));
-                storageAPI.postMessage(new Message("Simeon", "What's up"));
+                storageAPI.handleRequest(new RequestPostMessage(new Message("Simeon", "Hey")));
+                storageAPI.handleRequest(new RequestPostMessage(new Message("Simeon", "What's up")));
             });
 
-            ResponseMessageDetails responseMessageDetails =
-                storageAPI.searchAndDetails("non-existent");
+            ResponseMessageDetails responseMessageDetails = storageAPI.handleRequest(
+                new RequestSearchAndDetails("non-existent"), ResponseMessageDetails.class).get();
 
             assertNull(responseMessageDetails.getMessage());
         }
@@ -137,12 +142,12 @@ public class FullSystemTest {
             Message simeonHey = new Message("Simeon", "Hey");
 
             Utils.letThatSinkIn(storageAPI, () -> {
-                storageAPI.postMessage(simeonHey);
-                storageAPI.postMessage(new Message("Simeon", "What's up"));
+                storageAPI.handleRequest(new RequestPostMessage(simeonHey));
+                storageAPI.handleRequest(new RequestPostMessage(new Message("Simeon", "What's up")));
             });
 
-            ResponseMessageDetails responseMessageDetails =
-                storageAPI.searchAndDetails("Hey");
+            ResponseMessageDetails responseMessageDetails = storageAPI.handleRequest(
+                new RequestSearchAndDetails("Hey"), ResponseMessageDetails.class).get();
 
             assertEquals(simeonHey, responseMessageDetails.getMessage());
         }
@@ -151,8 +156,6 @@ public class FullSystemTest {
     @Test
     public void searchAndDetailsSnapshotIsolated() throws Exception {
         try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization()) {
-            ExecutorService executorService = Executors.newFixedThreadPool(2);
-
             StorageAPI storageAPI = manualTrinity.storageAPI;
             // Consume the NOP operation and make sure that they can communicate through Kafka
             assertEquals(1, manualTrinity.progressLucene());
@@ -160,29 +163,27 @@ public class FullSystemTest {
 
             Message simeonHey = new Message("Simeon", "Hey");
 
-            storageAPI.postMessage(simeonHey);
-            storageAPI.postMessage(new Message("Simeon", "What's up"));
+            storageAPI.handleRequest(new RequestPostMessage(simeonHey));
+            storageAPI.handleRequest(new RequestPostMessage(new Message("Simeon", "What's up")));
 
             // Post the messages
             assertEquals(2, manualTrinity.progressLucene());
             assertEquals(2, manualTrinity.progressPsql());
 
             // Search & details request
-            Future<ResponseMessageDetails> responseMessageDetailsFuture =
-                executorService.submit(() -> storageAPI.searchAndDetails(simeonHey.getMessageText()));
-
-            Thread.sleep(1000);
+            Future<ResponseMessageDetails> responseMessageDetailsFuture = storageAPI.handleRequest(
+                new RequestSearchAndDetails(simeonHey.getMessageText()), ResponseMessageDetails.class);
 
             // Progress just PSQL, which should take a snapshot of the data, and "wait" for Lucene
             assertEquals(1, manualTrinity.progressPsql());
 
             // Now delete all messages in PSQL
-            storageAPI.deleteAllMessages();
+            storageAPI.handleRequest(new RequestDeleteAllMessages());
             assertEquals(1, manualTrinity.progressPsql());
 
             // Make sure they are deleted in PSQL
-            Future<ResponseAllMessages> allMessagesFuture = executorService.submit(storageAPI::allMessages);
-            Thread.sleep(1000);
+            Future<ResponseAllMessages> allMessagesFuture =
+                storageAPI.handleRequest(new RequestAllMessages(), ResponseAllMessages.class);
 
             assertEquals(1, manualTrinity.progressPsql());
             assertEquals(0, allMessagesFuture.get().getMessages().size());
@@ -203,7 +204,8 @@ public class FullSystemTest {
 
             // Post messages
             for (int i=1; i<=messagesToPost; i++) {
-                manualTrinity.storageAPI.postMessage(new Message("simeon", "Message " + i));
+                manualTrinity.storageAPI.handleRequest(
+                    new RequestPostMessage(new Message("simeon", "Message " + i)));
             }
 
             // Then search for them
@@ -211,8 +213,8 @@ public class FullSystemTest {
 
             for (int i=0; i<messagesToSearch; i++) {
                 int toSearchFor = i % messagesToPost + 1;
-                Future<ResponseMessageDetails> detailsFuture =
-                    manualTrinity.storageAPI.searchAndDetailsFuture("Message " + toSearchFor);
+                Future<ResponseMessageDetails> detailsFuture = manualTrinity.storageAPI.handleRequest(
+                    new RequestSearchAndDetails("Message " + toSearchFor), ResponseMessageDetails.class);
                 futureDetails.add(detailsFuture);
             }
 
@@ -243,7 +245,8 @@ public class FullSystemTest {
             });
 
             for (int i=0; i<100; i++) {
-                manualTrinity.storageAPI.postMessage(new Message("Simeon", "love J Cole"));
+                manualTrinity.storageAPI.handleRequest(
+                    new RequestPostMessage(new Message("Simeon", "J Cole is the best")));
             }
 
             manualTrinity.progressPsql();

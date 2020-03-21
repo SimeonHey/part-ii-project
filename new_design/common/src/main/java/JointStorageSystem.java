@@ -5,6 +5,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -23,6 +25,9 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     final private Counter waitForContactCounter;
     final private Meter completedOperations;
     final private SettableGauge<Long> waitingThreadsTime = new SettableGauge<>();
+    final private Counter openedSnapshotsCounter;
+
+    final private ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public JointStorageSystem(String fullName,
                               ManualConsumer<Long, StupidStreamObject> eventStorageSystem,
@@ -37,6 +42,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
             Constants.METRIC_REGISTRY.counter(this.shortName + ".wait-for-contact");
         this.completedOperations = Constants.METRIC_REGISTRY.meter(this.shortName + ".completed-operations");
         Constants.METRIC_REGISTRY.register(this.shortName + ".wait-for-contact-time", waitingThreadsTime);
+        this.openedSnapshotsCounter = Constants.METRIC_REGISTRY.counter(this.shortName + ".opened-snapshots");
 
         // Subscribe to kafka and http listeners
         eventStorageSystem.subscribe(this::kafkaServiceHandler);
@@ -79,7 +85,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         LOGGER.info(fullName + " joint storage system responds to " + responseAddress + ": " + response);
         String serialized = Constants.gson.toJson(response);
         try {
-            HttpUtils.httpRequestResponse(responseAddress.getInternetAddress(), serialized);
+            HttpUtils.sendHttpRequest(responseAddress.getInternetAddress(), serialized);
         } catch (IOException e) {
             LOGGER.warning("Error when responding to " + responseAddress + ": " + e);
             throw new RuntimeException(e);
@@ -89,29 +95,35 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private void handleWithHandler(StupidStreamObject sso,
                                    ServiceBase<Snap> serviceHandler,
                                    Consumer<MultithreadedResponse> responseCallback) {
+        String objectTypeStr = sso.getObjectType().toString();
+        long uid = sso.getResponseAddress().getChannelID();
+
         if (serviceHandler.handleAsyncWithSnapshot) {
             Snap snapshotToUse = wrapper.getConcurrentSnapshot();
-            new Thread(() -> {
-                namedTimeMeasurements.startTimer(sso.getObjectType().toString());
+            openedSnapshotsCounter.inc();
+
+            executorService.submit(() -> {
+                namedTimeMeasurements.startTimer(objectTypeStr, uid);
 
                 try {
                     serviceHandler.handleRequest(sso, wrapper, responseCallback, this, snapshotToUse);
                     snapshotToUse.close();
+                    openedSnapshotsCounter.dec();
                 } catch (Exception e) {
                     LOGGER.warning("Error when closing the snapshot in storage system " + fullName);
                     throw new RuntimeException(e);
                 }
 
-                namedTimeMeasurements.stopTimerAndPublish(sso.getObjectType().toString());
+                namedTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
                 completedOperations.mark();
-            }).start();
+            });//.start();
         } else {
-            namedTimeMeasurements.startTimer(sso.getObjectType().toString());
+            namedTimeMeasurements.startTimer(objectTypeStr, uid);
 
             LOGGER.info(fullName + " calls the handler for request of type " + sso.getObjectType());
             serviceHandler.handleRequest(sso, wrapper, responseCallback, this, null);
 
-            namedTimeMeasurements.stopTimerAndPublish(sso.getObjectType().toString());
+            namedTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
             completedOperations.mark();
         }
     }
@@ -123,7 +135,13 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         for (ServiceBase<Snap> serviceHandler: serviceHandlers) {
             if (serviceHandler.couldHandle(sso)) {
                 LOGGER.info(fullName + " found a handler for request of type " + sso.getObjectType());
-                handleWithHandler(sso, serviceHandler, responseCallback);
+
+                try {
+                    handleWithHandler(sso, serviceHandler, responseCallback);
+                } catch (Exception e) {
+                    LOGGER.warning("Error when handling wit handler: " + e);
+                    throw new RuntimeException(e);
+                }
                 return;
             }
         }

@@ -1,33 +1,41 @@
 import java.util.HashMap;
+import java.util.function.Supplier;
 
 public class NamedTimeMeasurements {
     private final String rootName;
-    private final HashMap<String, TimeMeasurement> timeMeasurements = new HashMap<>();
+    private final HashMap<String, TimeMeasurer> timeMeasurers = new HashMap<>();
+    private final HashMap<String, HashMap<Long, TimeMeasurer.ActiveTimer>> activeTimers = new HashMap<>();
 
     public NamedTimeMeasurements(String rootName) {
         this.rootName = rootName;
     }
 
-    private TimeMeasurement getOrSet(String resource) {
-        if (timeMeasurements.containsKey(resource)) {
-            return timeMeasurements.get(resource);
+    private <K, V>V hmGetOrSet(HashMap<K, V> hm, K key, Supplier<V> supplier) {
+        if (hm.containsKey(key)) {
+            return hm.get(key);
         }
 
-        TimeMeasurement timeMeasurement = new TimeMeasurement(Constants.METRIC_REGISTRY,
-            String.format("%s.%s", rootName, resource));
-        timeMeasurements.put(resource, timeMeasurement);
-        return timeMeasurement;
+        V newObj = supplier.get();
+        hm.put(key, newObj);
+        return newObj;
     }
 
-    public void measureTime(String resource, Runnable operation) {
-        getOrSet(resource).measureAndPublish(operation);
+    private TimeMeasurer.ActiveTimer startOrGetTimer(String resource, Long uid) {
+        TimeMeasurer timeMeasurer = hmGetOrSet(timeMeasurers, resource, () ->
+            new TimeMeasurer(Constants.METRIC_REGISTRY, String.format("%s.%s", rootName, resource)));
+        var hmTimers = hmGetOrSet(activeTimers, resource, HashMap::new);
+        return hmGetOrSet(hmTimers, uid, timeMeasurer::startTimer);
     }
 
-    public void startTimer(String resource) {
-        getOrSet(resource).startTimer();
+    public void startTimer(String resource, Long uid) {
+        startOrGetTimer(resource, uid);
     }
 
-    public void stopTimerAndPublish(String resource) {
-        getOrSet(resource).stopTimerAndPublish();
+    public void stopTimerAndPublish(String resource, Long uid) {
+        var activeTimer = startOrGetTimer(resource, uid);
+        long elapsedMs = timeMeasurers.get(resource).stopTimerAndPublish(activeTimer);
+        activeTimers.get(resource).remove(uid);
+
+//        System.out.println(rootName + " -> " + resource + " -> " + uid + " took " + elapsedMs + "ms");
     }
 }

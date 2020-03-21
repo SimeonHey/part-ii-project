@@ -36,15 +36,21 @@ public class Constants {
 
     public static final int NUM_STORAGE_SYSTEMS = 2;
 
-
-    public static final String TEST_KAFKA_ADDRESS = "localhost:9092";
+    public static final String TEST_LUCENE_REQUEST_ADDRESS = String.format("http://localhost:%d/lucene/query",
+        LUCENE_LISTEN_PORT);
+    public static final String TEST_PSQL_REQUEST_ADDRESS = String.format("http://localhost:%d/psql/query",
+        PSQL_LISTEN_PORT);
+    public static final String TEST_KAFKA_ADDRESS = "192.168.1.51:9092";
     public static final String TEST_STORAGEAPI_ADDRESS = String.format("http://localhost:%d/server", STORAGEAPI_PORT);
     public static final String TEST_STORAGEAPI_ADDRESS_ALT = String.format("http://localhost:%d/server",
         STORAGEAPI_PORT_ALT);
     public static final String TEST_LUCENE_PSQL_CONTACT_ENDPOINT = "http://localhost:" + PSQL_LISTEN_PORT +
         "/psql/contact";
+    public static final String TEST_LUCENE_PSQL_CONTACT_ENDPOINT_ALT = "http://localhost:" + PSQL_LISTEN_PORT_ALT +
+        "/psql/contact";
 
     public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
+    public static final int TEST_STORAGEAPI_MAX_OUTSTANDING_FAVOURS = 1000;
 
     public static String getStorageSystemBaseName(String fullName) {
         return fullName.split(" ")[0];

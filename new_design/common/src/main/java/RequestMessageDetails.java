@@ -1,26 +1,26 @@
 import java.util.logging.Logger;
 
-public class RequestMessageDetails extends Addressable {
+public class RequestMessageDetails extends BaseRequest {
     private final static String KEY_MESSAGE_UUID = "messageUUID";
 
     private final static Logger LOGGER = Logger.getLogger(RequestMessageDetails.class.getName());
 
     private final Long messageUUID;
 
-    public RequestMessageDetails(Long messageUUID, Addressable addressable) {
-        super(addressable.getInternetAddress(), addressable.getChannelID());
+    public RequestMessageDetails(Long messageUUID) {
+        super(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS);
         this.messageUUID = messageUUID;
     }
 
-    static RequestMessageDetails fromStupidStreamObject(StupidStreamObject stupidStreamObject) {
-        if (stupidStreamObject.getObjectType() != StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS) {
+    public RequestMessageDetails(StupidStreamObject serializedRequest) {
+        super(serializedRequest);
+
+        if (serializedRequest.getObjectType() != StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS) {
             LOGGER.warning("Stupid Stream Object has the incorrect object type");
             throw new RuntimeException("Incorrect object type");
         }
 
-        Long messageUUID = Long.valueOf(stupidStreamObject.getProperty(KEY_MESSAGE_UUID));
-
-        return new RequestMessageDetails(messageUUID, stupidStreamObject.getResponseAddress());
+        this.messageUUID = Long.valueOf(serializedRequest.getProperty(KEY_MESSAGE_UUID));
     }
 
     public static StupidStreamObject getStupidStreamObject(Long messageUUID, Addressable responseAddress) {
@@ -28,8 +28,9 @@ public class RequestMessageDetails extends Addressable {
             .setProperty(KEY_MESSAGE_UUID, String.valueOf(messageUUID));
     }
 
-    public StupidStreamObject toStupidStreamObject() {
-        return getStupidStreamObject(messageUUID, this);
+    @Override
+    public StupidStreamObject toStupidStreamObject(Addressable responseAddress) {
+        return getStupidStreamObject(messageUUID, responseAddress);
     }
 
     public Long getMessageUUID() {

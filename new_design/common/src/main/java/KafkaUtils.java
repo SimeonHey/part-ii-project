@@ -19,8 +19,8 @@ import java.util.Properties;
 public class KafkaUtils {
     private static final Logger LOGGER = Logger.getLogger(KafkaUtils.class.getName());
 
-    private static final TimeMeasurement produceTimeMeasurer =
-        new TimeMeasurement(Constants.METRIC_REGISTRY, "produce-times");
+    private static final TimeMeasurer produceTimeMeasurer =
+        new TimeMeasurer(Constants.METRIC_REGISTRY, "produce-times");
 
     public static Consumer<Long, StupidStreamObject> createConsumer(String consumerGroup, String kafkaAddress,
                                                                     String kafkaTopic) {
@@ -53,7 +53,7 @@ public class KafkaUtils {
     static long produceMessage(Producer<Long, StupidStreamObject> producer,
                                String topic,
                                StupidStreamObject toSend) {
-        produceTimeMeasurer.startTimer();
+        var activeTimer = produceTimeMeasurer.startTimer();
 
         ProducerRecord<Long, StupidStreamObject> record = new ProducerRecord<>(topic,
             Constants.KAFKA_DEFAULT_PARTITION, null, toSend);
@@ -69,7 +69,7 @@ public class KafkaUtils {
             LOGGER.warning("Error when producing message");
             throw new RuntimeException(e);
         } finally {
-            produceTimeMeasurer.stopTimerAndPublish();
+            produceTimeMeasurer.stopTimerAndPublish(activeTimer);
         }
     }
 }
