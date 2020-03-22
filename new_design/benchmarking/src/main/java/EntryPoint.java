@@ -4,6 +4,7 @@ import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
 import io.vavr.Tuple2;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -52,9 +53,12 @@ public class EntryPoint {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.out.println("HELLO!");
+
+        // Log to a file
         LogManager.getLogManager().reset();
+//        Logger.getLogger("").addHandler(new FileHandler("mylog.txt"));
 
         ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(Constants.METRIC_REGISTRY)
             .convertRatesTo(TimeUnit.SECONDS)
@@ -74,7 +78,7 @@ public class EntryPoint {
         KafkaUtils.produceMessage(KafkaUtils.createProducer(Constants.TEST_KAFKA_ADDRESS, "test"),
             "transactions", new RequestNOP().toStupidStreamObject(Constants.NO_RESPONSE));
 
-        makeItDance(new NoSDUniformLoadFaker(20, 50), (StorageSystemFactory::serReads),
+        makeItDance(new NoSDUniformLoadFaker(5, 50), (StorageSystemFactory::serReads),
             List.of(/*
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, Constants.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, Constants.TEST_PSQL_REQUEST_ADDRESS),
@@ -82,3 +86,5 @@ public class EntryPoint {
             100);
     }
 }
+
+// TODO: There's a problem sending HTTP request

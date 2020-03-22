@@ -148,7 +148,7 @@ public class StorageAPI implements AutoCloseable {
 
 
     private byte[] receiveResponse(String serializedResponse) {
-        LOGGER.info(String.format("Received response %s", serializedResponse));
+        LOGGER.info(String.format("Received response with length %d", serializedResponse.length()));
 
         try {
             MultithreadedResponse response = this.multithreadedCommunication.registerResponse(serializedResponse);

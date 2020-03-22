@@ -20,8 +20,8 @@ public class Message {
     @Override
     public String toString() {
         return "Message{" +
-            "sender='" + sender + '\'' +
-            ", messageText='" + messageText + '\'' +
+            "sender length='" + sender.length() + '\'' +
+            ", messageText length='" + messageText.length() + '\'' +
             '}';
     }
 

@@ -27,14 +27,14 @@ public class SqlUtils {
     }
 
     public static void executeStatement(String sql, Connection connection) throws SQLException {
-        LOGGER.info("Executing statement: " + sql);
+        LOGGER.info("Executing SQL statement of length " + sql.length());
         connection.setAutoCommit(true);
         Statement statement = connection.createStatement();
         statement.executeUpdate(sql);
     }
 
     public static ResultSet executeStatementForResult(String sql, Connection connection) throws SQLException {
-        LOGGER.info("Executing statement for result: " + sql);
+        LOGGER.info("Executing SQL statement of length " + sql.length());
         connection.setAutoCommit(true);
         Statement plainStatement = connection.createStatement();
         return plainStatement.executeQuery(sql);

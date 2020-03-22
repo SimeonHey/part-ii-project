@@ -16,7 +16,7 @@ public class HttpUtils {
     static HttpURLConnection sendHttpRequest(String url,
                                              String params) throws IOException {
         var activeTime = httpRequestTimeMeasurer.startTimer();
-        LOGGER.info("Sending an HTTP request to " + url + " with body " + params);
+        LOGGER.info("Sending an HTTP request to " + url + " with body length " + params.length());
 
         HttpURLConnection httpURLConnection =
             (HttpURLConnection) new URL(url).openConnection();
@@ -32,6 +32,7 @@ public class HttpUtils {
         httpURLConnection.getInputStream();
 
         httpRequestTimeMeasurer.stopTimerAndPublish(activeTime);
+        LOGGER.info("Sending to " + url + " done!");
         return httpURLConnection;
     }
 

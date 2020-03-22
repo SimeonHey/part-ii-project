@@ -17,7 +17,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
             sender,
             messageText,
             uuid);
-        LOGGER.info(query);
+
         SqlUtils.executeStatement(query, sequentialConnection);
     }
 

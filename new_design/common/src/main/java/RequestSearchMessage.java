@@ -37,7 +37,7 @@ public class RequestSearchMessage extends BaseRequest {
     @Override
     public String toString() {
         return "RequestSearchMessage{" +
-            "searchText='" + searchText + '\'' +
+            "searchText length = '" + searchText.length() + '\'' +
             ", addres='" + super.toString() + '\'' +
             '}';
     }

@@ -31,7 +31,7 @@ public class MultithreadedResponse {
     public String toString() {
         return "MultithreadedResponse{" +
             "uuid=" + channelUuid +
-            ", serializedResponse=" + serializedResponse +
+            ", serializedResponse length =" + serializedResponse.length() +
             '}';
     }
 

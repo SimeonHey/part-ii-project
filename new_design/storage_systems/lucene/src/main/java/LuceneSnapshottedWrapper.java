@@ -60,7 +60,7 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
             String escapedSender = QueryParser.escape(requestPostMessage.getMessage().getSender());
             String escapedMessage = QueryParser.escape(requestPostMessage.getMessage().getMessageText());
 
-            LOGGER.info("Escaped sender: " + escapedSender + "; escaped message: " + escapedMessage);
+//            LOGGER.info("Escaped sender: " + escapedSender + "; escaped message: " + escapedMessage);
 
             doc.add(new StringField(FIELD_SENDER, escapedSender, Field.Store.YES));
             doc.add(new TextField(FIELD_MESSAGE, escapedMessage, Field.Store.NO));
