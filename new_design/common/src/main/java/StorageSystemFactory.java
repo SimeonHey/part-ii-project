@@ -41,6 +41,8 @@ public abstract class StorageSystemFactory<T extends AutoCloseable> implements A
 
     abstract JointStorageSystem<T> concurReads();
 
+    abstract JointStorageSystem<T> concurSchedule();
+
     @Override
     public void close() throws Exception {
 

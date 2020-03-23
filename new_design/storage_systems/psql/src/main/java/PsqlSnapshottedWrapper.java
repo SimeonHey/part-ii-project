@@ -6,10 +6,10 @@ import java.util.logging.Logger;
 public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<Connection> {
     private static final Logger LOGGER = Logger.getLogger(PsqlSnapshottedWrapper.class.getName());
 
-    private static final Connection sequentialConnection = SqlUtils.defaultConnection();
+    private final Connection sequentialConnection;
 
     PsqlSnapshottedWrapper() {
-
+        sequentialConnection = SqlUtils.defaultConnection();
     }
 
     private void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
@@ -22,7 +22,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
     }
 
     @Override
-    public ResponseMessageDetails getMessageDetails(Connection snapshot,
+    public ResponseMessageDetails getMessageDetails(Connection connection,
                                                     RequestMessageDetails requestMessageDetails) {
         LOGGER.info("Psql has to get details for message " + requestMessageDetails.getMessageUUID());
 
@@ -30,7 +30,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
             String statement = String.format("SELECT * FROM messages WHERE uuid = %d",
                 requestMessageDetails.getMessageUUID());
 
-            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, snapshot)) {
+            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
                 boolean hasMore = resultSet.next();
                 if (!hasMore) {
                     return new ResponseMessageDetails(null, requestMessageDetails.getMessageUUID());
@@ -48,14 +48,14 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
     }
 
     @Override
-    public ResponseAllMessages getAllMessages(Connection snapshot,
+    public ResponseAllMessages getAllMessages(Connection connection,
                                               RequestAllMessages requestAllMessages) {
         LOGGER.info("Psql has to get ALL messages");
         ResponseAllMessages responseAllMessages = new ResponseAllMessages();
 
         try {
             String statement = "SELECT * FROM messages";
-            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, snapshot)) {
+            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
 
                 while (resultSet.next()) {
                     responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
@@ -73,7 +73,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
     }
 
     @Override
-    public ResponseSearchMessage searchMessage(Connection snapshot,
+    public ResponseSearchMessage searchMessage(Connection connection,
                                                RequestSearchMessage requestSearchMessage) {
         throw new RuntimeException("PSQL doesn't have search functionality implemented");
     }
@@ -101,13 +101,17 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<C
         }
     }
 
+    @Override
+    public int getMaxNumberOfSnapshots() {
+        return 50;
+    }
+
     public Connection getDefaultSnapshot() {
         return sequentialConnection;
     }
 
     public Connection getConcurrentSnapshot() {
         Connection connection = SqlUtils.defaultConnection();
-
         try {
             connection.setAutoCommit(false);
             SqlUtils.executeStatement("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ", connection);

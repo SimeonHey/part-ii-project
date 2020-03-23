@@ -16,10 +16,10 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
     }
 
     @Override
-    public JointStorageSystem<Connection> simpleOlep() {
-        return new JointStorageSystem<>("psql simple olep", kafka, httpStorageSystem, snapshottedWrapper)
+    JointStorageSystem<Connection> simpleOlep() {
+        return new JointStorageSystem<>("psql simple olep", kafka, httpStorageSystem, snapshottedWrapper, -1)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -34,7 +34,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -49,14 +49,14 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerHttpService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, false) {
+            .registerHttpService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getAllMessages(snapshot,
                         new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
@@ -66,43 +66,19 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET MESSAGE DETAILS
-            .registerHttpService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, false) {
+            .registerHttpService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getMessageDetails(snapshot,
                         new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
-                }
-            })
-            // SEARCH MESSAGE
-            .registerHttpService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, false) {
-                @Override
-                void handleRequest(StupidStreamObject request,
-                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
-                                   Consumer<MultithreadedResponse> responseCallback,
-                                   JointStorageSystem<Connection> self,
-                                   Connection snapshot) {
-                    LOGGER.info("psql simple olep skips search request");
-                }
-            })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.NOP, false) {
-                @Override
-                void handleRequest(StupidStreamObject request,
-                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
-                                   Consumer<MultithreadedResponse> responseCallback,
-                                   JointStorageSystem<Connection> self,
-                                   Connection snapshot) {
-                    LOGGER.info(self.fullName + " received NOP");
-//                    responseCallback.accept(new StupidStreamObject(StupidStreamObject.ObjectType.NOP,
-//                        Constants.NO_RESPONSE));
                 }
             });
     }
@@ -110,9 +86,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
     @Override
     JointStorageSystem<Connection> serReads() {
         return new JointStorageSystem<>("psql ser reads", this.kafka, this.httpStorageSystem,
-            this.snapshottedWrapper)
+            this.snapshottedWrapper, -1)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -127,7 +103,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -142,14 +118,14 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getAllMessages(snapshot,
                         new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
@@ -159,43 +135,19 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getMessageDetails(snapshot,
                         new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
-                }
-            })
-            // SEARCH MESSAGE
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, false) {
-                @Override
-                void handleRequest(StupidStreamObject request,
-                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
-                                   Consumer<MultithreadedResponse> responseCallback,
-                                   JointStorageSystem<Connection> self,
-                                   Connection snapshot) {
-                    LOGGER.info("psql simple olep skips search request");
-                }
-            })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.NOP, false) {
-                @Override
-                void handleRequest(StupidStreamObject request,
-                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
-                                   Consumer<MultithreadedResponse> responseCallback,
-                                   JointStorageSystem<Connection> self,
-                                   Connection snapshot) {
-                    LOGGER.info(self.fullName + " received NOP");
-//                    responseCallback.accept(new StupidStreamObject(StupidStreamObject.ObjectType.NOP,
-//                        Constants.NO_RESPONSE));
                 }
             });
     }
@@ -203,9 +155,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
     @Override
     JointStorageSystem<Connection> sdRequestNoSession() {
         return new JointStorageSystem<>("psql SD no session", this.kafka, this.httpStorageSystem,
-            this.snapshottedWrapper)
+            this.snapshottedWrapper, -1)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -220,7 +172,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -235,14 +187,14 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getAllMessages(snapshot,
                         new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
@@ -252,14 +204,14 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getMessageDetails(snapshot,
                         new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
@@ -267,19 +219,8 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     );
                 }
             })
-            // SEARCH MESSAGE
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, false) {
-                @Override
-                void handleRequest(StupidStreamObject request,
-                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
-                                   Consumer<MultithreadedResponse> responseCallback,
-                                   JointStorageSystem<Connection> self,
-                                   Connection snapshot) {
-                    LOGGER.info(self.fullName + " skips search request");
-                }
-            })
             // SEARCH AND DETAILS
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -291,24 +232,11 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         self.waitForContact(request.getResponseAddress().getChannelID(), StupidStreamObject.class));
 
                     // Once it does, repeat what get message details does
-                    var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(), requestMessageDetails);
+                    var dbResponse = wrapper.getMessageDetails(snapshot, requestMessageDetails);
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
-                }
-            })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.NOP, false) {
-                @Override
-                void handleRequest(StupidStreamObject request,
-                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
-                                   Consumer<MultithreadedResponse> responseCallback,
-                                   JointStorageSystem<Connection> self,
-                                   Connection snapshot) {
-                    LOGGER.info(self.fullName + " received NOP");
-//                    responseCallback.accept(new StupidStreamObject(StupidStreamObject.ObjectType.NOP,
-//                        Constants.NO_RESPONSE));
                 }
             });
     }
@@ -316,9 +244,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
     @Override
     JointStorageSystem<Connection> sdRequestSeparateSession() {
         return new JointStorageSystem<>("psql SD WITH session", this.kafka, this.httpStorageSystem,
-            this.snapshottedWrapper)
+            this.snapshottedWrapper, 1)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -333,7 +261,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -348,14 +276,14 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getAllMessages(snapshot,
                         new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
@@ -365,14 +293,14 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getMessageDetails(snapshot,
                         new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
@@ -380,19 +308,8 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     );
                 }
             })
-            // SEARCH MESSAGE
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, false) {
-                @Override
-                void handleRequest(StupidStreamObject request,
-                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
-                                   Consumer<MultithreadedResponse> responseCallback,
-                                   JointStorageSystem<Connection> self,
-                                   Connection snapshot) {
-                    LOGGER.info("psql simple olep skips search request");
-                }
-            })
             // SEARCH AND DETAILS
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, true) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, 0) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -414,19 +331,6 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
-                }
-            })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.NOP, false) {
-                @Override
-                void handleRequest(StupidStreamObject request,
-                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
-                                   Consumer<MultithreadedResponse> responseCallback,
-                                   JointStorageSystem<Connection> self,
-                                   Connection snapshot) {
-                    LOGGER.info(self.fullName + " received NOP");
-//                    responseCallback.accept(new StupidStreamObject(StupidStreamObject.ObjectType.NOP,
-//                        Constants.NO_RESPONSE));
                 }
             });
     }
@@ -434,9 +338,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
     @Override
     JointStorageSystem<Connection> concurReads() {
         return new JointStorageSystem<>("psql SD WITH session", this.kafka, this.httpStorageSystem,
-            this.snapshottedWrapper)
+            this.snapshottedWrapper, 1)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -445,13 +349,13 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    Connection snapshot) {
                     wrapper.postMessage(new RequestPostMessage(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
-                             request.getResponseAddress().getChannelID(), 
+                        request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, false) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -460,57 +364,46 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                                    Connection snapshot) {
                     wrapper.deleteAllMessages();
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
-                             request.getResponseAddress().getChannelID(), 
+                        request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.fullName, request.getObjectType()));
                     responseCallback.accept(response);
                 }
             })
             // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, true) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, 0) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getAllMessages(snapshot,
                         new RequestAllMessages(request));
                     var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
-                             request.getResponseAddress().getChannelID(), dbResponse);
+                        request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse + "; the multithreaded response is: " + response);
                     responseCallback.accept(response);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, true) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, 0) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    var dbResponse = wrapper.getMessageDetails(wrapper.getDefaultSnapshot(),
+                    var dbResponse = wrapper.getMessageDetails(snapshot,
                         new RequestMessageDetails(request));
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
-                             request.getResponseAddress().getChannelID(), dbResponse)
+                            request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
             })
-            // SEARCH MESSAGE
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, true) {
-                @Override
-                void handleRequest(StupidStreamObject request,
-                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
-                                   Consumer<MultithreadedResponse> responseCallback,
-                                   JointStorageSystem<Connection> self,
-                                   Connection snapshot) {
-                    LOGGER.info("psql simple olep skips search request");
-                }
-            })
             // SEARCH AND DETAILS
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, true) {
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, 0) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
@@ -530,21 +423,102 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     LOGGER.info(self.fullName + ": the response from the database is: " + dbResponse);
                     responseCallback.accept(
                         new MultithreadedResponse(self.shortName, request.getObjectType(),
-                             request.getResponseAddress().getChannelID(), dbResponse)
+                            request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
-            })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.NOP, false) {
+            });
+    }
+
+    @Override
+    JointStorageSystem<Connection> concurSchedule() {
+        return new JointStorageSystem<>("psql SD WITH session", this.kafka, this.httpStorageSystem,
+            this.snapshottedWrapper, 2)
+            // POST MESSAGE
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, -1) {
                 @Override
                 void handleRequest(StupidStreamObject request,
                                    WrappedSnapshottedStorageSystem<Connection> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    LOGGER.info(self.fullName + " received NOP");
-//                    responseCallback.accept(new StupidStreamObject(StupidStreamObject.ObjectType.NOP,
-//                        Constants.NO_RESPONSE));
+                    wrapper.postMessage(new RequestPostMessage(request));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                    responseCallback.accept(response);
+                }
+            })
+            // DELETE ALL MESSAGES
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES, -1) {
+                @Override
+                void handleRequest(StupidStreamObject request,
+                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
+                                   Consumer<MultithreadedResponse> responseCallback,
+                                   JointStorageSystem<Connection> self,
+                                   Connection snapshot) {
+                    wrapper.deleteAllMessages();
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                    responseCallback.accept(response);
+                }
+            })
+            // GET ALL MESSAGES - has its separate channel because it is slooooooow
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, 0) {
+                @Override
+                void handleRequest(StupidStreamObject request,
+                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
+                                   Consumer<MultithreadedResponse> responseCallback,
+                                   JointStorageSystem<Connection> self,
+                                   Connection snapshot) {
+                    var dbResponse = wrapper.getAllMessages(snapshot,
+                        new RequestAllMessages(request));
+                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        request.getResponseAddress().getChannelID(), dbResponse);
+                    LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
+                        "response is " + dbResponse + "; the multithreaded response is: " + response);
+                    responseCallback.accept(response);
+                }
+            })
+            // GET MESSAGE DETAILS
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, 1) {
+                @Override
+                void handleRequest(StupidStreamObject request,
+                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
+                                   Consumer<MultithreadedResponse> responseCallback,
+                                   JointStorageSystem<Connection> self,
+                                   Connection snapshot) {
+                    var dbResponse = wrapper.getMessageDetails(snapshot,
+                        new RequestMessageDetails(request));
+                    responseCallback.accept(
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), dbResponse)
+                    );
+                }
+            })
+            // SEARCH AND DETAILS
+            .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, 1) {
+                @Override
+                void handleRequest(StupidStreamObject request,
+                                   WrappedSnapshottedStorageSystem<Connection> wrapper,
+                                   Consumer<MultithreadedResponse> responseCallback,
+                                   JointStorageSystem<Connection> self,
+                                   Connection snapshot) {
+
+                    LOGGER.info(self.fullName + " waits to be contacted by Lucene...");
+                    // This will block until Lucene contacts us
+                    RequestMessageDetails requestMessageDetails = new RequestMessageDetails(
+                        self.waitForContact(request.getResponseAddress().getChannelID(), StupidStreamObject.class));
+                    LOGGER.info("Contact successful! Request is: " + requestMessageDetails);
+
+                    // Once it does, repeat what get message details does
+                    var dbResponse = wrapper.getMessageDetails(snapshot, requestMessageDetails);
+
+                    LOGGER.info(self.fullName + ": the response from the database is: " + dbResponse);
+                    responseCallback.accept(
+                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                            request.getResponseAddress().getChannelID(), dbResponse)
+                    );
                 }
             });
     }

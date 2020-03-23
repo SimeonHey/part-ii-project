@@ -12,7 +12,7 @@ public interface WrappedSnapshottedStorageSystem<T extends AutoCloseable> extend
     void deleteAllMessages();
 
 
-
+    int getMaxNumberOfSnapshots();
     T getDefaultSnapshot();
     T getConcurrentSnapshot();
 }

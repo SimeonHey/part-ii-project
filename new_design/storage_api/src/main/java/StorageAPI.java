@@ -69,7 +69,9 @@ public class StorageAPI implements AutoCloseable {
 
     public <T>CompletableFuture<T> handleRequest(BaseRequest request, Class<T> responseType) {
         try {
-            outstandingFavoursSemaphore.acquire();
+            if (5 != 5)
+                outstandingFavoursSemaphore.acquire();
+
             outstandingFavoursCounter.inc();
         } catch (InterruptedException e) {
             LOGGER.warning("Error acquiring a semaphore resource for outstanding favours: " + e);
@@ -149,9 +151,10 @@ public class StorageAPI implements AutoCloseable {
 
     private byte[] receiveResponse(String serializedResponse) {
         LOGGER.info(String.format("Received response with length %d", serializedResponse.length()));
-
         try {
             MultithreadedResponse response = this.multithreadedCommunication.registerResponse(serializedResponse);
+            LOGGER.info(String.format("The response with length %d; Response details: %s", serializedResponse.length(),
+                response.toString()));
             favoursTimeMeasurers.stopTimerAndPublish(response.getRequestObjectType().toString(),
                 response.getChannelUuid());
 
@@ -163,7 +166,7 @@ public class StorageAPI implements AutoCloseable {
             LOGGER.warning("Error while trying to register a response in the StorageAPI: " + e);
             throw new RuntimeException(e);
         }
-        return ("Received response " + serializedResponse).getBytes();
+        return ("Received response of length " + serializedResponse.length()).getBytes();
     }
 
     private void waitOnChannel(long channelID, boolean destroy) {

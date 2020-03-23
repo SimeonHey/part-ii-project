@@ -2,15 +2,15 @@ import java.util.function.Consumer;
 
 public abstract class ServiceBase<Snap extends AutoCloseable> {
     private StupidStreamObject.ObjectType objectTypeToHandle;
-    protected boolean handleAsyncWithSnapshot;
+    protected int asyncHandleChannel;
 
-    public ServiceBase(StupidStreamObject.ObjectType objectTypeToHandle, boolean handleAsyncWithSnapshot) {
+    public ServiceBase(StupidStreamObject.ObjectType objectTypeToHandle, int asyncHandleChannel) {
         this.objectTypeToHandle = objectTypeToHandle;
-        this.handleAsyncWithSnapshot = handleAsyncWithSnapshot;
+        this.asyncHandleChannel = asyncHandleChannel;
     }
 
-    boolean couldHandle(StupidStreamObject sso) {
-        return sso.getObjectType().equals(this.objectTypeToHandle);
+    public StupidStreamObject.ObjectType getObjectTypeToHandle() {
+        return objectTypeToHandle;
     }
 
     abstract void handleRequest(StupidStreamObject request,

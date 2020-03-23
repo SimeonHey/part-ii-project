@@ -75,16 +75,11 @@ public class EntryPoint {
             .build(graphite);
         graphiteReporter.start(1, TimeUnit.SECONDS);
 
-        KafkaUtils.produceMessage(KafkaUtils.createProducer(Constants.TEST_KAFKA_ADDRESS, "test"),
-            "transactions", new RequestNOP().toStupidStreamObject(Constants.NO_RESPONSE));
-
-        makeItDance(new NoSDUniformLoadFaker(5, 50), (StorageSystemFactory::serReads),
+        makeItDance(new NoSDUniformLoadFaker(32766, 1), (StorageSystemFactory::concurSchedule),
             List.of(/*
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, Constants.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, Constants.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, Constants.TEST_LUCENE_REQUEST_ADDRESS)*/),
-            100);
+            100 /*not used atm*/);
     }
 }
-
-// TODO: There's a problem sending HTTP request

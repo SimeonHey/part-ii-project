@@ -91,15 +91,12 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
     @Override
     public ResponseSearchMessage searchMessage(IndexReader snapshot,
                                                RequestSearchMessage searchMessage) {
-        LOGGER.info("Searching in a previous snapshot for search text" + searchMessage.getSearchText());
-
         try (Analyzer analyzer = new StandardAnalyzer()) {
             // change the analyzer if you want different tokenization or filters
             IndexSearcher indexSearcher = new IndexSearcher(snapshot);
 
             QueryParser queryParser = new QueryParser(FIELD_MESSAGE, analyzer);
             String escaped = QueryParser.escape(searchMessage.getSearchText());
-            LOGGER.info("Escaped search query: " + escaped);
             Query query = queryParser.parse(escaped);
 
             TopDocs searchResults = indexSearcher.search(query, 100);
@@ -116,7 +113,8 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
                 }
             });
 
-            LOGGER.info("Lucene searched for text " + searchMessage.getSearchText() + " and got " + occurrences);
+            LOGGER.info("Lucene searched for text of length " + searchMessage.getSearchText().length() +
+                " and got " + occurrences);
             return new ResponseSearchMessage(occurrences);
         } catch (IOException | ParseException e) {
             LOGGER.warning("Error when performing search: " + e);
@@ -147,6 +145,11 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
     @Override
     public IndexReader getConcurrentSnapshot() {
         return getDefaultSnapshot();
+    }
+
+    @Override
+    public int getMaxNumberOfSnapshots() {
+        return -1;
     }
 
     @Override
