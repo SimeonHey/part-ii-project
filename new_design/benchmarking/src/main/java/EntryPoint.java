@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.logging.LogManager;
 
 public class EntryPoint {
     private static void makeItDance(LoadFaker loadFaker,
@@ -57,7 +56,7 @@ public class EntryPoint {
         System.out.println("HELLO!");
 
         // Log to a file
-        LogManager.getLogManager().reset();
+//        LogManager.getLogManager().reset();
 //        Logger.getLogger("").addHandler(new FileHandler("mylog.txt"));
 
         ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(Constants.METRIC_REGISTRY)
@@ -75,7 +74,7 @@ public class EntryPoint {
             .build(graphite);
         graphiteReporter.start(1, TimeUnit.SECONDS);
 
-        makeItDance(new NoSDUniformLoadFaker(32766, 1), (StorageSystemFactory::concurSchedule),
+        makeItDance(new NoSDUniformLoadFaker(99_000, 1), (StorageSystemFactory::concurSchedule),
             List.of(/*
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, Constants.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, Constants.TEST_PSQL_REQUEST_ADDRESS),

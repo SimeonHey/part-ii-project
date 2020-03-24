@@ -337,7 +337,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
 
     @Override
     JointStorageSystem<Connection> concurReads() {
-        return new JointStorageSystem<>("psql SD WITH session", this.kafka, this.httpStorageSystem,
+        return new JointStorageSystem<>("psql concur reads", this.kafka, this.httpStorageSystem,
             this.snapshottedWrapper, 1)
             // POST MESSAGE
             .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, -1) {
@@ -431,7 +431,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
 
     @Override
     JointStorageSystem<Connection> concurSchedule() {
-        return new JointStorageSystem<>("psql SD WITH session", this.kafka, this.httpStorageSystem,
+        return new JointStorageSystem<>("psql concur schedule", this.kafka, this.httpStorageSystem,
             this.snapshottedWrapper, 2)
             // POST MESSAGE
             .registerKafkaService(new ServiceBase<>(StupidStreamObject.ObjectType.POST_MESSAGE, -1) {

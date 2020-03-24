@@ -250,6 +250,8 @@ public class FullSystemTest {
             }
 
             manualTrinity.progressPsql();
+
+            Thread.sleep(1000);
             assertEquals(numRequests, confirmationResponses.size());
             while (confirmationResponses.size() > 0) {
                 ConfirmationResponse current = confirmationResponses.take();
@@ -259,6 +261,8 @@ public class FullSystemTest {
             }
 
             manualTrinity.progressLucene();
+
+            Thread.sleep(1000);
             assertEquals(numRequests, confirmationResponses.size());
             while (confirmationResponses.size() > 0) {
                 ConfirmationResponse current = confirmationResponses.take();

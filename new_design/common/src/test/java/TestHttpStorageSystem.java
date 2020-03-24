@@ -53,20 +53,27 @@ public class TestHttpStorageSystem {
 
     @Test
     public void testBigHttpRequest() throws IOException {
-        int charsLim = 1_000_000 * 1000;
+        int charsLim = 1_000_000 * 2;
+        int numberOfTimes = 100;
+
         String phrase = "a".repeat(charsLim);
 
         HttpStorageSystem httpStorageSystem =
             new HttpStorageSystem("test", HttpUtils.initHttpServer(FREE_PORT));
 
-        List<String> theResponse = new ArrayList<>(1);
+        List<Integer> theResponseSizes = new ArrayList<>(numberOfTimes);
         httpStorageSystem.registerHandler("sayHi", (query) -> {
-            theResponse.add(query);
+            theResponseSizes.add(query.length());
             return ("Hi " + query).getBytes();
         });
 
-        HttpUtils.sendHttpRequest("http://localhost:" + FREE_PORT, "test/sayHi", phrase);
-        assertEquals(1, theResponse.size());
-        assertEquals(theResponse.get(0), phrase);
+        for (int i=0; i<numberOfTimes; i++) {
+            HttpUtils.sendHttpRequest("http://localhost:" + FREE_PORT, "test/sayHi", phrase);
+        }
+
+        assertEquals(numberOfTimes, theResponseSizes.size());
+        for (int i=0; i<numberOfTimes; i++) {
+            assertEquals(theResponseSizes.get(i), Integer.valueOf(phrase.length()));
+        }
     }
 }
