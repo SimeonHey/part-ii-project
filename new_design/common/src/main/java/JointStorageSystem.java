@@ -26,13 +26,15 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private final TimeMeasurer waitingThreadsTimeMeasurer;
     private final Counter openedSnapshotsCounter;
 
-    private static final int LIMIT_DB_THREADS = 5;
-    private static final int LIMIT_RESPONSE_THREADS = 2;
+    private static final int LIMIT_DB_THREADS = 4;
+    private static final int LIMIT_RESPONSE_THREADS = 1;
 
     private final MultithreadedEventQueueExecutor databaseOpsExecutors =
-        new MultithreadedEventQueueExecutor(LIMIT_DB_THREADS);
+        new MultithreadedEventQueueExecutor(LIMIT_DB_THREADS,
+            new MultithreadedEventQueueExecutor.StaticChannelsScheduler(StupidStreamObject.ObjectType.values().length));
+
     private final MultithreadedEventQueueExecutor responseExecutors =
-        new MultithreadedEventQueueExecutor(LIMIT_RESPONSE_THREADS);
+        new MultithreadedEventQueueExecutor(LIMIT_RESPONSE_THREADS, new MultithreadedEventQueueExecutor.FifoScheduler());
 
     public JointStorageSystem(String fullName,
                               ManualConsumer<Long, StupidStreamObject> eventStorageSystem,
@@ -129,12 +131,17 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
         if (serviceHandler.asyncHandleChannel != -1) {
             Snap snapshotToUse = this.obtainConnection();
-
             // Execute asynchronously
-            databaseOpsExecutors.submitOperation(() -> {
+            databaseOpsExecutors.submitOperation(sso.getObjectType().ordinal(), () -> {
                 processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
-                serviceHandler.handleRequest(sso, wrapper, responseCallback, this, snapshotToUse);
+                try {
+                    serviceHandler.handleRequest(sso, wrapper, responseCallback, this, snapshotToUse);
+                } catch (Exception e) {
+                    LOGGER.warning("Error when handling request: " + e);
+                    throw new RuntimeException(e);
+                }
+
                 this.releaseConnection(snapshotToUse);
 
                 processingTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
@@ -145,7 +152,12 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
             processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
             // Execute in the current thread
-            serviceHandler.handleRequest(sso, wrapper, responseCallback, this, wrapper.getDefaultSnapshot());
+            try {
+                serviceHandler.handleRequest(sso, wrapper, responseCallback, this, wrapper.getDefaultSnapshot());
+            } catch (Exception e) {
+                LOGGER.warning("Error when handling request: " + e);
+                throw new RuntimeException(e);
+            }
 
             processingTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
             totalTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
@@ -166,6 +178,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         }
 
         handleWithHandler(sso, serviceHandler, responseCallback);
+        LOGGER.info("Successfully processed (but possibly not completed) request of type " + sso.getObjectType());
     }
 
     protected <T> T waitForContact(long channel, Class<T> classOfResponse) {

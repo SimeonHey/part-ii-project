@@ -2,23 +2,71 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 public class MultithreadedEventQueueExecutor implements Closeable {
     private final static Logger LOGGER = Logger.getLogger(MultithreadedEventQueueExecutor.class.getName());
 
-    private final LinkedBlockingQueue<Runnable> operations;
+    public interface Scheduler {
+        void submitOperation(int identifier, Runnable runnable) throws InterruptedException;
+        Runnable takeOperation(int identifier) throws InterruptedException;
+    }
+
+    public static class FifoScheduler implements Scheduler {
+        private final LinkedBlockingQueue<Runnable> operations = new LinkedBlockingQueue<>();
+
+        @Override
+        public void submitOperation(int operationIdentifier, Runnable operation) throws InterruptedException {
+            operations.put(operation);
+        }
+
+        @Override
+        public Runnable takeOperation(int threadIdentifier) throws InterruptedException {
+            return operations.take();
+        }
+    }
+
+    public static class StaticChannelsScheduler implements Scheduler {
+        private final ArrayList<LinkedBlockingQueue<Runnable>> operationsChannels;
+        private final int numberOfChannels;
+
+        public StaticChannelsScheduler(int numberOfOperationsChannels) {
+            this.numberOfChannels = numberOfOperationsChannels;
+
+            this.operationsChannels = new ArrayList<>(numberOfOperationsChannels);
+            for (int i=0; i<numberOfOperationsChannels; i++) {
+                operationsChannels.add(new LinkedBlockingQueue<>());
+            }
+        }
+
+        @Override
+        public void submitOperation(int identifier, Runnable runnable) throws InterruptedException {
+            operationsChannels.get(identifier).put(runnable);
+        }
+
+        @Override
+        public Runnable takeOperation(int identifier) throws InterruptedException {
+            int channel = identifier % numberOfChannels;
+            Runnable runnable = operationsChannels.get(channel).take();
+            LOGGER.info("Thread with identifier " + identifier + " received an operation from channel " + channel);
+            return runnable;
+        }
+    }
+
     private final List<Thread> runningThreads;
+    private final Scheduler scheduler;
+    private final int numberOfThreads;
 
     private boolean haltExecution;
-    private int outstandingOperations;
+    private AtomicInteger outstandingOperations = new AtomicInteger();
 
-    private Thread getLoopingThread() {
+    private Thread getALoopingThread(int identifier) {
         return new Thread(() -> {
             while (!haltExecution) {
                 try {
-                    operations.take().run();
-                    outstandingOperations -= 1;
+                    this.scheduler.takeOperation(identifier).run();
+                    outstandingOperations.decrementAndGet();
                 } catch (InterruptedException e) {
                     haltExecution = true;
                     LOGGER.warning("Error when trying to obtain next runnable operation: " + e);
@@ -28,29 +76,36 @@ public class MultithreadedEventQueueExecutor implements Closeable {
         });
     }
 
-    public MultithreadedEventQueueExecutor(int numberOfThreads) {
-        this.operations = new LinkedBlockingQueue<>();
+    public MultithreadedEventQueueExecutor(int numberOfThreads, Scheduler scheduler) {
+        this.numberOfThreads = numberOfThreads;
+        this.scheduler = scheduler;
+
         this.runningThreads = new ArrayList<>(numberOfThreads);
-
         for (int i=0; i<numberOfThreads; i++) {
-            this.runningThreads.add(this.getLoopingThread());
+            this.runningThreads.add(this.getALoopingThread(i));
         }
-
         this.runningThreads.forEach(Thread::start);
     }
 
-    public void submitOperation(Runnable runnable) {
+    public void submitOperation(int operationIdentifier, Runnable runnable) {
+        operationIdentifier %= this.numberOfThreads; // TODO: not the cleanest thing
+
         try {
-            outstandingOperations += 1;
-            operations.put(runnable);
+            outstandingOperations.incrementAndGet();
+            scheduler.submitOperation(operationIdentifier, runnable);
         } catch (InterruptedException e) {
             LOGGER.warning("Error when trying to add a runnable operation");
             throw new RuntimeException(e);
         }
+        LOGGER.info("Submitted an operation with identifier " + operationIdentifier);
+    }
+
+    public void submitOperation(Runnable runnable) {
+        submitOperation(0, runnable);
     }
 
     public int getOutstandingOperations() {
-        return outstandingOperations;
+        return outstandingOperations.get();
     }
 
     @Override

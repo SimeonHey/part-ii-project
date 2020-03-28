@@ -30,8 +30,10 @@ public class MultithreadedResponse {
     @Override
     public String toString() {
         return "MultithreadedResponse{" +
-            "uuid=" + channelUuid +
-            ", serializedResponse length =" + serializedResponse.length() +
+            "channelUuid=" + channelUuid +
+            ", fromStorageSystem='" + fromStorageSystem + '\'' +
+            ", requestObjectType=" + requestObjectType +
+            ", serializedResponse length='" + serializedResponse.length() + '\'' +
             '}';
     }
 
