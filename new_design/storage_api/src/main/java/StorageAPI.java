@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
@@ -33,14 +32,12 @@ public class StorageAPI implements AutoCloseable {
     private final NamedTimeMeasurements favoursTimeMeasurers = new NamedTimeMeasurements("favours");
     private final Counter outstandingFavoursCounter =
         Constants.METRIC_REGISTRY.counter("favours.outstanding-count");
-    private final Semaphore outstandingFavoursSemaphore;
 
     StorageAPI(Producer<Long, StupidStreamObject> producer,
                HttpStorageSystem httpStorageSystem,
                String transactionsTopic,
                String selfAddress,
-               List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavours,
-               int maxOutstandingFavours) {
+               List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavours) {
         this.producer = producer;
         this.transactionsTopic = transactionsTopic;
         this.httpStorageSystem = httpStorageSystem;
@@ -51,8 +48,6 @@ public class StorageAPI implements AutoCloseable {
 
         this.ADDRESS_RESPONSE =  String.format("%s/%s", httpStorageSystem.getFullAddress(selfAddress),
             ENDPOINT_RESPONSE);
-
-        this.outstandingFavoursSemaphore = new Semaphore(maxOutstandingFavours);
 
         LOGGER.info("Address response: " + ADDRESS_RESPONSE);
     }
@@ -68,15 +63,7 @@ public class StorageAPI implements AutoCloseable {
     }
 
     public <T>CompletableFuture<T> handleRequest(BaseRequest request, Class<T> responseType) {
-        try {
-            if (5 != 5)
-                outstandingFavoursSemaphore.acquire();
-
-            outstandingFavoursCounter.inc();
-        } catch (InterruptedException e) {
-            LOGGER.warning("Error acquiring a semaphore resource for outstanding favours: " + e);
-            throw new RuntimeException(e);
-        }
+        outstandingFavoursCounter.inc();
 
         var httpFavor = findHttpFavour(request);
 
@@ -104,7 +91,6 @@ public class StorageAPI implements AutoCloseable {
             String serializedResponse;
             try {
                 serializedResponse = this.multithreadedCommunication.consumeAndDestroy(offset);
-                outstandingFavoursSemaphore.release();
                 outstandingFavoursCounter.dec();
             } catch (InterruptedException e) {
                 LOGGER.warning("Error when waiting on channel " + offset + ": " + e);

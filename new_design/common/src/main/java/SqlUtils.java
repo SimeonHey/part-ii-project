@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 public class SqlUtils {
     private static final Logger LOGGER = Logger.getLogger(SqlUtils.class.getName());
 
-    public static Connection defaultConnection() {
+    public static Connection freshDefaultConnection() {
         return obtainConnection(Constants.PSQL_USER_PASS[0], Constants.PSQL_USER_PASS[1], Constants.PSQL_ADDRESS);
     }
 
@@ -28,14 +28,14 @@ public class SqlUtils {
 
     public static void executeStatement(String sql, Connection connection) throws SQLException {
         LOGGER.info("Executing SQL statement of length " + sql.length());
-        connection.setAutoCommit(true);
+//        connection.setAutoCommit(true);
         Statement statement = connection.createStatement();
         statement.executeUpdate(sql);
     }
 
     public static ResultSet executeStatementForResult(String sql, Connection connection) throws SQLException {
         LOGGER.info("Executing SQL statement of length " + sql.length());
-        connection.setAutoCommit(true);
+//        connection.setAutoCommit(true);
         Statement plainStatement = connection.createStatement();
         return plainStatement.executeQuery(sql);
     }

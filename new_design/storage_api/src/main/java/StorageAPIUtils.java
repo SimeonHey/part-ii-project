@@ -54,7 +54,7 @@ class StorageAPIUtils {
             HttpUtils.initHttpServer(initArgs.listeningPort));
 
         StorageAPI ret = new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic, "localhost",
-            initArgs.httpFavoursList, Constants.TEST_STORAGEAPI_MAX_OUTSTANDING_FAVOURS);
+            initArgs.httpFavoursList);
 
         LOGGER.info("Successfully initialized storage api " + ret);
         return ret;
@@ -75,7 +75,7 @@ class StorageAPIUtils {
             HttpUtils.initHttpServer(initArgs.listeningPort));
 
         StorageAPI ret =  new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic, "localhost",
-            initArgs.httpFavoursList, Constants.TEST_STORAGEAPI_MAX_OUTSTANDING_FAVOURS);
+            initArgs.httpFavoursList);
 
         LOGGER.info("Successfully initialized storage api " + ret);
         return ret;

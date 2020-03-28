@@ -197,7 +197,7 @@ public class FullSystemTest {
     }
 
     @Test
-    public void aLotOfSD() throws Exception {
+    public void aLotOfSDs() throws Exception {
         try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization()) {
             int messagesToPost = 100;
             int messagesToSearch = 500;

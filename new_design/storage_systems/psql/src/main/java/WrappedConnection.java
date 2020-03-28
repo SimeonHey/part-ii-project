@@ -1,26 +1,36 @@
 import java.sql.Connection;
-import java.util.concurrent.Semaphore;
+import java.sql.SQLException;
+import java.util.function.Consumer;
 
 public class WrappedConnection implements AutoCloseable {
     private final Connection connection;
-    private final Semaphore semaphoreConnections;
+    private final Consumer<WrappedConnection> closeCallback;
+    private final long txId;
 
-    public WrappedConnection(Connection connection, Semaphore semaphoreConnections) {
+    public WrappedConnection(Connection connection, Consumer<WrappedConnection> closeCallback, long txId) {
         this.connection = connection;
-        this.semaphoreConnections = semaphoreConnections;
+        this.closeCallback = closeCallback;
+        this.txId = txId;
     }
 
     public Connection getConnection() {
         return connection;
     }
 
-    public Semaphore getSemaphoreConnections() {
-        return semaphoreConnections;
+    public long getTxId() {
+        return txId;
+    }
+
+    @Override
+    public String toString() {
+        return "WrappedConnection{" +
+            "connection=" + connection +
+            ", txId=" + txId +
+            '}';
     }
 
     @Override
     public void close() throws Exception {
-        this.connection.close();
-        this.semaphoreConnections.release();
+        closeCallback.accept(this);
     }
 }

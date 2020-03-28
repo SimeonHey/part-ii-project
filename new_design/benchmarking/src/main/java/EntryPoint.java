@@ -14,8 +14,7 @@ import java.util.function.Function;
 public class EntryPoint {
     private static void makeItDance(LoadFaker loadFaker,
                                     Function<StorageSystemFactory, JointStorageSystem> factoryStrategy,
-                                    List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavoursList,
-                                    int outstandingFavoursLimit) {
+                                    List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavoursList) {
         String selfAddress = "192.168.1.50";
         String psqlAddress = String.format("http://localhost:%d", Constants.PSQL_LISTEN_PORT);
 
@@ -33,8 +32,7 @@ public class EntryPoint {
                      "StorageAPI",
                      HttpUtils.initHttpServer(Constants.STORAGEAPI_PORT)),
                  Constants.KAFKA_TOPIC, selfAddress,
-                 httpFavoursList,
-                 outstandingFavoursLimit)) {
+                 httpFavoursList)) {
 
             psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
             luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
@@ -63,7 +61,7 @@ public class EntryPoint {
             .convertRatesTo(TimeUnit.SECONDS)
             .convertDurationsTo(TimeUnit.MILLISECONDS)
             .build();
-        consoleReporter.start(1, TimeUnit.SECONDS);
+        consoleReporter. start(1, TimeUnit.SECONDS);
 
         Graphite graphite = new Graphite(new InetSocketAddress("localhost", 2003));
         GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(Constants.METRIC_REGISTRY)
@@ -74,11 +72,10 @@ public class EntryPoint {
             .build(graphite);
         graphiteReporter.start(1, TimeUnit.SECONDS);
 
-        makeItDance(new NoSDUniformLoadFaker(99_000, 1), (StorageSystemFactory::concurSchedule),
+        makeItDance(new UniformLoadFaker(1_000, 1), (StorageSystemFactory::concurReads),
             List.of(/*
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, Constants.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, Constants.TEST_PSQL_REQUEST_ADDRESS),
-                new Tuple2<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, Constants.TEST_LUCENE_REQUEST_ADDRESS)*/),
-            100 /*not used atm*/);
+                new Tuple2<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, Constants.TEST_LUCENE_REQUEST_ADDRESS)*/));
     }
 }

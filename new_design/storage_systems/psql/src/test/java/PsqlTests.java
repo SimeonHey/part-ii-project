@@ -3,10 +3,18 @@ import org.junit.Test;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class PsqlTests {
+    private final static Logger LOGGER = Logger.getLogger(PsqlTests.class.getName());
+
     @Test
     public void testNewTransactionConnectionIsSnapshotIsolated() throws SQLException {
         // We will just test the .newTransactionConnection() method
@@ -26,7 +34,7 @@ public class PsqlTests {
 //        SqlUtils.executeStatement("CREATE TABLE test2 (col1 text)", normalConnection);
 
         // Initialize a connection which has its own transaction
-        Connection transactionConnection = psqlWrapper.getConcurrentSnapshot();
+        Connection transactionConnection = psqlWrapper.getConcurrentSnapshot().getConnection();
 
         // Insert things from the normal connection.
         SqlUtils.executeStatement("INSERT INTO test VALUES ($$hello$$)", normalConnection);
@@ -39,5 +47,30 @@ public class PsqlTests {
 
         resultSet = SqlUtils.executeStatementForResult("SELECT * FROM test2", transactionConnection);
         assertEquals(1, SqlUtils.resultSetSize(resultSet));
+    }
+
+    @Test
+    public void testConnectionPooling() throws Exception {
+        PsqlSnapshottedWrapper psqlSnapshottedWrapper = new PsqlSnapshottedWrapper();
+        List<WrappedConnection> openedConnections = new ArrayList<>();
+
+        for (int i=0; i<PsqlSnapshottedWrapper.MAX_OPENED_CONNECTIONS; i++) {
+            var current = psqlSnapshottedWrapper.getConcurrentSnapshot();
+            openedConnections.add(current);
+            LOGGER.info("Added a connectinon " + current);
+        }
+
+        CompletableFuture<WrappedConnection> oneMore =
+            CompletableFuture.supplyAsync(psqlSnapshottedWrapper::getConcurrentSnapshot);
+
+        Thread.sleep(1000);
+
+        assertFalse(oneMore.isDone());
+
+        openedConnections.get(0).close();
+
+        Thread.sleep(1000);
+        assertTrue(oneMore.isDone());
+        assertEquals(openedConnections.get(0).getTxId(), oneMore.get().getTxId());
     }
 }

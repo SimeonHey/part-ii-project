@@ -5,11 +5,11 @@ public class TimeMeasurer {
     private final Timer timer;
     private final SettableGauge<Long> settableGauge;
 
-    public static class ActiveTimer {
+    static class ActiveTimer {
         private Timer.Context timerContext;
         private long startTime;
 
-        public ActiveTimer(Timer.Context timerContext, long startTime) {
+        private ActiveTimer(Timer.Context timerContext, long startTime) {
             this.timerContext = timerContext;
             this.startTime = startTime;
         }
