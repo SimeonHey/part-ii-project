@@ -4,7 +4,7 @@ public abstract class LoadFaker {
     Random random = new Random(22335577);
     private final int charsLimit;
     private final int wordsLimit;
-    private int currentRequests = 0;
+    private int currentRequests = 1;
 
     public LoadFaker(int charsLimit, int wordsLimit) {
         this.charsLimit = charsLimit;

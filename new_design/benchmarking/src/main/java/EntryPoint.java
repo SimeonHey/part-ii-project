@@ -7,6 +7,7 @@ import io.vavr.Tuple2;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -72,7 +73,24 @@ public class EntryPoint {
             .build(graphite);
         graphiteReporter.start(1, TimeUnit.SECONDS);
 
-        makeItDance(new UniformLoadFaker(1_000, 1), (StorageSystemFactory::concurReads),
+        ProportionsLoadFaker littleGetAllLoadFaker = new ProportionsLoadFaker(1_000, 1, Map.of(
+            StupidStreamObject.ObjectType.POST_MESSAGE, 0.24,
+            StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, 0.24,
+            StupidStreamObject.ObjectType.SEARCH_MESSAGES, 0.24,
+            StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, 0.24,
+            StupidStreamObject.ObjectType.GET_ALL_MESSAGES, 0.04
+        ));
+
+        ProportionsLoadFaker noSDsLittleGetAll = new ProportionsLoadFaker(1_000, 1, Map.of(
+            StupidStreamObject.ObjectType.POST_MESSAGE, 0.30,
+            StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, 0.30,
+            StupidStreamObject.ObjectType.SEARCH_MESSAGES, 0.30,
+            StupidStreamObject.ObjectType.GET_ALL_MESSAGES, 0.10
+        ));
+
+
+
+        makeItDance(noSDsLittleGetAll, (StorageSystemFactory::concurReads),
             List.of(/*
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, Constants.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, Constants.TEST_PSQL_REQUEST_ADDRESS),

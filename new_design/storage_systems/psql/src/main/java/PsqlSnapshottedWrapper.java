@@ -59,13 +59,13 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
     @Override
     public ResponseAllMessages getAllMessages(WrappedConnection wrappedConnection,
                                               RequestAllMessages requestAllMessages) {
-
+        /*
         try {
-            Thread.sleep(1000); // TODO: Remove
+            Thread.sleep(200); // TODO: Remove
         } catch (InterruptedException e) {
             LOGGER.warning("Error while waiting");
             throw new RuntimeException(e);
-        }
+        }*/
 
         LOGGER.info("Psql has to get ALL messages");
         ResponseAllMessages responseAllMessages = new ResponseAllMessages();
