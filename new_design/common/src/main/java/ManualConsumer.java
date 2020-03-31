@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 public class ManualConsumer<K, V> {
     private final static Logger LOGGER = Logger.getLogger(ManualConsumer.class.getName());
 
-    static final long DEFAULT_BLOCK_ON_POLL_MS = 10 * 1000; // TODO: Check
+    static final long DEFAULT_BLOCK_ON_POLL_MS = 1; // TODO: Check
 
     List<KafkaConsumerObserver<K, V>> subscribers = new CopyOnWriteArrayList<>();
     protected Consumer<K, V> kafkaConsumer;
@@ -30,12 +30,17 @@ public class ManualConsumer<K, V> {
 
     public void subscribe(KafkaConsumerObserver<K, V> subscriber) {
         this.subscribers.add(subscriber);
+        LOGGER.info("Adding a subscriber for a total of " + this.subscribers.size() + " subscribers");
     }
 
     ConsumerRecords<K, V> consumeRecords() {
         ConsumerRecords<K, V> consumerRecords = this.kafkaConsumer.poll(java.time.Duration.ofMillis(blockOnPollMs));
         this.kafkaConsumer.commitSync();
-//        LOGGER.info("Consumed " + consumerRecords.count() + " records");
+
+        if (consumerRecords.count() > 0) {
+            LOGGER.info("Something consumed " + consumerRecords.count() + " records");
+        }
+
         return consumerRecords;
     }
 
@@ -51,7 +56,8 @@ public class ManualConsumer<K, V> {
     public int consumeAvailableRecords() {
         ConsumerRecords<K, V> consumerRecords = this.consumeRecords();
 
-        LOGGER.info("Consumed " + consumerRecords.count() + " records. Pinging the subscribers...");
+        LOGGER.info("Consumed " + consumerRecords.count() + " records. Pinging all of the " +
+            this.subscribers.size() + " subscribers...");
         consumerRecords.forEach(record ->
             this.subscribers.forEach(subscriber -> subscriber.messageReceived(record)));
 

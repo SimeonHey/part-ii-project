@@ -3,10 +3,10 @@ import java.util.Map;
 public class ProportionsLoadFaker extends LoadFaker {
     private final static double EPS = 0.000001;
 
-    private final Map<StupidStreamObject.ObjectType, Double> proportions;
+    private final Map<LoadFaker.Events, Double> proportions;
 
     public ProportionsLoadFaker(int charsLimit, int wordsLimit,
-                                Map<StupidStreamObject.ObjectType, Double> proportions) {
+                                Map<LoadFaker.Events, Double> proportions) {
         super(charsLimit, wordsLimit);
         this.proportions = proportions;
 
@@ -20,11 +20,11 @@ public class ProportionsLoadFaker extends LoadFaker {
     void nextRequest(StorageAPI storageAPI) {
         final double current = random.nextDouble();
         double curSum = 0;
-        for (Map.Entry<StupidStreamObject.ObjectType, Double> entry : proportions.entrySet()) {
+        for (Map.Entry<LoadFaker.Events, Double> entry : proportions.entrySet()) {
             curSum += entry.getValue();
 
             if (curSum >= current) {
-                callFromObjectType(entry.getKey(), storageAPI);
+                callFromId(entry.getKey().ordinal(), storageAPI);
                 return;
             }
         }

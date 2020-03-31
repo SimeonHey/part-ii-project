@@ -1,8 +1,8 @@
 public class ConfirmationResponse {
     private final String fromStorageSystem;
-    private final StupidStreamObject.ObjectType objectType;
+    private final String objectType;
 
-    public ConfirmationResponse(String fromStorageSystem, StupidStreamObject.ObjectType objectType) {
+    public ConfirmationResponse(String fromStorageSystem, String objectType) {
         this.fromStorageSystem = fromStorageSystem;
         this.objectType = objectType;
     }
@@ -11,7 +11,7 @@ public class ConfirmationResponse {
         return fromStorageSystem;
     }
 
-    public StupidStreamObject.ObjectType getObjectType() {
+    public String getObjectType() {
         return objectType;
     }
 

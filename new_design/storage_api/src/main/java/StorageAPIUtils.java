@@ -13,7 +13,7 @@ class StorageAPIUtils {
         public String transactionsTopic;
         public int listeningPort;
 
-        public List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavoursList = List.of(/*
+        public List<Tuple2<String, String>> httpFavoursList = List.of(/*
             new Tuple2<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, Constants.TEST_PSQL_REQUEST_ADDRESS),
             new Tuple2<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, Constants.TEST_PSQL_REQUEST_ADDRESS),
             new Tuple2<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, Constants.TEST_LUCENE_REQUEST_ADDRESS)*/);
@@ -43,10 +43,10 @@ class StorageAPIUtils {
 
         // Setup connections
         LOGGER.info("Initializing a Kafka producer...");
-        Producer<Long, StupidStreamObject> producer =
+        Producer<Long, BaseEvent> producer =
             KafkaUtils.createProducer(initArgs.kafkaAddress, "storageAPI");
         KafkaUtils.produceMessage(producer, initArgs.transactionsTopic,
-            new RequestNOP().toStupidStreamObject(new Addressable(Constants.TEST_STORAGEAPI_ADDRESS, 0L)));
+            new RequestNOP(new Addressable(Constants.TEST_STORAGEAPI_ADDRESS)));
         LOGGER.info("Success");
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);
@@ -65,9 +65,9 @@ class StorageAPIUtils {
 
         // Setup connections
         LOGGER.info("Initializing a Kafka producer...");
-        Producer<Long, StupidStreamObject> producer = new DummyProducer();
+        Producer<Long, BaseEvent> producer = new DummyProducer();
         KafkaUtils.produceMessage(producer, initArgs.transactionsTopic,
-            new RequestNOP().toStupidStreamObject(new Addressable(Constants.TEST_STORAGEAPI_ADDRESS, 0L)));
+            new RequestNOP(new Addressable(Constants.TEST_STORAGEAPI_ADDRESS)));
         LOGGER.info("Success");
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);

@@ -3,7 +3,6 @@ import com.codahale.metrics.Meter;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -12,12 +11,16 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private final static Logger LOGGER = Logger.getLogger(JointStorageSystem.class.getName());
 
     private final MultithreadedCommunication multithreadedCommunication = new MultithreadedCommunication();
-    private final Map<StupidStreamObject.ObjectType, ServiceBase<Snap>> kafkaServiceHandlers = new HashMap<>();
-    private final Map<StupidStreamObject.ObjectType, ServiceBase<Snap>> httpServiceHandlers = new HashMap<>();
 
     final String fullName;
     final String shortName;
-    private WrappedSnapshottedStorageSystem<Snap> wrapper;
+    private final WrappedSnapshottedStorageSystem<Snap> wrapper;
+
+    private final Map<String, ServiceBase<Snap>> kafkaServiceHandlers;
+    private final Map<String, ServiceBase<Snap>> httpServiceHandlers;
+
+    final Map<String, Class<? extends BaseEvent>> classMap;
+    private final Map<String, Integer> classNumber;
 
     private final NamedTimeMeasurements processingTimeMeasurements;
     private final NamedTimeMeasurements totalTimeMeasurements;
@@ -31,22 +34,29 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     private final MultithreadedEventQueueExecutor databaseOpsExecutors =
         new MultithreadedEventQueueExecutor(LIMIT_DB_THREADS,
-            new MultithreadedEventQueueExecutor.StaticChannelsScheduler(StupidStreamObject.ObjectType.values().length));
+            new MultithreadedEventQueueExecutor.StaticChannelsScheduler(6));
 
     private final MultithreadedEventQueueExecutor responseExecutors =
         new MultithreadedEventQueueExecutor(LIMIT_RESPONSE_THREADS, new MultithreadedEventQueueExecutor.FifoScheduler());
 
-    public JointStorageSystem(String fullName,
-                              ManualConsumer<Long, StupidStreamObject> eventStorageSystem,
-                              HttpStorageSystem httpStorageSystem,
-                              WrappedSnapshottedStorageSystem<Snap> wrapper,
-                              int numberOfSemaphoreChannels) {
+    JointStorageSystem(String fullName,
+                       HttpStorageSystem httpStorageSystem,
+                       WrappedSnapshottedStorageSystem<Snap> wrapper,
+                       Map<String, ServiceBase<Snap>> kafkaServiceHandlers,
+                       Map<String, ServiceBase<Snap>> httpServiceHandlers,
+                       Map<String, Class<? extends BaseEvent>> classMap,
+                       Map<String, Integer> classNumber) {
         this.fullName = fullName;
         this.shortName = Constants.getStorageSystemBaseName(fullName);
         this.wrapper = wrapper;
 
+        this.kafkaServiceHandlers = kafkaServiceHandlers;
+        this.httpServiceHandlers = httpServiceHandlers;
+
+        this.classMap = classMap;
+        this.classNumber = classNumber;
+
         // Subscribe to kafka and http listeners
-        eventStorageSystem.subscribe(this::kafkaServiceHandler);
         httpStorageSystem.registerHandler("query", this::httpServiceHandler);
 
         // Settle things for contact
@@ -70,7 +80,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     }
 
     private byte[] httpServiceHandler(String serializedQuery) {
-        StupidStreamObject sso = Constants.gson.fromJson(serializedQuery, StupidStreamObject.class);
+        BaseEvent sso = EventJsonDeserializer.deserialize(Constants.gson, serializedQuery, classMap);
 
         LOGGER.info(String.format("%s received an HTTP query of type %s", fullName, sso.getObjectType()));
 
@@ -78,8 +88,8 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         return "Thanks, processing... :)".getBytes();
     }
 
-    private void kafkaServiceHandler(ConsumerRecord<Long, StupidStreamObject> record) {
-        StupidStreamObject sso = record.value();
+    void kafkaServiceHandler(ConsumerRecord<Long, BaseEvent> record) {
+        BaseEvent sso = record.value();
         LOGGER.info(String.format("%s received a Kafka query: %s", fullName, sso.getObjectType()));
 
         // The Kafka offset is only known after the message has been published
@@ -121,10 +131,10 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         openedSnapshotsCounter.dec();
     }
 
-    private void handleWithHandler(StupidStreamObject sso,
+    private void handleWithHandler(BaseEvent sso,
                                    ServiceBase<Snap> serviceHandler,
                                    Consumer<MultithreadedResponse> responseCallback) {
-        String objectTypeStr = sso.getObjectType().toString();
+        String objectTypeStr = sso.getObjectType();
         long uid = sso.getResponseAddress().getChannelID();
 
         totalTimeMeasurements.startTimer(objectTypeStr, uid);
@@ -132,7 +142,8 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         if (serviceHandler.asyncHandleChannel != -1) {
             Snap snapshotToUse = this.obtainConnection();
             // Execute asynchronously
-            databaseOpsExecutors.submitOperation(sso.getObjectType().ordinal(), () -> {
+            int number = classNumber.get(sso.getObjectType());
+            databaseOpsExecutors.submitOperation(number, () -> {
                 processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
                 try {
@@ -165,20 +176,20 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         }
     }
 
-    private void requestArrived(Map<StupidStreamObject.ObjectType, ServiceBase<Snap>> serviceHandlers,
-                                StupidStreamObject sso,
+    private void requestArrived(Map<String, ServiceBase<Snap>> serviceHandlers,
+                                BaseEvent baseEvent,
                                 Consumer<MultithreadedResponse> responseCallback) {
-        LOGGER.info("Request arrived for " + fullName + " of type " + sso.getObjectType());
+        LOGGER.info("Request arrived for " + fullName + " of type " + baseEvent.getObjectType());
 
-        var serviceHandler = serviceHandlers.get(sso.getObjectType());
+        var serviceHandler = serviceHandlers.get(baseEvent.getObjectType());
 
         if (serviceHandler == null) {
-            LOGGER.info("Couldn't find a handler for request of type " + sso.getObjectType());
+            LOGGER.info("Couldn't find a handler for request of type " + baseEvent.getObjectType());
             return;
         }
 
-        handleWithHandler(sso, serviceHandler, responseCallback);
-        LOGGER.info("Successfully processed (but possibly not completed) request of type " + sso.getObjectType());
+        handleWithHandler(baseEvent, serviceHandler, responseCallback);
+        LOGGER.info("Successfully processed (but possibly not completed) request of type " + baseEvent.getObjectType());
     }
 
     protected <T> T waitForContact(long channel, Class<T> classOfResponse) {
@@ -198,14 +209,17 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         return Constants.gson.fromJson(serialized, classOfResponse);
     }
 
-    public JointStorageSystem<Snap> registerKafkaService(ServiceBase<Snap> serviceDescription) {
-        this.kafkaServiceHandlers.put(serviceDescription.getObjectTypeToHandle(), serviceDescription);
-        return this;
-    }
-
-    public JointStorageSystem<Snap> registerHttpService(ServiceBase<Snap> serviceDescription) {
-        this.httpServiceHandlers.put(serviceDescription.getObjectTypeToHandle(), serviceDescription);
-        return this;
+    @Override
+    public String toString() {
+        return "JointStorageSystem{" +
+            "fullName='" + fullName + '\'' +
+            ", wrapper=" + wrapper +
+            ", kafkaServiceHandlers=" + kafkaServiceHandlers.keySet() +
+            ", httpServiceHandlers=" + httpServiceHandlers.keySet() +
+            ", classMap=" + classMap.keySet() +
+            ", databaseOpsExecutors=" + databaseOpsExecutors +
+            ", responseExecutors=" + responseExecutors +
+            '}';
     }
 
     @Override

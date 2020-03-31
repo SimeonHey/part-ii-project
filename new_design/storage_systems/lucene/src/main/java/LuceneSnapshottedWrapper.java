@@ -64,7 +64,7 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
 
             doc.add(new StringField(FIELD_SENDER, escapedSender, Field.Store.YES));
             doc.add(new TextField(FIELD_MESSAGE, escapedMessage, Field.Store.NO));
-            doc.add(new StoredField(FIELD_UUID, requestPostMessage.getChannelID()));
+            doc.add(new StoredField(FIELD_UUID, requestPostMessage.getResponseAddress().getChannelID()));
 
             indexWriter.addDocument(doc);
         } catch (IOException e) {

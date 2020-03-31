@@ -1,5 +1,4 @@
 import java.io.IOException;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 class Utils {
@@ -24,7 +23,8 @@ class Utils {
         public void close() throws Exception {
             LOGGER.info("STARTING SHUTDOWN PROCEDURE");
 
-            this.storageAPI.handleRequest(new RequestDeleteAllMessages()); // Produces a Kafka message
+            this.storageAPI.handleRequest(new RequestDeleteAllMessages(
+                new Addressable(storageAPI.getResponseAddress()))); // Produces a Kafka message
             this.storageAPI.waitForAllConfirmations();
             Thread.sleep(1000);
 
@@ -36,14 +36,14 @@ class Utils {
     }
 
     static class ManualTrinity extends Trinity {
-        public final ManualConsumer<Long, StupidStreamObject> manualConsumerPsql;
-        public final ManualConsumer<Long, StupidStreamObject> manualConsumerLucene;
+        public final ManualConsumer<Long, BaseEvent> manualConsumerPsql;
+        public final ManualConsumer<Long, BaseEvent> manualConsumerLucene;
 
         ManualTrinity(JointStorageSystem psqlConcurReads,
                       JointStorageSystem luceneConcurReads,
                       StorageAPI storageAPI,
-                      ManualConsumer<Long, StupidStreamObject> manualConsumerPsql,
-                      ManualConsumer<Long, StupidStreamObject> manualConsumerLucene) {
+                      ManualConsumer<Long, BaseEvent> manualConsumerPsql,
+                      ManualConsumer<Long, BaseEvent> manualConsumerLucene) {
             super(psqlConcurReads, luceneConcurReads, storageAPI);
             this.manualConsumerPsql = manualConsumerPsql;
             this.manualConsumerLucene = manualConsumerLucene;
@@ -82,15 +82,11 @@ class Utils {
             return savedInstance;
         }
 
-        var psqlFactory = new PsqlStorageSystemsFactory(LoopingConsumer.fresh("psql",
-            Constants.TEST_KAFKA_ADDRESS));
-        var psqlConcurrentSnapshots = psqlFactory.concurSchedule();
-        psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
+        var psqlFactory = new PsqlStorageSystemsFactory(Constants.PSQL_LISTEN_PORT);
+        var psqlConcurrentSnapshots = psqlFactory.concurReads();
 
-        var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene",
-            Constants.TEST_KAFKA_ADDRESS), Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT);
-        JointStorageSystem luceneStorageSystem = luceneFactory.concurSchedule();
-        luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
+        var luceneFactory = new LuceneStorageSystemFactory(Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT);
+        JointStorageSystem luceneStorageSystem = luceneFactory.concurReads();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultTestValues();
         StorageAPI storageAPI = StorageAPIUtils.initFromArgsForTests(storageAPIInitArgs);
@@ -107,14 +103,22 @@ class Utils {
             return savedInstanceManual;
         }
 
-        var psqlFactory = new PsqlStorageSystemsFactory(
-            new LoopingConsumer<>(new DummyConsumer("psql")), Constants.PSQL_LISTEN_PORT_ALT);
-        var psqlStorageSystem = psqlFactory.concurSchedule();
+        final ManualConsumer[] psqlManualConsumer = new ManualConsumer[1];
+        var psqlFactory = new PsqlStorageSystemsFactory(Constants.PSQL_LISTEN_PORT_ALT, (
+            jointStorageSystem -> {
+                psqlManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("psql"));
+                psqlManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
+            }));
+        var psqlStorageSystem = psqlFactory.concurReads();
 
-        var luceneFactory = new LuceneStorageSystemFactory(
-            new LoopingConsumer<>(new DummyConsumer("lucene")),
-            Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT_ALT);
-        JointStorageSystem luceneStorageSystem = luceneFactory.concurSchedule();
+        final ManualConsumer[] luceneManualConsumer = new ManualConsumer[1];
+        var luceneFactory = new LuceneStorageSystemFactory(Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT_ALT,
+            jointStorageSystem -> {
+                luceneManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("lucene"));
+                luceneManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
+            });
+
+        JointStorageSystem luceneStorageSystem = luceneFactory.concurReads();
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(
             Constants.TEST_KAFKA_ADDRESS,
@@ -123,7 +127,7 @@ class Utils {
         StorageAPI storageAPI = StorageAPIUtils.initFromArgsWithDummyKafkaForTests(storageAPIInitArgs);
 
         savedInstanceManual = new ManualTrinity(psqlStorageSystem, luceneStorageSystem, storageAPI,
-            psqlFactory.getManualConsumer(), luceneFactory.getManualConsumer());
+            psqlManualConsumer[0], luceneManualConsumer[0]);
 
         return savedInstanceManual;
     }

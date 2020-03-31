@@ -5,7 +5,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
 
 public class LuceneEntryPoint {
     public static void main(String[] args) throws IOException, ParseException {
@@ -19,9 +18,7 @@ public class LuceneEntryPoint {
         String psqlAddress = commandLine.getOptionValue("psql");
         String kafkaAddress = commandLine.getOptionValue("kafka");
 
-        var luceneFactory =
-            new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene", kafkaAddress), psqlAddress);
+        var luceneFactory = new LuceneStorageSystemFactory(psqlAddress);
         luceneFactory.simpleOlep();
-        luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
     }
 }

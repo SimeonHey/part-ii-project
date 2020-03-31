@@ -99,8 +99,10 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
     public void postMessage(RequestPostMessage requestPostMessage) {
         LOGGER.info("PSQL posts message " + requestPostMessage);
         try {
-            insertMessage(requestPostMessage.getMessage().getSender(),
-                requestPostMessage.getMessage().getMessageText(), requestPostMessage.getChannelID());
+            insertMessage(
+                requestPostMessage.getMessage().getSender(),
+                requestPostMessage.getMessage().getMessageText(),
+                requestPostMessage.getResponseAddress().getChannelID());
         } catch (SQLException e) {
             LOGGER.warning("Error when inserting message: " + e);
             throw new RuntimeException(e);

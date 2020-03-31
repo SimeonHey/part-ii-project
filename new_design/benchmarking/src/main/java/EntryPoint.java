@@ -8,21 +8,18 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class EntryPoint {
     private static void makeItDance(LoadFaker loadFaker,
                                     Function<StorageSystemFactory, JointStorageSystem> factoryStrategy,
-                                    List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavoursList) {
+                                    List<Tuple2<String, String>> httpFavoursList) {
         String selfAddress = "192.168.1.50";
         String psqlAddress = String.format("http://localhost:%d", Constants.PSQL_LISTEN_PORT);
 
-        try (var psqlFactory = new PsqlStorageSystemsFactory(LoopingConsumer.fresh("psql",
-            Constants.TEST_KAFKA_ADDRESS), Constants.PSQL_LISTEN_PORT);
-            var luceneFactory = new LuceneStorageSystemFactory(LoopingConsumer.fresh("lucene",
-            Constants.TEST_KAFKA_ADDRESS), psqlAddress + "/psql/contact");
+        try (var psqlFactory = new PsqlStorageSystemsFactory(Constants.PSQL_LISTEN_PORT);
+            var luceneFactory = new LuceneStorageSystemFactory(psqlAddress + "/psql/contact");
 
              var ignored = factoryStrategy.apply(psqlFactory);
              var ignored1 = factoryStrategy.apply(luceneFactory);
@@ -34,9 +31,6 @@ public class EntryPoint {
                      HttpUtils.initHttpServer(Constants.STORAGEAPI_PORT)),
                  Constants.KAFKA_TOPIC, selfAddress,
                  httpFavoursList)) {
-
-            psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
-            luceneFactory.listenBlockingly(Executors.newFixedThreadPool(1));
 
             fakeWithLoad(loadFaker, storageApi);
 
@@ -74,26 +68,23 @@ public class EntryPoint {
         graphiteReporter.start(1, TimeUnit.SECONDS);
 
         ProportionsLoadFaker littleGetAllLoadFaker = new ProportionsLoadFaker(1_000, 1, Map.of(
-            StupidStreamObject.ObjectType.POST_MESSAGE, 0.24,
-            StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, 0.24,
-            StupidStreamObject.ObjectType.SEARCH_MESSAGES, 0.24,
-            StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, 0.24,
-            StupidStreamObject.ObjectType.GET_ALL_MESSAGES, 0.04
+            LoadFaker.Events.POST_MESSAGE, 0.24,
+            LoadFaker.Events.GET_MESSAGE_DETAILS, 0.24,
+            LoadFaker.Events.SEARCH_MESSAGES, 0.24,
+            LoadFaker.Events.SEARCH_AND_DETAILS, 0.24,
+            LoadFaker.Events.GET_ALL_MESSAGES, 0.04
         ));
 
         ProportionsLoadFaker noSDsLittleGetAll = new ProportionsLoadFaker(1_000, 1, Map.of(
-            StupidStreamObject.ObjectType.POST_MESSAGE, 0.30,
-            StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, 0.30,
-            StupidStreamObject.ObjectType.SEARCH_MESSAGES, 0.30,
-            StupidStreamObject.ObjectType.GET_ALL_MESSAGES, 0.10
+            LoadFaker.Events.POST_MESSAGE, 0.30,
+            LoadFaker.Events.GET_MESSAGE_DETAILS, 0.30,
+            LoadFaker.Events.SEARCH_MESSAGES, 0.30,
+            LoadFaker.Events.GET_ALL_MESSAGES, 0.10
         ));
 
 
 
         makeItDance(noSDsLittleGetAll, (StorageSystemFactory::concurReads),
-            List.of(/*
-                new Tuple2<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, Constants.TEST_PSQL_REQUEST_ADDRESS),
-                new Tuple2<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, Constants.TEST_PSQL_REQUEST_ADDRESS),
-                new Tuple2<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, Constants.TEST_LUCENE_REQUEST_ADDRESS)*/));
+            List.of());
     }
 }

@@ -1,6 +1,34 @@
+import jdk.jfr.Event;
+
 import java.util.Random;
 
 public abstract class LoadFaker {
+    public enum Events {
+        DELETE_ALL_MESSAGES(RequestDeleteAllMessages.class),
+        POST_MESSAGE(RequestPostMessage.class),
+        
+        GET_ALL_MESSAGES(RequestAllMessages.class),
+        GET_MESSAGE_DETAILS(RequestMessageDetails.class),
+        SEARCH_MESSAGES(RequestSearchMessage.class),
+        SEARCH_AND_DETAILS(RequestSearchAndDetails.class);
+        
+        private final Class<? extends BaseEvent> theClass;
+
+        Events(Class<? extends BaseEvent> theClass) {
+            this.theClass = theClass;
+        }
+    }
+
+    private int findEventByName(String eventName) {
+        for (Events value : Events.values()) {
+            if (value.theClass.getName().equals(eventName)) {
+                return value.ordinal();
+            }
+        }
+
+        throw new RuntimeException("Can't find the event");
+    }
+
     Random random = new Random(22335577);
     private final int charsLimit;
     private final int wordsLimit;
@@ -11,21 +39,21 @@ public abstract class LoadFaker {
         this.wordsLimit = wordsLimit;
     }
 
-    BaseRequest getRequestFromId(int id) {
+    BaseEvent getRequestFromId(int id, Addressable responseAddress) {
         try {
-            if (id == StupidStreamObject.ObjectType.POST_MESSAGE.ordinal()) {
-                return new RequestPostMessage(getRandomMessage());
-            } else if (id == StupidStreamObject.ObjectType.GET_ALL_MESSAGES.ordinal()) {
-                return new RequestAllMessages();
-            } else if (id == StupidStreamObject.ObjectType.SEARCH_MESSAGES.ordinal()) {
-                return new RequestSearchMessage(getRandomWord(charsLimit - 1));
-            } else if (id == StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS.ordinal()) {
+            if (id == Events.POST_MESSAGE.ordinal()) {
+                return new RequestPostMessage(responseAddress, getRandomMessage());
+            } else if (id == Events.GET_ALL_MESSAGES.ordinal()) {
+                return new RequestAllMessages(responseAddress);
+            } else if (id == Events.SEARCH_MESSAGES.ordinal()) {
+                return new RequestSearchMessage(responseAddress, getRandomWord(charsLimit - 1));
+            } else if (id == Events.GET_MESSAGE_DETAILS.ordinal()) {
                 long messageId = random.nextInt(currentRequests) % currentRequests;
-                return new RequestMessageDetails(messageId);
-            } else if (id == StupidStreamObject.ObjectType.SEARCH_AND_DETAILS.ordinal()) {
-                return new RequestSearchAndDetails(getRandomWord(charsLimit - 1));
-            } else if (id == StupidStreamObject.ObjectType.DELETE_ALL_MESSAGES.ordinal()) {
-                return new RequestDeleteAllMessages();
+                return new RequestMessageDetails(responseAddress, messageId);
+            } else if (id == Events.SEARCH_AND_DETAILS.ordinal()) {
+                return new RequestSearchAndDetails(responseAddress, getRandomWord(charsLimit - 1));
+            } else if (id == Events.DELETE_ALL_MESSAGES.ordinal()) {
+                return new RequestDeleteAllMessages(responseAddress);
             } else {
                 throw new RuntimeException("The universe is broken");
             }
@@ -35,11 +63,13 @@ public abstract class LoadFaker {
     }
 
     void callFromId(int id, StorageAPI storageAPI) {
-        storageAPI.handleRequest(getRequestFromId(id), Object.class); // Ignores the output anyways
+        storageAPI.handleRequest(getRequestFromId(id, new Addressable(storageAPI.getResponseAddress())), Object.class); // Ignores the
+        // output
+        // anyways
     }
 
-    void callFromObjectType(StupidStreamObject.ObjectType objectType, StorageAPI storageAPI) {
-        callFromId(objectType.ordinal(), storageAPI);
+    void callFromObjectType(String objectType, StorageAPI storageAPI) {
+        callFromId(findEventByName(objectType), storageAPI);
     }
 
     String getRandomWord(int length) {

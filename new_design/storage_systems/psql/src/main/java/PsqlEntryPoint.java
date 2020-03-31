@@ -5,7 +5,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 public class PsqlEntryPoint {
@@ -24,11 +23,7 @@ public class PsqlEntryPoint {
 
         LOGGER.info("Starting a PSQL wrapper on port " + port + ", and kafka address " + kafkaAddress);
 
-        var loopingConsumer =
-            new LoopingConsumer<>(KafkaUtils.createConsumer("psql", kafkaAddress, Constants.KAFKA_TOPIC));
-        var psqlFactory = new PsqlStorageSystemsFactory(loopingConsumer, port);
-
+        var psqlFactory = new PsqlStorageSystemsFactory(port);
         psqlFactory.concurReads();
-        psqlFactory.listenBlockingly(Executors.newFixedThreadPool(1));
     }
 }

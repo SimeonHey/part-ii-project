@@ -37,11 +37,4 @@ public class LuceneUtils {
             return ret;
         }
     }
-
-    static Consumer<Long, StupidStreamObject> getConsumer(LuceneInitArgs initArgs) {
-        return KafkaUtils.createConsumer(
-            "lucene",
-            initArgs.kafkaAddress,
-            initArgs.transactionsTopic);
-    }
 }

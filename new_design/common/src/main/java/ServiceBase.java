@@ -1,19 +1,26 @@
 import java.util.function.Consumer;
 
 public abstract class ServiceBase<Snap extends AutoCloseable> {
-    private StupidStreamObject.ObjectType objectTypeToHandle;
+    private String objectTypeToHandle;
+
+    private Class<? extends BaseEvent> classOfObjectToHandle;
     protected int asyncHandleChannel;
 
-    public ServiceBase(StupidStreamObject.ObjectType objectTypeToHandle, int asyncHandleChannel) {
-        this.objectTypeToHandle = objectTypeToHandle;
+    public ServiceBase(Class<? extends BaseEvent> classOfObjectToHandle, int asyncHandleChannel) {
+        this.classOfObjectToHandle = classOfObjectToHandle;
+        this.objectTypeToHandle = classOfObjectToHandle.getName();
         this.asyncHandleChannel = asyncHandleChannel;
     }
 
-    public StupidStreamObject.ObjectType getObjectTypeToHandle() {
+    public String getObjectTypeToHandle() {
         return objectTypeToHandle;
     }
 
-    abstract void handleRequest(StupidStreamObject request,
+    public Class<? extends BaseEvent> getClassOfObjectToHandle() {
+        return classOfObjectToHandle;
+    }
+
+    abstract void handleRequest(BaseEvent request,
                                 WrappedSnapshottedStorageSystem<Snap> wrapper,
                                 Consumer<MultithreadedResponse> responseCallback,
                                 JointStorageSystem<Snap> self,

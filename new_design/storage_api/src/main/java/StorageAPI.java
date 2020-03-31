@@ -13,9 +13,9 @@ public class StorageAPI implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(StorageAPI.class.getName());
     private static final String ENDPOINT_RESPONSE = "response";
 
-    private final String ADDRESS_RESPONSE;
+    private final String responseAddress;
 
-    private final Producer<Long, StupidStreamObject> producer;
+    private final Producer<Long, BaseEvent> producer;
     private final String transactionsTopic;
 
     private final MultithreadedCommunication multithreadedCommunication = new MultithreadedCommunication();
@@ -27,17 +27,17 @@ public class StorageAPI implements AutoCloseable {
 
     private List<ConfirmationListener> confirmationListeners = new ArrayList<>();
 
-    private final List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavours;
+    private final List<Tuple2<String, String>> httpFavours;
 
     private final NamedTimeMeasurements favoursTimeMeasurers = new NamedTimeMeasurements("favours");
     private final Counter outstandingFavoursCounter =
         Constants.METRIC_REGISTRY.counter("favours.outstanding-count");
 
-    StorageAPI(Producer<Long, StupidStreamObject> producer,
+    StorageAPI(Producer<Long, BaseEvent> producer,
                HttpStorageSystem httpStorageSystem,
                String transactionsTopic,
                String selfAddress,
-               List<Tuple2<StupidStreamObject.ObjectType, String>> httpFavours) {
+               List<Tuple2<String, String>> httpFavours) {
         this.producer = producer;
         this.transactionsTopic = transactionsTopic;
         this.httpStorageSystem = httpStorageSystem;
@@ -46,13 +46,13 @@ public class StorageAPI implements AutoCloseable {
 
         this.httpStorageSystem.registerHandler(ENDPOINT_RESPONSE, this::receiveResponse);
 
-        this.ADDRESS_RESPONSE =  String.format("%s/%s", httpStorageSystem.getFullAddress(selfAddress),
+        this.responseAddress =  String.format("%s/%s", httpStorageSystem.getFullAddress(selfAddress),
             ENDPOINT_RESPONSE);
 
-        LOGGER.info("Address response: " + ADDRESS_RESPONSE);
+        LOGGER.info("Address response: " + responseAddress);
     }
 
-    private Tuple2<StupidStreamObject.ObjectType, String> findHttpFavour(BaseRequest request) {
+    private Tuple2<String, String> findHttpFavour(BaseEvent request) {
         for (var tuple: httpFavours) {
             if (tuple._1.equals(request.getObjectType())) {
                 return tuple;
@@ -62,7 +62,7 @@ public class StorageAPI implements AutoCloseable {
         return null;
     }
 
-    public <T>CompletableFuture<T> handleRequest(BaseRequest request, Class<T> responseType) {
+    public <T>CompletableFuture<T> handleRequest(BaseEvent request, Class<T> responseType) {
         outstandingFavoursCounter.inc();
 
         var httpFavor = findHttpFavour(request);
@@ -70,18 +70,15 @@ public class StorageAPI implements AutoCloseable {
         if (httpFavor == null) { // I assume if it's not in the HTTP it's in the Kafka favour group
             LOGGER.info("StorageAPI handles request " + request + " through Kafka");
 
-            var resonseAddress = new Addressable(this.ADDRESS_RESPONSE);
-            return kafkaRequestResponseFuture(request.toStupidStreamObject(resonseAddress), responseType);
+            return kafkaRequestResponseFuture(request, responseType);
         } else {
             LOGGER.info("StorageAPI handles request " + request + " through HTTP");
 
-            var responseAddress = new Addressable(this.ADDRESS_RESPONSE);
-            return httpRequestAsyncResponseFuture(httpFavor._2, request.toStupidStreamObject(responseAddress),
-                responseType);
+            return httpRequestAsyncResponseFuture(httpFavor._2, request, responseType);
         }
     }
 
-    public void handleRequest(BaseRequest request) {
+    public void handleRequest(BaseEvent request) {
         handleRequest(request, Object.class);
     }
 
@@ -100,26 +97,37 @@ public class StorageAPI implements AutoCloseable {
         });
     }
 
-    private <T> CompletableFuture<T> kafkaRequestResponseFuture(StupidStreamObject request, Class<T> responseType) {
+    private <T> CompletableFuture<T> kafkaRequestResponseFuture(BaseEvent request, Class<T> responseType) {
         long offset = KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,
             request);
 
-        LOGGER.info("Waiting for response on channel with uuid " + offset);
-        favoursTimeMeasurers.startTimer(request.getObjectType().toString(), offset);
-        return consumeAndDestroyAsync(offset, responseType);
+        if (request.expectsResponse()) {
+            LOGGER.info("Waiting for response on channel with uuid " + offset);
+
+            favoursTimeMeasurers.startTimer(request.getObjectType(), offset);
+            return consumeAndDestroyAsync(offset, responseType);
+        } else {
+            this.confirmationChannelsList.add(offset);
+            return null;
+        }
     }
 
-    private <T>CompletableFuture<T> httpRequestAsyncResponseFuture(String address, StupidStreamObject request,
+    private <T>CompletableFuture<T> httpRequestAsyncResponseFuture(String address, BaseEvent request,
                                                                    Class<T> responseType) {
         try {
             long curId = httpRequestsUid.getAndDecrement();
             request.getResponseAddress().setChannelID(curId);
 
-            LOGGER.info(String.format("Sending a request of type %s through HTTP with id = %d...",
-                request.getObjectType().toString(), curId));
-            favoursTimeMeasurers.startTimer(request.getObjectType().toString(), curId);
+            LOGGER.info(String.format("Sending a request of type %s through HTTP with id = %d, and waiting for " +
+                    "response on that channel...", request.getObjectType(), curId));
+
+            if (!request.expectsResponse()) {
+                this.confirmationChannelsList.add(curId);
+            }
+
+            favoursTimeMeasurers.startTimer(request.getObjectType(), curId);
             HttpUtils.sendHttpRequest(address, Constants.gson.toJson(request));
 
             return consumeAndDestroyAsync(curId, responseType);
@@ -134,15 +142,13 @@ public class StorageAPI implements AutoCloseable {
         confirmationListeners.add(confirmationListener);
     }
 
-
     private byte[] receiveResponse(String serializedResponse) {
         LOGGER.info(String.format("Received response with length %d", serializedResponse.length()));
         try {
             MultithreadedResponse response = this.multithreadedCommunication.registerResponse(serializedResponse);
             LOGGER.info(String.format("The response with length %d; Response details: %s", serializedResponse.length(),
                 response.toString()));
-            favoursTimeMeasurers.stopTimerAndPublish(response.getRequestObjectType().toString(),
-                response.getChannelUuid());
+            favoursTimeMeasurers.stopTimerAndPublish(response.getRequestObjectType(), response.getChannelUuid());
 
             // Notify all confirmation listeners as this is a response anyways
             ConfirmationResponse confirmationResponse = new ConfirmationResponse(response.getFromStorageSystem(),
@@ -180,6 +186,10 @@ public class StorageAPI implements AutoCloseable {
         LOGGER.info("Received confirmations and cleared the current list.");
     }
 
+    public String getResponseAddress() {
+        return responseAddress;
+    }
+
     @Override
     public String toString() {
         return "StorageAPI{" +
@@ -190,6 +200,8 @@ public class StorageAPI implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
+        LOGGER.info("Closing the Storage API...");
+
         this.waitForAllConfirmations();
         httpStorageSystem.close();
     }

@@ -8,7 +8,7 @@ public class SdBiasedLoadFaker extends LoadFaker {
     @Override
     void nextRequest(StorageAPI storageAPI) {
         if (random.nextDouble() < SD_CHANCE) {
-            callFromObjectType(StupidStreamObject.ObjectType.SEARCH_AND_DETAILS, storageAPI);
+            callFromObjectType(RequestSearchAndDetails.class.getName(), storageAPI);
         } else {
             callFromId(random.nextInt(5), storageAPI);
         }

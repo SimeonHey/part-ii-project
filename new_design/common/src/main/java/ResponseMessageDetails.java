@@ -38,11 +38,4 @@ public class ResponseMessageDetails {
     public int hashCode() {
         return Objects.hash(getMessage(), getUuid());
     }
-
-    StupidStreamObject toStupidStreamObject() {
-        return new StupidStreamObject(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, Constants.NO_RESPONSE)
-            .setProperty("messageSender", message.getSender())
-            .setProperty("messageText", message.getMessageText())
-            .setProperty("uuid", String.valueOf(uuid));
-    }
 }

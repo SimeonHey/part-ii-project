@@ -1,11 +1,11 @@
 public class MultithreadedResponse {
     private final long channelUuid;
     private final String fromStorageSystem;
-    private final StupidStreamObject.ObjectType requestObjectType;
+    private final String requestObjectType;
     private final String serializedResponse;
 
     public MultithreadedResponse(String fromStorageSystem,
-                                 StupidStreamObject.ObjectType requestObjectType,
+                                 String requestObjectType,
                                  long channelUuid,
                                  Object response) {
         this.fromStorageSystem = fromStorageSystem;
@@ -37,7 +37,7 @@ public class MultithreadedResponse {
             '}';
     }
 
-    public StupidStreamObject.ObjectType getRequestObjectType() {
+    public String getRequestObjectType() {
         return requestObjectType;
     }
 }
