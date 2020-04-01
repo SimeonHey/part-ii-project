@@ -9,7 +9,7 @@ public class BaseEvent {
         this.expectsResponse = expectsResponse;
     }
 
-    public String getObjectType() {
+    public String getEventType() {
         return objectType;
     }
 

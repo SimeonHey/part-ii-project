@@ -82,7 +82,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private byte[] httpServiceHandler(String serializedQuery) {
         BaseEvent sso = EventJsonDeserializer.deserialize(Constants.gson, serializedQuery, classMap);
 
-        LOGGER.info(String.format("%s received an HTTP query of type %s", fullName, sso.getObjectType()));
+        LOGGER.info(String.format("%s received an HTTP query of type %s", fullName, sso.getEventType()));
 
         requestArrived(this.httpServiceHandlers, sso, wrapResponseWithAddress(sso.getResponseAddress()));
         return "Thanks, processing... :)".getBytes();
@@ -90,7 +90,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     void kafkaServiceHandler(ConsumerRecord<Long, BaseEvent> record) {
         BaseEvent sso = record.value();
-        LOGGER.info(String.format("%s received a Kafka query: %s", fullName, sso.getObjectType()));
+        LOGGER.info(String.format("%s received a Kafka query: %s", fullName, sso.getEventType()));
 
         // The Kafka offset is only known after the message has been published
         sso.getResponseAddress().setChannelID(record.offset());
@@ -131,23 +131,23 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         openedSnapshotsCounter.dec();
     }
 
-    private void handleWithHandler(BaseEvent sso,
+    private void handleWithHandler(BaseEvent event,
                                    ServiceBase<Snap> serviceHandler,
                                    Consumer<MultithreadedResponse> responseCallback) {
-        String objectTypeStr = sso.getObjectType();
-        long uid = sso.getResponseAddress().getChannelID();
+        String objectTypeStr = event.getEventType();
+        long uid = event.getResponseAddress().getChannelID();
 
         totalTimeMeasurements.startTimer(objectTypeStr, uid);
 
         if (serviceHandler.asyncHandleChannel != -1) {
             Snap snapshotToUse = this.obtainConnection();
             // Execute asynchronously
-            int number = classNumber.get(sso.getObjectType());
+            int number = classNumber.get(event.getEventType());
             databaseOpsExecutors.submitOperation(number, () -> {
                 processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
                 try {
-                    serviceHandler.handleRequest(sso, wrapper, responseCallback, this, snapshotToUse);
+                    serviceHandler.handleRequest(event, wrapper, responseCallback, this, snapshotToUse);
                 } catch (Exception e) {
                     LOGGER.warning("Error when handling request: " + e);
                     throw new RuntimeException(e);
@@ -164,7 +164,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
             // Execute in the current thread
             try {
-                serviceHandler.handleRequest(sso, wrapper, responseCallback, this, wrapper.getDefaultSnapshot());
+                serviceHandler.handleRequest(event, wrapper, responseCallback, this, wrapper.getDefaultSnapshot());
             } catch (Exception e) {
                 LOGGER.warning("Error when handling request: " + e);
                 throw new RuntimeException(e);
@@ -179,17 +179,17 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private void requestArrived(Map<String, ServiceBase<Snap>> serviceHandlers,
                                 BaseEvent baseEvent,
                                 Consumer<MultithreadedResponse> responseCallback) {
-        LOGGER.info("Request arrived for " + fullName + " of type " + baseEvent.getObjectType());
+        LOGGER.info("Request arrived for " + fullName + " of type " + baseEvent.getEventType());
 
-        var serviceHandler = serviceHandlers.get(baseEvent.getObjectType());
+        var serviceHandler = serviceHandlers.get(baseEvent.getEventType());
 
         if (serviceHandler == null) {
-            LOGGER.info("Couldn't find a handler for request of type " + baseEvent.getObjectType());
+            LOGGER.info("Couldn't find a handler for request of type " + baseEvent.getEventType());
             return;
         }
 
         handleWithHandler(baseEvent, serviceHandler, responseCallback);
-        LOGGER.info("Successfully processed (but possibly not completed) request of type " + baseEvent.getObjectType());
+        LOGGER.info("Successfully processed (but possibly not completed) request of type " + baseEvent.getEventType());
     }
 
     protected <T> T waitForContact(long channel, Class<T> classOfResponse) {

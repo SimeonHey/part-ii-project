@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.LogManager;
 
 public class EntryPoint {
     private static void makeItDance(LoadFaker loadFaker,
@@ -49,7 +50,7 @@ public class EntryPoint {
         System.out.println("HELLO!");
 
         // Log to a file
-//        LogManager.getLogManager().reset();
+        LogManager.getLogManager().reset();
 //        Logger.getLogger("").addHandler(new FileHandler("mylog.txt"));
 
         ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(Constants.METRIC_REGISTRY)
@@ -82,9 +83,18 @@ public class EntryPoint {
             LoadFaker.Events.GET_ALL_MESSAGES, 0.10
         ));
 
+        ProportionsLoadFaker noGetAllLoadFaker = new ProportionsLoadFaker(1_000, 1, Map.of(
+            LoadFaker.Events.POST_MESSAGE, 0.25,
+            LoadFaker.Events.GET_MESSAGE_DETAILS, 0.25,
+            LoadFaker.Events.SEARCH_MESSAGES, 0.25,
+            LoadFaker.Events.SEARCH_AND_DETAILS, 0.25));
 
+        ProportionsLoadFaker noGetAllNoSDLoadFaker = new ProportionsLoadFaker(1_000, 1, Map.of(
+            LoadFaker.Events.POST_MESSAGE, 0.34,
+            LoadFaker.Events.GET_MESSAGE_DETAILS, 0.33,
+            LoadFaker.Events.SEARCH_MESSAGES, 0.33));
 
-        makeItDance(noSDsLittleGetAll, (StorageSystemFactory::concurReads),
+        makeItDance(noGetAllNoSDLoadFaker, (StorageSystemFactory::concurReads),
             List.of());
     }
 }

@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 class Utils {
@@ -6,6 +7,9 @@ class Utils {
 
     private static ManualTrinity savedInstanceManual;
     private static Trinity savedInstance;
+
+    private final static Function<StorageSystemFactory, JointStorageSystem> storageSystemStrategy =
+        (StorageSystemFactory::simpleOlep);
 
     static class Trinity implements AutoCloseable{
         public final JointStorageSystem psqlStorageSystem;
@@ -83,10 +87,10 @@ class Utils {
         }
 
         var psqlFactory = new PsqlStorageSystemsFactory(Constants.PSQL_LISTEN_PORT);
-        var psqlConcurrentSnapshots = psqlFactory.concurReads();
+        var psqlConcurrentSnapshots = storageSystemStrategy.apply(psqlFactory);
 
         var luceneFactory = new LuceneStorageSystemFactory(Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT);
-        JointStorageSystem luceneStorageSystem = luceneFactory.concurReads();
+        JointStorageSystem luceneStorageSystem = storageSystemStrategy.apply(luceneFactory);
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultTestValues();
         StorageAPI storageAPI = StorageAPIUtils.initFromArgsForTests(storageAPIInitArgs);
@@ -109,7 +113,7 @@ class Utils {
                 psqlManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("psql"));
                 psqlManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
             }));
-        var psqlStorageSystem = psqlFactory.concurReads();
+        var psqlStorageSystem = storageSystemStrategy.apply(psqlFactory);
 
         final ManualConsumer[] luceneManualConsumer = new ManualConsumer[1];
         var luceneFactory = new LuceneStorageSystemFactory(Constants.TEST_LUCENE_PSQL_CONTACT_ENDPOINT_ALT,
@@ -118,7 +122,7 @@ class Utils {
                 luceneManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
             });
 
-        JointStorageSystem luceneStorageSystem = luceneFactory.concurReads();
+        JointStorageSystem luceneStorageSystem = storageSystemStrategy.apply(luceneFactory);
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(
             Constants.TEST_KAFKA_ADDRESS,

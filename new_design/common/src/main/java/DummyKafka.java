@@ -42,7 +42,7 @@ class DummyKafka {
         records.add(consumerRecord);
 
         LOGGER.info("State of the log: " + records.stream().map(r ->
-            r.value().getObjectType()).collect(Collectors.toList()).toString());
+            r.value().getEventType()).collect(Collectors.toList()).toString());
 
         return records.size()-1;
     }
@@ -54,7 +54,7 @@ class DummyKafka {
         LOGGER.info("DUMMY KAFKA: " + consumerGroup + " consuming messages of length " +
             (this.records.size() - consumeFrom) + " starting from " + consumeFrom + ": " +
             records.subList(consumeFrom,
-                this.records.size()).stream().map(r -> r.value().getObjectType()).collect(Collectors.toList()).toString());
+                this.records.size()).stream().map(r -> r.value().getEventType()).collect(Collectors.toList()).toString());
 
         return new ConsumerRecords<>(
             Collections.singletonMap(TOPIC_PARTITION, records.subList(consumeFrom, this.records.size())));

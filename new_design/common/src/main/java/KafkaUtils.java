@@ -62,7 +62,7 @@ public class KafkaUtils {
 
         try {
             RecordMetadata metadata = producer.send(record).get();
-            LOGGER.info("Produced message of type " + toSend.getObjectType()
+            LOGGER.info("Produced message of type " + toSend.getEventType()
                 + " with Kafka offset = " + metadata.offset());
 
             return metadata.offset();

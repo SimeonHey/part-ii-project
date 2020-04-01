@@ -36,9 +36,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), 
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -51,9 +51,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), 
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -67,7 +67,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    WrappedConnection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse + "; the multithreaded response is: " + response);
@@ -85,7 +85,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                     var dbResponse = wrapper.getMessageDetails(snapshot,
                         (RequestMessageDetails) request);
                     responseCallback.accept(
-                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
@@ -105,9 +105,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), 
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -120,9 +120,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), 
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -136,7 +136,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    WrappedConnection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse + "; the multithreaded response is: " + response);
@@ -154,7 +154,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                     var dbResponse = wrapper.getMessageDetails(snapshot,
                         (RequestMessageDetails) request);
                     responseCallback.accept(
-                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
@@ -174,9 +174,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), 
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -189,9 +189,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), 
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -205,7 +205,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    WrappedConnection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse + "; the multithreaded response is: " + response);
@@ -223,7 +223,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                     var dbResponse = wrapper.getMessageDetails(snapshot,
                         (RequestMessageDetails) request);
                     responseCallback.accept(
-                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
@@ -243,7 +243,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                     // Once it does, repeat what get message details does
                     var dbResponse = wrapper.getMessageDetails(snapshot, requestMessageDetails);
                     responseCallback.accept(
-                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
@@ -263,9 +263,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), 
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -278,9 +278,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), 
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -294,7 +294,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    WrappedConnection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse + "; the multithreaded response is: " + response);
@@ -312,7 +312,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                     var dbResponse = wrapper.getMessageDetails(snapshot,
                         (RequestMessageDetails) request);
                     responseCallback.accept(
-                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
@@ -337,7 +337,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
 
                     LOGGER.info(self.fullName + ": the response from the database is: " + dbResponse);
                     responseCallback.accept(
-                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        new MultithreadedResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
@@ -357,9 +357,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                         request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -372,9 +372,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    JointStorageSystem<WrappedConnection> self,
                                    WrappedConnection snapshot) {
                     wrapper.deleteAllMessages();
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                         request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.fullName, request.getObjectType()));
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
             })
@@ -388,7 +388,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                                    WrappedConnection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
-                    var response = new MultithreadedResponse(self.shortName, request.getObjectType(),
+                    var response = new MultithreadedResponse(self.shortName, request.getEventType(),
                         request.getResponseAddress().getChannelID(), dbResponse);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse + "; the multithreaded response is: " + response);
@@ -406,7 +406,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
                     var dbResponse = wrapper.getMessageDetails(snapshot,
                         (RequestMessageDetails) request);
                     responseCallback.accept(
-                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        new MultithreadedResponse(self.shortName, request.getEventType(),
                             request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
@@ -431,7 +431,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<WrappedConne
 
                     LOGGER.info(self.fullName + ": the response from the database is: " + dbResponse);
                     responseCallback.accept(
-                        new MultithreadedResponse(self.shortName, request.getObjectType(),
+                        new MultithreadedResponse(self.shortName, request.getEventType(),
                             request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }

@@ -54,7 +54,7 @@ public class StorageAPI implements AutoCloseable {
 
     private Tuple2<String, String> findHttpFavour(BaseEvent request) {
         for (var tuple: httpFavours) {
-            if (tuple._1.equals(request.getObjectType())) {
+            if (tuple._1.equals(request.getEventType())) {
                 return tuple;
             }
         }
@@ -106,7 +106,7 @@ public class StorageAPI implements AutoCloseable {
         if (request.expectsResponse()) {
             LOGGER.info("Waiting for response on channel with uuid " + offset);
 
-            favoursTimeMeasurers.startTimer(request.getObjectType(), offset);
+            favoursTimeMeasurers.startTimer(request.getEventType(), offset);
             return consumeAndDestroyAsync(offset, responseType);
         } else {
             this.confirmationChannelsList.add(offset);
@@ -121,13 +121,13 @@ public class StorageAPI implements AutoCloseable {
             request.getResponseAddress().setChannelID(curId);
 
             LOGGER.info(String.format("Sending a request of type %s through HTTP with id = %d, and waiting for " +
-                    "response on that channel...", request.getObjectType(), curId));
+                    "response on that channel...", request.getEventType(), curId));
 
             if (!request.expectsResponse()) {
                 this.confirmationChannelsList.add(curId);
             }
 
-            favoursTimeMeasurers.startTimer(request.getObjectType(), curId);
+            favoursTimeMeasurers.startTimer(request.getEventType(), curId);
             HttpUtils.sendHttpRequest(address, Constants.gson.toJson(request));
 
             return consumeAndDestroyAsync(curId, responseType);

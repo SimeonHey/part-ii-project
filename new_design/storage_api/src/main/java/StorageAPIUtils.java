@@ -13,10 +13,10 @@ class StorageAPIUtils {
         public String transactionsTopic;
         public int listeningPort;
 
-        public List<Tuple2<String, String>> httpFavoursList = List.of(/*
-            new Tuple2<>(StupidStreamObject.ObjectType.GET_ALL_MESSAGES, Constants.TEST_PSQL_REQUEST_ADDRESS),
-            new Tuple2<>(StupidStreamObject.ObjectType.GET_MESSAGE_DETAILS, Constants.TEST_PSQL_REQUEST_ADDRESS),
-            new Tuple2<>(StupidStreamObject.ObjectType.SEARCH_MESSAGES, Constants.TEST_LUCENE_REQUEST_ADDRESS)*/);
+        public List<Tuple2<String, String>> httpFavoursList = List.of(
+            new Tuple2<>(RequestAllMessages.class.getName(), Constants.TEST_PSQL_REQUEST_ADDRESS),
+            new Tuple2<>(RequestMessageDetails.class.getName(), Constants.TEST_PSQL_REQUEST_ADDRESS),
+            new Tuple2<>(RequestSearchMessage.class.getName(), Constants.TEST_LUCENE_REQUEST_ADDRESS));
 
         private StorageAPIInitArgs () {
 
