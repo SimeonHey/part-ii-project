@@ -21,7 +21,15 @@ public abstract class ServiceBase<Snap extends AutoCloseable> {
     }
 
     abstract void handleRequest(BaseEvent request,
-                                Consumer<MultithreadedResponse> responseCallback,
+                                Consumer<ChanneledResponse> responseCallback,
                                 JointStorageSystem<Snap> self,
                                 Snap snapshot);
+
+    @Override
+    public String toString() {
+        return "ServiceBase{" +
+            "objectTypeToHandle='" + objectTypeToHandle + '\'' +
+            ", asyncHandleChannel=" + asyncHandleChannel +
+            '}';
+    }
 }

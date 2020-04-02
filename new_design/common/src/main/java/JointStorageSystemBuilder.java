@@ -33,6 +33,7 @@ public class JointStorageSystemBuilder<Snap extends AutoCloseable> implements Au
         this.classNumber.put(serviceDescription.getObjectTypeToHandle(), number);
 
         this.kafkaServiceHandlers.put(serviceDescription.getObjectTypeToHandle(), serviceDescription);
+        LOGGER.info("Registered a Kafka service: " + serviceDescription);
         return this;
     }
 
@@ -42,6 +43,8 @@ public class JointStorageSystemBuilder<Snap extends AutoCloseable> implements Au
         this.classNumber.put(serviceDescription.getObjectTypeToHandle(), number);
 
         this.httpServiceHandlers.put(serviceDescription.getObjectTypeToHandle(), serviceDescription);
+
+        LOGGER.info("Registered an HTTP service: " + serviceDescription);
         return this;
     }
 

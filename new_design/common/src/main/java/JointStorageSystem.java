@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 public class JointStorageSystem<Snap extends AutoCloseable> implements AutoCloseable {
     private final static Logger LOGGER = Logger.getLogger(JointStorageSystem.class.getName());
 
-    private final MultithreadedCommunication multithreadedCommunication = new MultithreadedCommunication();
+    private final ChanneledCommunication channeledCommunication = new ChanneledCommunication();
 
     final String fullName;
     final String shortName;
@@ -75,11 +75,14 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     // Handlers
     private byte[] externalContact(String contactResponse) {
-        multithreadedCommunication.registerResponse(contactResponse);
+        channeledCommunication.registerResponse(contactResponse);
         return "Thanks!".getBytes();
     }
 
     private byte[] httpServiceHandler(String serializedQuery) {
+        LOGGER.info(fullName + " received an HTTP query of length " + serializedQuery.length() +
+            ", deserializing...");
+
         BaseEvent sso = EventJsonDeserializer.deserialize(Constants.gson, serializedQuery, classMap);
 
         LOGGER.info(String.format("%s received an HTTP query of type %s", fullName, sso.getEventType()));
@@ -98,11 +101,11 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         requestArrived(this.kafkaServiceHandlers, sso, wrapResponseWithAddress(sso.getResponseAddress()));
     }
 
-    private Consumer<MultithreadedResponse> wrapResponseWithAddress(Addressable responseAddress) {
-        return (MultithreadedResponse response) -> respond(responseAddress, response);
+    private Consumer<ChanneledResponse> wrapResponseWithAddress(Addressable responseAddress) {
+        return (ChanneledResponse response) -> respond(responseAddress, response);
     }
 
-    private void respond(Addressable responseAddress, MultithreadedResponse response) {
+    private void respond(Addressable responseAddress, ChanneledResponse response) {
         responseExecutors.submitOperation(() -> {
             LOGGER.info(fullName + " joint storage system responds to " + responseAddress + ": " + response);
 
@@ -116,16 +119,16 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         });
     }
 
-    private Snap obtainConnection() {
+    private SnapshotHolder<Snap> obtainConcurrentSnapshot() {
         openedSnapshotsCounter.inc();
-        return wrapper.getConcurrentSnapshot().getSnapshot();
+        return wrapper.getConcurrentSnapshot();
     }
 
-    private void releaseConnection(Snap snapshot) {
+    private void releaseSnapshot(SnapshotHolder<Snap> snapshotHolder) {
         try {
-            snapshot.close();
+            snapshotHolder.close();
         } catch (Exception e) {
-            LOGGER.warning("Error when closing database connection: " + e);
+            LOGGER.warning("Error when releasing a snapshot: " + e);
             throw new RuntimeException(e);
         }
         openedSnapshotsCounter.dec();
@@ -133,27 +136,27 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     private void handleWithHandler(BaseEvent event,
                                    ServiceBase<Snap> serviceHandler,
-                                   Consumer<MultithreadedResponse> responseCallback) {
+                                   Consumer<ChanneledResponse> responseCallback) {
         String objectTypeStr = event.getEventType();
         long uid = event.getResponseAddress().getChannelID();
 
         totalTimeMeasurements.startTimer(objectTypeStr, uid);
 
         if (serviceHandler.asyncHandleChannel != -1) {
-            Snap snapshotToUse = this.obtainConnection();
+            SnapshotHolder<Snap> snapshotToUse = this.obtainConcurrentSnapshot();
             // Execute asynchronously
             int number = classNumber.get(event.getEventType());
             databaseOpsExecutors.submitOperation(number, () -> {
                 processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
                 try {
-                    serviceHandler.handleRequest(event, responseCallback, this, snapshotToUse);
+                    serviceHandler.handleRequest(event, responseCallback, this, snapshotToUse.getSnapshot());
                 } catch (Exception e) {
                     LOGGER.warning("Error when handling request: " + e);
                     throw new RuntimeException(e);
                 }
 
-                this.releaseConnection(snapshotToUse);
+                this.releaseSnapshot(snapshotToUse);
 
                 processingTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
                 totalTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
@@ -178,7 +181,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     private void requestArrived(Map<String, ServiceBase<Snap>> serviceHandlers,
                                 BaseEvent baseEvent,
-                                Consumer<MultithreadedResponse> responseCallback) {
+                                Consumer<ChanneledResponse> responseCallback) {
         LOGGER.info("Request arrived for " + fullName + " of type " + baseEvent.getEventType());
 
         var serviceHandler = serviceHandlers.get(baseEvent.getEventType());
@@ -198,7 +201,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
         String serialized;
         try {
-            serialized = multithreadedCommunication.consumeAndDestroy(channel);
+            serialized = channeledCommunication.consumeAndDestroy(channel);
         } catch (InterruptedException e) {
             LOGGER.warning("Error in " + fullName + " while waiting on channel " + channel + " for external contact");
             throw new RuntimeException(e);

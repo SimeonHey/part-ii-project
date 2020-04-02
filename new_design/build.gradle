@@ -10,14 +10,7 @@ dependencies {
 
     api group: 'org.apache.kafka', name: 'kafka_2.12', version: '2.3.1'
 
-    implementation group: 'org.apache.lucene', name: 'lucene-core', version: '8.3.0'
-    implementation group: 'org.apache.lucene', name: 'lucene-queryparser', version: '8.3.0'
-
-
     api project(':new_design:common')
-    api project(':new_design:storage_systems:lucene')
-    api project(':new_design:storage_systems:psql')
-    api project(':new_design:storage_api')
 }
 
 test {

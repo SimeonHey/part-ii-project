@@ -1,7 +1,10 @@
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 public class SnapshotHolder<T> implements AutoCloseable {
+    private final static Logger LOGGER = Logger.getLogger(SnapshotHolder.class.getName());
+
     private T snapshot;
     private final Consumer<SnapshotHolder<T>> closeCallback;
     private final long snapshotId;
@@ -35,6 +38,7 @@ public class SnapshotHolder<T> implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
+        LOGGER.info("Refreshing the snapshot and calling the close callback...");
         this.snapshot = refreshProcedure.apply(this.snapshot);
         closeCallback.accept(this);
     }
