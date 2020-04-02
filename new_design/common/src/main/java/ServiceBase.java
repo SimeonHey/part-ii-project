@@ -21,7 +21,6 @@ public abstract class ServiceBase<Snap extends AutoCloseable> {
     }
 
     abstract void handleRequest(BaseEvent request,
-                                WrappedSnapshottedStorageSystem<Snap> wrapper,
                                 Consumer<MultithreadedResponse> responseCallback,
                                 JointStorageSystem<Snap> self,
                                 Snap snapshot);

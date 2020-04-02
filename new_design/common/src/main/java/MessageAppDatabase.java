@@ -1,5 +1,4 @@
-public interface WrappedSnapshottedStorageSystem<T extends AutoCloseable> extends AutoCloseable {
-    // Read requests - require a snapshot (it might be the latest one, in which case it's not really a snaphost)
+public interface MessageAppDatabase<T> {
     ResponseMessageDetails getMessageDetails(T snapshot,
                                              RequestMessageDetails requestMessageDetails);
     ResponseAllMessages getAllMessages(T snapshotHolder,
@@ -10,9 +9,4 @@ public interface WrappedSnapshottedStorageSystem<T extends AutoCloseable> extend
     // Write requests - they always operate on the latest non-snapshot connection
     void postMessage(RequestPostMessage postMessage);
     void deleteAllMessages();
-
-
-    int getMaxNumberOfSnapshots();
-    T getDefaultSnapshot();
-    T getConcurrentSnapshot();
 }

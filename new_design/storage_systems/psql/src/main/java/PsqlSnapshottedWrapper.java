@@ -2,23 +2,19 @@
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 
-public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<WrappedConnection> {
+public class PsqlSnapshottedWrapper extends SnapshottedStorageWrapper<Connection>
+    implements MessageAppDatabase<Connection> {
+
     private static final Logger LOGGER = Logger.getLogger(PsqlSnapshottedWrapper.class.getName());
     public static final int MAX_OPENED_CONNECTIONS = 90;
 
-    private final WrappedConnection sequentialConnection;
-
-    private final Semaphore connectionsSemaphore = new Semaphore(MAX_OPENED_CONNECTIONS);
-    private final BlockingQueue<WrappedConnection> concurrentConectionsPool =
-        new LinkedBlockingDeque<>(MAX_OPENED_CONNECTIONS);
+    private final Connection sequentialConnection;
 
     PsqlSnapshottedWrapper() {
-        sequentialConnection = new WrappedConnection(SqlUtils.freshDefaultConnection(), (c) -> {}, -1);
+        super(MAX_OPENED_CONNECTIONS);
+        sequentialConnection = SqlUtils.freshDefaultConnection();
     }
 
     private void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
@@ -27,11 +23,11 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
             messageText,
             uuid);
 
-        SqlUtils.executeStatement(query, sequentialConnection.getConnection());
+        SqlUtils.executeStatement(query, sequentialConnection);
     }
 
     @Override
-    public ResponseMessageDetails getMessageDetails(WrappedConnection wrappedConnection,
+    public ResponseMessageDetails getMessageDetails(Connection connection,
                                                     RequestMessageDetails requestMessageDetails) {
         LOGGER.info("Psql has to get details for message " + requestMessageDetails.getMessageUUID());
 
@@ -39,7 +35,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
             String statement = String.format("SELECT * FROM messages WHERE uuid = %d",
                 requestMessageDetails.getMessageUUID());
 
-            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, wrappedConnection.getConnection())) {
+            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
                 boolean hasMore = resultSet.next();
                 if (!hasMore) {
                     return new ResponseMessageDetails(null, requestMessageDetails.getMessageUUID());
@@ -57,7 +53,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
     }
 
     @Override
-    public ResponseAllMessages getAllMessages(WrappedConnection wrappedConnection,
+    public ResponseAllMessages getAllMessages(Connection connection,
                                               RequestAllMessages requestAllMessages) {
         /*
         try {
@@ -72,7 +68,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
 
         try {
             String statement = "SELECT * FROM messages";
-            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, wrappedConnection.getConnection())) {
+            try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
 
                 while (resultSet.next()) {
                     responseAllMessages.addMessage(SqlUtils.extractMessageFromResultSet(resultSet));
@@ -90,7 +86,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
     }
 
     @Override
-    public ResponseSearchMessage searchMessage(WrappedConnection wrappedConnection,
+    public ResponseSearchMessage searchMessage(Connection connection,
                                                RequestSearchMessage requestSearchMessage) {
         throw new RuntimeException("PSQL doesn't have search functionality implemented");
     }
@@ -113,7 +109,7 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
     public void deleteAllMessages() {
         LOGGER.info("Psql is deleting ALL messages");
         try {
-            SqlUtils.executeStatement("DELETE FROM messages", sequentialConnection.getConnection());
+            SqlUtils.executeStatement("DELETE FROM messages", sequentialConnection);
         } catch (SQLException e) {
             LOGGER.warning("SQL exception when doing sql stuff in delete all messages: " + e);
             throw new RuntimeException(e);
@@ -121,34 +117,12 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
     }
 
     @Override
-    public int getMaxNumberOfSnapshots() {
-        return 50;
-    }
-
-    public WrappedConnection getDefaultSnapshot() {
+    public Connection getDefaultSnapshot() {
         return sequentialConnection;
     }
 
-    private void concurrentConnectionClosedCallback(WrappedConnection wrappedConnection) {
-        LOGGER.info("Putting connection with txId " + wrappedConnection.getTxId() + " back into the pool...");
-
-        try {
-            wrappedConnection.getConnection().commit();
-        } catch (SQLException e) {
-            // TODO: Maybe we don't care about the outcome here..
-            LOGGER.warning("Error when trying to commit old concurrent connection: " + e);
-            throw new RuntimeException(e);
-        }
-
-        try {
-            concurrentConectionsPool.put(wrappedConnection);
-        } catch (InterruptedException e) {
-            LOGGER.warning("Error when trying to put a wrapped connection back in the pool to be reused: " + e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    private WrappedConnection freshConcurrentConnection() {
+    @Override
+    Connection freshConcurrentSnapshot() {
         final Connection connection = SqlUtils.freshDefaultConnection();
         final long txId;
 
@@ -171,34 +145,19 @@ public class PsqlSnapshottedWrapper implements WrappedSnapshottedStorageSystem<W
             throw new RuntimeException(e);
         }
 
-        return new WrappedConnection(connection, this::concurrentConnectionClosedCallback, txId);
+        return connection;
     }
 
     @Override
-    public WrappedConnection getConcurrentSnapshot() {
-        // First, try and re-use one from the poll, with no blocking!
-        WrappedConnection pooled = concurrentConectionsPool.poll(); // TODO: Might want to wait for a while :)
-        if (pooled != null) {
-            LOGGER.info("Returning a pooled connection");
-            return pooled;
-        }
-
-        // If such is not available, try and create a new one, no blocking again (because nothing is releasing
-        // resources)
-        boolean canAcquire = connectionsSemaphore.tryAcquire();
-        if (canAcquire) {
-            LOGGER.info("Returning a fresh connection");
-            return freshConcurrentConnection();
-        }
-
-        // If we can't create a new one because the limit has been reached, block until a pooled one is available
+    Connection refreshSnapshot(Connection bareSnapshot) {
         try {
-            LOGGER.info("Waiting for a pooled connection and returning it...");
-            return concurrentConectionsPool.take();
-        } catch (InterruptedException e) {
-            LOGGER.warning("Error when waiting on a pooled connection to become available: " + e);
+            bareSnapshot.commit();
+        } catch (SQLException e) {
+            LOGGER.warning("Error when tryin to refresh a concurren connection by commiting it: " + e);
             throw new RuntimeException(e);
         }
+
+        return bareSnapshot;
     }
 
     @Override

@@ -14,7 +14,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     final String fullName;
     final String shortName;
-    private final WrappedSnapshottedStorageSystem<Snap> wrapper;
+    private final SnapshottedStorageWrapper<Snap> wrapper;
 
     private final Map<String, ServiceBase<Snap>> kafkaServiceHandlers;
     private final Map<String, ServiceBase<Snap>> httpServiceHandlers;
@@ -41,7 +41,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     JointStorageSystem(String fullName,
                        HttpStorageSystem httpStorageSystem,
-                       WrappedSnapshottedStorageSystem<Snap> wrapper,
+                       SnapshottedStorageWrapper<Snap> wrapper,
                        Map<String, ServiceBase<Snap>> kafkaServiceHandlers,
                        Map<String, ServiceBase<Snap>> httpServiceHandlers,
                        Map<String, Class<? extends BaseEvent>> classMap,
@@ -118,7 +118,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     private Snap obtainConnection() {
         openedSnapshotsCounter.inc();
-        return wrapper.getConcurrentSnapshot();
+        return wrapper.getConcurrentSnapshot().getSnapshot();
     }
 
     private void releaseConnection(Snap snapshot) {
@@ -147,7 +147,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
                 processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
                 try {
-                    serviceHandler.handleRequest(event, wrapper, responseCallback, this, snapshotToUse);
+                    serviceHandler.handleRequest(event, responseCallback, this, snapshotToUse);
                 } catch (Exception e) {
                     LOGGER.warning("Error when handling request: " + e);
                     throw new RuntimeException(e);
@@ -164,7 +164,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
             // Execute in the current thread
             try {
-                serviceHandler.handleRequest(event, wrapper, responseCallback, this, wrapper.getDefaultSnapshot());
+                serviceHandler.handleRequest(event, responseCallback, this, wrapper.getDefaultSnapshot());
             } catch (Exception e) {
                 LOGGER.warning("Error when handling request: " + e);
                 throw new RuntimeException(e);

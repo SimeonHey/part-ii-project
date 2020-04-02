@@ -28,8 +28,11 @@ import java.util.logging.Logger;
 /**
  * Proxy for Lucene transactions
  */
-class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexReader> {
+class LuceneSnapshottedWrapper extends SnapshottedStorageWrapper<IndexReader>
+    implements MessageAppDatabase<IndexReader>{
+
     private static final Logger LOGGER = Logger.getLogger(LuceneSnapshottedWrapper.class.getName());
+    private static final int MAX_CONNECTIONS = Integer.MAX_VALUE;
 
     private static final String FIELD_MESSAGE = "message";
     private static final String FIELD_SENDER = "sender";
@@ -39,10 +42,12 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
     private final Analyzer analyzer = new StandardAnalyzer();
 
     public LuceneSnapshottedWrapper() {
+        super(MAX_CONNECTIONS);
         indexPath = Paths.get(Constants.LUCENE_DEFAULT_INDEX_DEST);
     }
 
     public LuceneSnapshottedWrapper(String indexDestination) {
+        super(MAX_CONNECTIONS);
         indexPath = Paths.get(indexDestination);
     }
 
@@ -133,7 +138,7 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
     }
 
     @Override
-    public IndexReader getDefaultSnapshot() {
+    IndexReader freshConcurrentSnapshot() {
         try {
             return DirectoryReader.open(FSDirectory.open(indexPath));
         } catch (IOException e) {
@@ -143,13 +148,13 @@ class LuceneSnapshottedWrapper implements WrappedSnapshottedStorageSystem<IndexR
     }
 
     @Override
-    public IndexReader getConcurrentSnapshot() {
-        return getDefaultSnapshot();
+    public IndexReader getDefaultSnapshot() {
+        return freshConcurrentSnapshot();
     }
 
     @Override
-    public int getMaxNumberOfSnapshots() {
-        return -1;
+    IndexReader refreshSnapshot(IndexReader bareSnapshot) {
+        return freshConcurrentSnapshot();
     }
 
     @Override

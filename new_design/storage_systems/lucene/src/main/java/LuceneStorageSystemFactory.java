@@ -8,10 +8,12 @@ import java.util.logging.Logger;
 public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader> {
     private static final Logger LOGGER = Logger.getLogger(LuceneStorageSystemFactory.class.getName());
 
+    private static final LuceneSnapshottedWrapper wrapper = new LuceneSnapshottedWrapper();
+
     private final String psqlContactAddress;
 
     public LuceneStorageSystemFactory(String psqlContactAddress) throws IOException {
-        super("lucene", new LuceneSnapshottedWrapper(), Constants.LUCENE_LISTEN_PORT, storageSystem -> {
+        super("lucene", wrapper, Constants.LUCENE_LISTEN_PORT, storageSystem -> {
             var consumer = LoopingConsumer.fresh(
                 storageSystem.fullName,
                 Constants.TEST_KAFKA_ADDRESS,
@@ -37,7 +39,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -53,7 +54,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -69,7 +69,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerHttpService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -81,7 +80,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerHttpService(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -93,7 +91,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerHttpService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -111,7 +108,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -129,7 +125,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -145,7 +140,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -161,7 +155,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -173,7 +166,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -185,7 +177,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -203,7 +194,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -221,7 +211,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -237,7 +226,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -253,7 +241,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -265,7 +252,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -277,7 +263,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -295,7 +280,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestSearchAndDetails.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -325,7 +309,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -343,7 +326,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -359,7 +341,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -375,7 +356,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -387,7 +367,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -399,7 +378,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -417,7 +395,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -446,7 +423,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -464,7 +440,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -480,7 +455,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -496,7 +470,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, 0) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -508,7 +481,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, 0) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -520,7 +492,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, 0) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -538,7 +509,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
@@ -567,7 +537,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
-                                   WrappedSnapshottedStorageSystem<IndexReader> wrapper,
                                    Consumer<MultithreadedResponse> responseCallback,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot

@@ -14,12 +14,12 @@ public class JointStorageSystemBuilder<Snap extends AutoCloseable> implements Au
 
     private final String fullName;
     private final HttpStorageSystem httpStorageSystem;
-    private final WrappedSnapshottedStorageSystem<Snap> wrapper;
+    private final SnapshottedStorageWrapper<Snap> wrapper;
     private final Consumer<JointStorageSystem<Snap>> bootstrapProcedure;
 
     public JointStorageSystemBuilder(String fullName,
                                      HttpStorageSystem httpStorageSystem,
-                                     WrappedSnapshottedStorageSystem<Snap> wrapper,
+                                     SnapshottedStorageWrapper<Snap> wrapper,
                                      Consumer<JointStorageSystem<Snap>> bootstrapProcedure) {
         this.fullName = fullName;
         this.httpStorageSystem = httpStorageSystem;

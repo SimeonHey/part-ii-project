@@ -34,7 +34,7 @@ public class PsqlTests {
 //        SqlUtils.executeStatement("CREATE TABLE test2 (col1 text)", normalConnection);
 
         // Initialize a connection which has its own transaction
-        Connection transactionConnection = psqlWrapper.getConcurrentSnapshot().getConnection();
+        Connection transactionConnection = psqlWrapper.getConcurrentSnapshot().getSnapshot();
 
         // Insert things from the normal connection.
         SqlUtils.executeStatement("INSERT INTO test VALUES ($$hello$$)", normalConnection);
@@ -52,7 +52,7 @@ public class PsqlTests {
     @Test
     public void testConnectionPooling() throws Exception {
         PsqlSnapshottedWrapper psqlSnapshottedWrapper = new PsqlSnapshottedWrapper();
-        List<WrappedConnection> openedConnections = new ArrayList<>();
+        List<SnapshotHolder> openedConnections = new ArrayList<>();
 
         for (int i=0; i<PsqlSnapshottedWrapper.MAX_OPENED_CONNECTIONS; i++) {
             var current = psqlSnapshottedWrapper.getConcurrentSnapshot();
@@ -60,7 +60,7 @@ public class PsqlTests {
             LOGGER.info("Added a connectinon " + current);
         }
 
-        CompletableFuture<WrappedConnection> oneMore =
+        CompletableFuture<SnapshotHolder> oneMore =
             CompletableFuture.supplyAsync(psqlSnapshottedWrapper::getConcurrentSnapshot);
 
         Thread.sleep(1000);
@@ -71,6 +71,6 @@ public class PsqlTests {
 
         Thread.sleep(1000);
         assertTrue(oneMore.isDone());
-        assertEquals(openedConnections.get(0).getTxId(), oneMore.get().getTxId());
+        assertEquals(openedConnections.get(0).getSnapshotId(), oneMore.get().getSnapshotId());
     }
 }
