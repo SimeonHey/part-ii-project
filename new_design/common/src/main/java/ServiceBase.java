@@ -1,21 +1,35 @@
 import java.util.function.Consumer;
 
 public abstract class ServiceBase<Snap extends AutoCloseable> {
-    private StupidStreamObject.ObjectType objectTypeToHandle;
-    protected boolean handleAsyncWithSnapshot;
+    private String objectTypeToHandle;
 
-    public ServiceBase(StupidStreamObject.ObjectType objectTypeToHandle, boolean handleAsyncWithSnapshot) {
-        this.objectTypeToHandle = objectTypeToHandle;
-        this.handleAsyncWithSnapshot = handleAsyncWithSnapshot;
+    private Class<? extends BaseEvent> classOfObjectToHandle;
+    protected int asyncHandleChannel;
+
+    public ServiceBase(Class<? extends BaseEvent> classOfObjectToHandle, int asyncHandleChannel) {
+        this.classOfObjectToHandle = classOfObjectToHandle;
+        this.objectTypeToHandle = classOfObjectToHandle.getName();
+        this.asyncHandleChannel = asyncHandleChannel;
     }
 
-    boolean couldHandle(StupidStreamObject sso) {
-        return sso.getObjectType().equals(this.objectTypeToHandle);
+    public String getObjectTypeToHandle() {
+        return objectTypeToHandle;
     }
 
-    abstract void handleRequest(StupidStreamObject request,
-                                WrappedSnapshottedStorageSystem<Snap> wrapper,
-                                Consumer<MultithreadedResponse> responseCallback,
+    public Class<? extends BaseEvent> getClassOfObjectToHandle() {
+        return classOfObjectToHandle;
+    }
+
+    abstract void handleRequest(BaseEvent request,
+                                Consumer<ChanneledResponse> responseCallback,
                                 JointStorageSystem<Snap> self,
                                 Snap snapshot);
+
+    @Override
+    public String toString() {
+        return "ServiceBase{" +
+            "objectTypeToHandle='" + objectTypeToHandle + '\'' +
+            ", asyncHandleChannel=" + asyncHandleChannel +
+            '}';
+    }
 }

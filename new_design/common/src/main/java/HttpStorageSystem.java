@@ -32,8 +32,8 @@ public class HttpStorageSystem implements AutoCloseable {
             (httpExchange) -> {
 
                 String bodyQuery = new String(httpExchange.getRequestBody().readAllBytes());
-                LOGGER.info(storageSystemName + " handles request at endpoint " + endpoint + " with post data " +
-                    bodyQuery);
+                LOGGER.info(storageSystemName + " handles request at endpoint " + endpoint + " with post data length " +
+                    bodyQuery.length());
 
                 byte[] bytes = handler.apply(bodyQuery);
 

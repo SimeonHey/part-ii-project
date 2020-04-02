@@ -1,6 +1,7 @@
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class LoopingConsumer<K, V> extends ManualConsumer<K, V>{
@@ -35,8 +36,11 @@ public class LoopingConsumer<K, V> extends ManualConsumer<K, V>{
         }
     }
 
-    public static LoopingConsumer<Long, StupidStreamObject> fresh(String consumerGroup, String kafkaAddress) {
+    public static LoopingConsumer<Long, BaseEvent> fresh(String consumerGroup, String kafkaAddress,
+                                                      Map<String, Class<? extends BaseEvent>> classMap) {
+        LOGGER.info("Creating a new consumer for group " + consumerGroup + " on kafka address " + kafkaAddress + " to" +
+            " handle classes: " + classMap);
         return new LoopingConsumer<>(
-            KafkaUtils.createConsumer(consumerGroup, kafkaAddress, Constants.KAFKA_TOPIC));
+            KafkaUtils.createConsumer(consumerGroup, kafkaAddress, Constants.KAFKA_TOPIC, classMap));
     }
 }

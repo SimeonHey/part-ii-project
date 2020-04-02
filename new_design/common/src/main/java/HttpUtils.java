@@ -10,9 +10,13 @@ public class HttpUtils {
     private final static Logger LOGGER = Logger.getLogger(HttpUtils.class.getName());
     private final static int TIMEOUT_MS = 5 * 1000;
 
+    private final static TimeMeasurer httpRequestTimeMeasurer = new TimeMeasurer(Constants.METRIC_REGISTRY,
+        "httpTimes");
+
     static HttpURLConnection sendHttpRequest(String url,
                                              String params) throws IOException {
-        LOGGER.info("Sending an HTTP request to " + url + " with body " + params);
+        var activeTime = httpRequestTimeMeasurer.startTimer();
+        LOGGER.info("Sending an HTTP request to " + url + " with body length " + params.length() + "...");
 
         HttpURLConnection httpURLConnection =
             (HttpURLConnection) new URL(url).openConnection();
@@ -23,7 +27,12 @@ public class HttpUtils {
         httpURLConnection.setDoOutput(true);
 
         httpURLConnection.getOutputStream().write(params.getBytes());
+        httpURLConnection.getOutputStream().close();
 
+        httpURLConnection.getInputStream();
+
+        httpRequestTimeMeasurer.stopTimerAndPublish(activeTime);
+        LOGGER.info("Sending to " + url + " done!");
         return httpURLConnection;
     }
 
@@ -42,8 +51,13 @@ public class HttpUtils {
     }
 
     static String httpRequestResponse(String full, String params) throws IOException {
+        var activeTime = httpRequestTimeMeasurer.startTimer();
+
         HttpURLConnection conn = sendHttpRequest(full, params);
-        return new String(conn.getInputStream().readAllBytes());
+        String res = new String(conn.getInputStream().readAllBytes());
+
+        httpRequestTimeMeasurer.stopTimerAndPublish(activeTime);
+        return res;
     }
 
     static void discoverEndpoint(String endpoint) throws InterruptedException {
