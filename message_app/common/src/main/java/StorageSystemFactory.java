@@ -1,7 +1,7 @@
 import java.io.IOException;
 import java.util.function.Consumer;
 
-public abstract class StorageSystemFactory<T extends AutoCloseable> implements AutoCloseable {
+public abstract class StorageSystemFactory<T> implements AutoCloseable {
     final HttpStorageSystem httpStorageSystem;
     final SnapshottedStorageWrapper<T> snapshottedWrapper;
     final Consumer<JointStorageSystem<T>> bootstrapProcedure;

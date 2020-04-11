@@ -4,14 +4,20 @@ public class RequestPostMessage extends BaseEvent {
     private static final Logger LOGGER = Logger.getLogger(RequestPostMessage.class.getName());
 
     private final Message message;
+    private final String recepient;
 
-    public RequestPostMessage(Addressable responseAddress, Message message) {
+    public RequestPostMessage(Addressable responseAddress, Message message, String recepient) {
         super(responseAddress, false);
         this.message = message;
+        this.recepient = recepient;
     }
 
     public Message getMessage() {
         return this.message;
+    }
+
+    public String getRecepient() {
+        return recepient;
     }
 
     @Override

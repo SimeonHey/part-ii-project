@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-public class JointStorageSystem<Snap extends AutoCloseable> implements AutoCloseable {
+public class JointStorageSystem<Snap> implements AutoCloseable {
     private final static Logger LOGGER = Logger.getLogger(JointStorageSystem.class.getName());
 
     private final ChanneledCommunication channeledCommunication = new ChanneledCommunication();
@@ -23,21 +23,18 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private final Map<String, Integer> classNumber;
 
     private final NamedTimeMeasurements processingTimeMeasurements;
-    private final NamedTimeMeasurements totalTimeMeasurements;
+    private final NamedTimeMeasurements totalProcessingTimeMeasurements;
     private final Counter waitForContactCounter;
-    private final Meter completedOperations;
     private final TimeMeasurer waitingThreadsTimeMeasurer;
+
     private final Counter openedSnapshotsCounter;
+    private final Counter waitForSnapshotCounter;
 
-    private static final int LIMIT_DB_THREADS = 4;
-    private static final int LIMIT_RESPONSE_THREADS = 1;
+    private final Meter completedOperations;
+    private final Meter operationsReceived;
 
-    private final MultithreadedEventQueueExecutor databaseOpsExecutors =
-        new MultithreadedEventQueueExecutor(LIMIT_DB_THREADS,
-            new MultithreadedEventQueueExecutor.StaticChannelsScheduler(6));
-
-    private final MultithreadedEventQueueExecutor responseExecutors =
-        new MultithreadedEventQueueExecutor(LIMIT_RESPONSE_THREADS, new MultithreadedEventQueueExecutor.FifoScheduler());
+    private final MultithreadedEventQueueExecutor databaseOpsExecutors;
+    private final MultithreadedEventQueueExecutor responseExecutors;
 
     JointStorageSystem(String fullName,
                        HttpStorageSystem httpStorageSystem,
@@ -45,7 +42,9 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
                        Map<String, ServiceBase<Snap>> kafkaServiceHandlers,
                        Map<String, ServiceBase<Snap>> httpServiceHandlers,
                        Map<String, Class<? extends BaseEvent>> classMap,
-                       Map<String, Integer> classNumber) {
+                       Map<String, Integer> classNumber,
+                       MultithreadedEventQueueExecutor databaseOpsExecutors,
+                       MultithreadedEventQueueExecutor responseExecutors) {
         this.fullName = fullName;
         this.shortName = Constants.getStorageSystemBaseName(fullName);
         this.wrapper = wrapper;
@@ -56,6 +55,9 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
         this.classMap = classMap;
         this.classNumber = classNumber;
 
+        this.databaseOpsExecutors = databaseOpsExecutors;
+        this.responseExecutors = responseExecutors;
+
         // Subscribe to kafka and http listeners
         httpStorageSystem.registerHandler("query", this::httpServiceHandler);
 
@@ -64,13 +66,15 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
         // Metrics below
         this.processingTimeMeasurements = new NamedTimeMeasurements(this.shortName);
-        this.totalTimeMeasurements = new NamedTimeMeasurements(this.shortName + ".total-time");
+        this.totalProcessingTimeMeasurements = new NamedTimeMeasurements(this.shortName + ".total-time");
         this.waitForContactCounter =
             Constants.METRIC_REGISTRY.counter(this.shortName + ".wait-for-contact");
         this.completedOperations = Constants.METRIC_REGISTRY.meter(this.shortName + ".completed-operations");
+        this.operationsReceived = Constants.METRIC_REGISTRY.meter(this.shortName + ".operations-received");
         this.waitingThreadsTimeMeasurer =
             new TimeMeasurer(Constants.METRIC_REGISTRY, this.shortName + ".wait-for-contact-time");
         this.openedSnapshotsCounter = Constants.METRIC_REGISTRY.counter(this.shortName + ".opened-snapshots");
+        waitForSnapshotCounter = Constants.METRIC_REGISTRY.counter(this.shortName + ".wait-for-snapshot-meter");
     }
 
     // Handlers
@@ -120,8 +124,12 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     }
 
     private SnapshotHolder<Snap> obtainConcurrentSnapshot() {
-        openedSnapshotsCounter.inc();
-        return wrapper.getConcurrentSnapshot();
+        waitForSnapshotCounter.inc();
+        var snapshot = wrapper.getConcurrentSnapshot();
+
+        waitForSnapshotCounter.dec();
+        openedSnapshotsCounter.inc(); // say you got it after you get it
+        return snapshot;
     }
 
     private void releaseSnapshot(SnapshotHolder<Snap> snapshotHolder) {
@@ -137,10 +145,12 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private void handleWithHandler(BaseEvent event,
                                    ServiceBase<Snap> serviceHandler,
                                    Consumer<ChanneledResponse> responseCallback) {
+        LOGGER.info(this.fullName + " found a handler for event type " + event.getEventType());
+
         String objectTypeStr = event.getEventType();
         long uid = event.getResponseAddress().getChannelID();
 
-        totalTimeMeasurements.startTimer(objectTypeStr, uid);
+        totalProcessingTimeMeasurements.startTimer(objectTypeStr, uid);
 
         if (serviceHandler.asyncHandleChannel != -1) {
             SnapshotHolder<Snap> snapshotToUse = this.obtainConcurrentSnapshot();
@@ -159,7 +169,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
                 this.releaseSnapshot(snapshotToUse);
 
                 processingTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
-                totalTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
+                totalProcessingTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
                 completedOperations.mark();
             });
         } else {
@@ -174,7 +184,7 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
             }
 
             processingTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
-            totalTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
+            totalProcessingTimeMeasurements.stopTimerAndPublish(objectTypeStr, uid);
             completedOperations.mark();
         }
     }
@@ -182,12 +192,13 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
     private void requestArrived(Map<String, ServiceBase<Snap>> serviceHandlers,
                                 BaseEvent baseEvent,
                                 Consumer<ChanneledResponse> responseCallback) {
+        operationsReceived.mark();
         LOGGER.info("Request arrived for " + fullName + " of type " + baseEvent.getEventType());
 
         var serviceHandler = serviceHandlers.get(baseEvent.getEventType());
 
         if (serviceHandler == null) {
-            LOGGER.info("Couldn't find a handler for request of type " + baseEvent.getEventType());
+            LOGGER.warning("Couldn't find a handler for request of type " + baseEvent.getEventType());
             return;
         }
 
@@ -227,6 +238,6 @@ public class JointStorageSystem<Snap extends AutoCloseable> implements AutoClose
 
     @Override
     public void close() throws Exception {
-        wrapper.getDefaultSnapshot().close();
+
     }
 }

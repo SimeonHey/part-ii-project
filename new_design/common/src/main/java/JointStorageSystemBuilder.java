@@ -3,7 +3,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-public class JointStorageSystemBuilder<Snap extends AutoCloseable> implements AutoCloseable {
+public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
     private final static Logger LOGGER = Logger.getLogger(JointStorageSystemBuilder.class.getName());
 
     private final Map<String, ServiceBase<Snap>> kafkaServiceHandlers = new HashMap<>();
@@ -51,7 +51,10 @@ public class JointStorageSystemBuilder<Snap extends AutoCloseable> implements Au
     public JointStorageSystem<Snap> build() {
         // Construct the storage system
         var storageSystem = new JointStorageSystem<>(fullName, httpStorageSystem, wrapper, kafkaServiceHandlers,
-            httpServiceHandlers, classMap, classNumber);
+            httpServiceHandlers, classMap, classNumber,
+            new MultithreadedEventQueueExecutor(classMap.size(),
+                new MultithreadedEventQueueExecutor.StaticChannelsScheduler(classMap.size())),
+            new MultithreadedEventQueueExecutor(1, new MultithreadedEventQueueExecutor.FifoScheduler()));
 
         LOGGER.info("Built storage system: " + storageSystem);
 

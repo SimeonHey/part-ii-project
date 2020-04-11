@@ -26,6 +26,7 @@ include 'message_app'
 include 'message_app:common'
 include 'message_app:storage_systems:psql'
 include 'message_app:storage_systems:lucene'
+include 'message_app:storage_systems:vavr'
 include 'message_app:storage_api'
 include 'message_app:message_app'
 

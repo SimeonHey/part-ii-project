@@ -1,4 +1,5 @@
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Meter;
 import io.vavr.Tuple2;
 import org.apache.kafka.clients.producer.Producer;
 
@@ -32,6 +33,9 @@ public class StorageAPI implements AutoCloseable {
     private final NamedTimeMeasurements favoursTimeMeasurers = new NamedTimeMeasurements("favours");
     private final Counter outstandingFavoursCounter =
         Constants.METRIC_REGISTRY.counter("favours.outstanding-count");
+    private final NamedMeterMeasurements opsSentMeters = new NamedMeterMeasurements("ops-sent-meters");
+
+    private final Meter responsesReceivedMeter = Constants.METRIC_REGISTRY.meter("responses-received-meter");
 
     StorageAPI(Producer<Long, BaseEvent> producer,
                HttpStorageSystem httpStorageSystem,
@@ -66,6 +70,8 @@ public class StorageAPI implements AutoCloseable {
         outstandingFavoursCounter.inc();
 
         var httpFavor = findHttpFavour(request);
+
+        opsSentMeters.markFor(request.getEventType());
 
         if (httpFavor == null) { // I assume if it's not in the HTTP it's in the Kafka favour group
             LOGGER.info("StorageAPI handles request " + request + " through Kafka");
@@ -103,10 +109,11 @@ public class StorageAPI implements AutoCloseable {
             this.transactionsTopic,
             request);
 
+        favoursTimeMeasurers.startTimer(request.getEventType(), offset);
+
         if (request.expectsResponse()) {
             LOGGER.info("Waiting for response on channel with uuid " + offset);
 
-            favoursTimeMeasurers.startTimer(request.getEventType(), offset);
             return consumeAndDestroyAsync(offset, responseType);
         } else {
             LOGGER.info("Confirmation " + offset);
@@ -121,6 +128,7 @@ public class StorageAPI implements AutoCloseable {
                                                                    Class<T> responseType) {
         long curId = httpRequestsUid.getAndDecrement();
         request.getResponseAddress().setChannelID(curId);
+        favoursTimeMeasurers.startTimer(request.getEventType(), curId);
 
         try {
             HttpUtils.sendHttpRequest(address, Constants.gson.toJson(request));
@@ -132,7 +140,6 @@ public class StorageAPI implements AutoCloseable {
         if (request.expectsResponse()) {
             LOGGER.info("Sent request. Waiting for response on channel with uuid " + curId);
 
-            favoursTimeMeasurers.startTimer(request.getEventType(), curId);
             return consumeAndDestroyAsync(curId, responseType);
         } else {
             LOGGER.info("Sent request. Confirmation will arrive on channel " + curId);
@@ -150,6 +157,7 @@ public class StorageAPI implements AutoCloseable {
         LOGGER.info(String.format("Received response with length %d", serializedResponse.length()));
         try {
             ChanneledResponse response = this.channeledCommunication.registerResponse(serializedResponse);
+            responsesReceivedMeter.mark();
             LOGGER.info(String.format("The response with length %d; Response details: %s", serializedResponse.length(),
                 response.toString()));
             favoursTimeMeasurers.stopTimerAndPublish(response.getRequestObjectType(), response.getChannelUuid());

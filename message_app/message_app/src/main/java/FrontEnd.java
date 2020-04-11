@@ -41,7 +41,7 @@ class FrontEnd extends JFrame {
             messageField.getText());
 
         Message message = new Message(this.sender, messageField.getText());
-        this.storageAPI.handleRequest(new RequestPostMessage(ConstantsMAPP.SELF_ADDRESS, message));
+        this.storageAPI.handleRequest(new RequestPostMessage(ConstantsMAPP.SELF_ADDRESS, message, "unknown"));
         this.messageField.setText("");
     }
 

@@ -3,7 +3,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 
-public abstract class SnapshottedStorageWrapper<T extends AutoCloseable> implements AutoCloseable {
+public abstract class SnapshottedStorageWrapper<T> implements AutoCloseable {
     private final static Logger LOGGER = Logger.getLogger(SnapshottedStorageWrapper.class.getName());
 
     private final Semaphore connectionsSemaphore;

@@ -33,7 +33,7 @@ public class NamedTimeMeasurements {
 
     public void stopTimerAndPublish(String resource, Long uid) {
         var activeTimer = startOrGetTimer(resource, uid);
-        long elapsedMs = timeMeasurers.get(resource).stopTimerAndPublish(activeTimer);
+        timeMeasurers.get(resource).stopTimerAndPublish(activeTimer);
         activeTimers.get(resource).remove(uid);
 
 //        System.out.println(rootName + " -> " + resource + " -> " + uid + " took " + elapsedMs + "ms");

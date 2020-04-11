@@ -23,12 +23,16 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             Executors.newFixedThreadPool(1).submit(consumer::listenBlockingly);
         });
         this.psqlContactAddress = psqlContactAddress;
+
+        wrapper.deleteAllMessages();
     }
 
     public LuceneStorageSystemFactory(String psqlContactAddress,
                                       Consumer<JointStorageSystem<IndexReader>> bootstrapProcedure) throws IOException {
         super("lucene", new LuceneSnapshottedWrapper(), ConstantsMAPP.LUCENE_LISTEN_PORT, bootstrapProcedure);
         this.psqlContactAddress = psqlContactAddress;
+
+        wrapper.deleteAllMessages();
     }
 
     @Override
@@ -65,28 +69,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     responseCallback.accept(response);
                 }
             })
-            // GET ALL MESSAGES
-            .registerHttpService(new ServiceBase<>(RequestAllMessages.class, -1) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get all messages request and does nothing");
-                }
-            })
-            // GET MESSAGE DETAILS
-            .registerHttpService(new ServiceBase<>(RequestMessageDetails.class, -1) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get message details request and does nothing");
-                }
-            })
             // SEARCH MESSAGE
             .registerHttpService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
@@ -104,15 +86,26 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     );
                 }
             })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info(self.fullName + " received NOP");
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
+                }
+            })
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+                @Override
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
                 }
             }).build();
     }
@@ -151,28 +144,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     responseCallback.accept(response);
                 }
             })
-            // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, -1) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get all messages request and does nothing");
-                }
-            })
-            // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, -1) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get message details request and does nothing");
-                }
-            })
             // SEARCH MESSAGE
             .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
@@ -190,15 +161,15 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     );
                 }
             })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info(self.fullName + " received NOP");
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
                 }
             }).build();
     }
@@ -235,28 +206,6 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         request.getResponseAddress().getChannelID(),
                         new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
-                }
-            })
-            // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, -1) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get all messages request and does nothing");
-                }
-            })
-            // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, -1) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get message details request and does nothing");
                 }
             })
             // SEARCH MESSAGE
@@ -305,15 +254,15 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     }
                 }
             })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info(self.fullName + " received NOP");
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
                 }
             }).build();
     }
@@ -351,31 +300,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
-            })
-            // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, -1) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get all messages request and does nothing");
-                }
-            })
-            // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, -1) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get message details request and does nothing");
-                }
-            })
-            // SEARCH MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, -1) {
+            }).registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 void handleRequest(BaseEvent request,
                                    Consumer<ChanneledResponse> responseCallback,
@@ -419,15 +344,15 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     }
                 }
             })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info(self.fullName + " received NOP");
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
                 }
             }).build();
     }
@@ -465,30 +390,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         new ConfirmationResponse(self.fullName, request.getEventType()));
                     responseCallback.accept(response);
                 }
-            })
-            // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, 0) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get all messages request and does nothing");
-                }
-            })
-            // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, 0) {
-                @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info("Lucene received a get message details request and does nothing");
-                }
-            })
-            // SEARCH MESSAGE
+            })// SEARCH MESSAGE
             .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, 0) {
                 @Override
                 void handleRequest(BaseEvent request,
@@ -533,15 +435,15 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     }
                 }
             })
-            // NOP
-            .registerKafkaService(new ServiceBase<>(RequestNOP.class, -1) {
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, 1) {
                 @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
-                ) {
-                    LOGGER.info(self.fullName + " received NOP");
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
                 }
             }).build();
     }

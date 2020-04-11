@@ -5,33 +5,35 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-public class MultithreadedEventQueueExecutor implements Closeable {
+class MultithreadedEventQueueExecutor implements Closeable {
     private final static Logger LOGGER = Logger.getLogger(MultithreadedEventQueueExecutor.class.getName());
 
-    public interface Scheduler {
-        void submitOperation(int identifier, Runnable runnable) throws InterruptedException;
-        Runnable takeOperation(int identifier) throws InterruptedException;
+    interface Scheduler {
+        void submitOperation(int operationIdentifier, Runnable runnable) throws InterruptedException;
+        Runnable takeOperation(int threadIdentifier) throws InterruptedException;
     }
 
-    public static class FifoScheduler implements Scheduler {
+    static class FifoScheduler implements Scheduler {
         private final LinkedBlockingQueue<Runnable> operations = new LinkedBlockingQueue<>();
 
         @Override
         public void submitOperation(int operationIdentifier, Runnable operation) throws InterruptedException {
+            LOGGER.info("Operation with identifier " + operationIdentifier + " was submitted");
             operations.put(operation);
         }
 
         @Override
         public Runnable takeOperation(int threadIdentifier) throws InterruptedException {
+            LOGGER.info("Thread with identifier " + threadIdentifier + " received an operation");
             return operations.take();
         }
     }
 
-    public static class StaticChannelsScheduler implements Scheduler {
+    static class StaticChannelsScheduler implements Scheduler {
         private final ArrayList<LinkedBlockingQueue<Runnable>> operationsChannels;
         private final int numberOfChannels;
 
-        public StaticChannelsScheduler(int numberOfOperationsChannels) {
+        StaticChannelsScheduler(int numberOfOperationsChannels) {
             this.numberOfChannels = numberOfOperationsChannels;
 
             this.operationsChannels = new ArrayList<>(numberOfOperationsChannels);
@@ -41,15 +43,21 @@ public class MultithreadedEventQueueExecutor implements Closeable {
         }
 
         @Override
-        public void submitOperation(int identifier, Runnable runnable) throws InterruptedException {
-            operationsChannels.get(identifier).put(runnable);
+        public void submitOperation(int operationIdentifier, Runnable runnable) throws InterruptedException {
+            int channel = operationIdentifier % numberOfChannels;
+            LOGGER.info("Submitting operation with identifier " + operationIdentifier +
+                " in channel " + channel);
+
+            operationsChannels.get(operationIdentifier).put(runnable);
         }
 
         @Override
-        public Runnable takeOperation(int identifier) throws InterruptedException {
-            int channel = identifier % numberOfChannels;
+        public Runnable takeOperation(int threadIdentifier) throws InterruptedException {
+            int channel = threadIdentifier % numberOfChannels;
+
             Runnable runnable = operationsChannels.get(channel).take();
-            LOGGER.info("Thread with identifier " + identifier + " received an operation from channel " + channel);
+            LOGGER.info("Thread with identifier " + threadIdentifier +
+                " receives an operation from channel " + channel);
             return runnable;
         }
     }
@@ -61,11 +69,11 @@ public class MultithreadedEventQueueExecutor implements Closeable {
     private boolean haltExecution;
     private AtomicInteger outstandingOperations = new AtomicInteger();
 
-    private Thread getALoopingThread(int identifier) {
+    private Thread getALoopingThread(int threadIdentifier) {
         return new Thread(() -> {
             while (!haltExecution) {
                 try {
-                    this.scheduler.takeOperation(identifier).run();
+                    this.scheduler.takeOperation(threadIdentifier).run();
                     outstandingOperations.decrementAndGet();
                 } catch (InterruptedException e) {
                     haltExecution = true;
@@ -76,7 +84,7 @@ public class MultithreadedEventQueueExecutor implements Closeable {
         });
     }
 
-    public MultithreadedEventQueueExecutor(int numberOfThreads, Scheduler scheduler) {
+    MultithreadedEventQueueExecutor(int numberOfThreads, Scheduler scheduler) {
         this.numberOfThreads = numberOfThreads;
         this.scheduler = scheduler;
 
@@ -87,9 +95,7 @@ public class MultithreadedEventQueueExecutor implements Closeable {
         this.runningThreads.forEach(Thread::start);
     }
 
-    public void submitOperation(int operationIdentifier, Runnable runnable) {
-        operationIdentifier %= this.numberOfThreads; // TODO: not the cleanest thing
-
+    void submitOperation(int operationIdentifier, Runnable runnable) {
         try {
             outstandingOperations.incrementAndGet();
             scheduler.submitOperation(operationIdentifier, runnable);
@@ -100,11 +106,11 @@ public class MultithreadedEventQueueExecutor implements Closeable {
         LOGGER.info("Submitted an operation with identifier " + operationIdentifier);
     }
 
-    public void submitOperation(Runnable runnable) {
+    void submitOperation(Runnable runnable) {
         submitOperation(0, runnable);
     }
 
-    public int getOutstandingOperations() {
+    int getOutstandingOperations() {
         return outstandingOperations.get();
     }
 
@@ -119,5 +125,15 @@ public class MultithreadedEventQueueExecutor implements Closeable {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "MultithreadedEventQueueExecutor{" +
+            "scheduler=" + scheduler +
+            ", numberOfThreads=" + numberOfThreads +
+            ", haltExecution=" + haltExecution +
+            ", outstandingOperations=" + outstandingOperations +
+            '}';
     }
 }

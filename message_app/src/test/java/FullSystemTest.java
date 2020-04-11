@@ -20,9 +20,9 @@ public class FullSystemTest {
 
             Utils.letThatSinkIn(storageAPI, () -> {
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "Hey")));
+                    new Message("Simeon", "Hey"), ConstantsMAPP.UNKNOWN_RECIPIENT));
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "What's up")));
+                    new Message("Simeon", "What's up"), ConstantsMAPP.UNKNOWN_RECIPIENT));
             });
 
             ResponseSearchMessage responseSearchMessage =
@@ -41,13 +41,13 @@ public class FullSystemTest {
 
             Utils.letThatSinkIn(storageAPI, () -> {
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "Hey")));
+                    new Message("Simeon", "Hey"), ConstantsMAPP.UNKNOWN_RECIPIENT));
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "What's up")));
+                    new Message("Simeon", "What's up"), ConstantsMAPP.UNKNOWN_RECIPIENT));
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "Hey")));
+                    new Message("Simeon", "Hey"), ConstantsMAPP.UNKNOWN_RECIPIENT));
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "Hey")));
+                    new Message("Simeon", "Hey"), ConstantsMAPP.UNKNOWN_RECIPIENT));
             });
 
             ResponseSearchMessage responseSearchMessage =
@@ -69,17 +69,17 @@ public class FullSystemTest {
             Utils.letThatSinkIn(storageAPI, () -> {
                 for (int i = 0; i < cnt; i++) {
                     storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                        toSend));
+                        toSend, ConstantsMAPP.UNKNOWN_RECIPIENT));
 
                     storageAPI.handleRequest(
                         new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                            new Message("Someone else", "jibberish")));
+                            new Message("Someone else", "jibberish"), ConstantsMAPP.UNKNOWN_RECIPIENT));
                     storageAPI.handleRequest(
                         new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                            new Message("Someone else", "jibberish")));
+                            new Message("Someone else", "jibberish"), ConstantsMAPP.UNKNOWN_RECIPIENT));
                     storageAPI.handleRequest(
                         new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                            new Message("Someone else", "jibberish")));
+                            new Message("Someone else", "jibberish"), ConstantsMAPP.UNKNOWN_RECIPIENT));
                 }
             });
 
@@ -121,7 +121,7 @@ public class FullSystemTest {
             Utils.letThatSinkIn(storageAPI, () -> {
                 for (Message mes : toSend) {
                     storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                        mes));
+                        mes, ConstantsMAPP.UNKNOWN_RECIPIENT));
                 }
             });
 
@@ -144,9 +144,9 @@ public class FullSystemTest {
 
             Utils.letThatSinkIn(storageAPI, () -> {
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "Hey")));
+                    new Message("Simeon", "Hey"), ConstantsMAPP.UNKNOWN_RECIPIENT));
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "What's up")));
+                    new Message("Simeon", "What's up"), ConstantsMAPP.UNKNOWN_RECIPIENT));
             });
 
             ResponseMessageDetails responseMessageDetails = storageAPI.handleRequest(
@@ -166,9 +166,9 @@ public class FullSystemTest {
 
             Utils.letThatSinkIn(storageAPI, () -> {
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    simeonHey));
+                    simeonHey, ConstantsMAPP.UNKNOWN_RECIPIENT));
                 storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "What's up")));
+                    new Message("Simeon", "What's up"), ConstantsMAPP.UNKNOWN_RECIPIENT));
             });
 
             ResponseMessageDetails responseMessageDetails = storageAPI.handleRequest(
@@ -190,9 +190,9 @@ public class FullSystemTest {
             Message simeonHey = new Message("Simeon", "Hey");
 
             storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                simeonHey));
+                simeonHey, ConstantsMAPP.UNKNOWN_RECIPIENT));
             storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "What's up")));
+                    new Message("Simeon", "What's up"), ConstantsMAPP.UNKNOWN_RECIPIENT));
 
             // Post the messages
             assertEquals(2, manualTrinity.progressLucene());
@@ -238,7 +238,7 @@ public class FullSystemTest {
             for (int i=1; i<=messagesToPost; i++) {
                 manualTrinity.storageAPI.handleRequest(
                     new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("simeon", "Message " + i)));
+                    new Message("simeon", "Message " + i), ConstantsMAPP.UNKNOWN_RECIPIENT));
             }
 
             // Then search for them
@@ -284,7 +284,7 @@ public class FullSystemTest {
             for (int i=0; i<100; i++) {
                 manualTrinity.storageAPI.handleRequest(
                     new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "J Cole is the best")));
+                    new Message("Simeon", "J Cole is the best"), ConstantsMAPP.UNKNOWN_RECIPIENT));
             }
 
             manualTrinity.progressPsql();

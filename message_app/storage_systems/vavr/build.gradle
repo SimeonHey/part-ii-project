@@ -1,0 +1,11 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation project(':message_app:common')
+    implementation project(path: ':new_design:common')
+
+    implementation group: 'io.vavr', name: 'vavr', version: '0.10.2'
+    testImplementation 'junit:junit:4.12'
+}

@@ -1,6 +1,6 @@
 import java.util.function.Consumer;
 
-public abstract class ServiceBase<Snap extends AutoCloseable> {
+public abstract class ServiceBase<Snap> {
     private String objectTypeToHandle;
 
     private Class<? extends BaseEvent> classOfObjectToHandle;

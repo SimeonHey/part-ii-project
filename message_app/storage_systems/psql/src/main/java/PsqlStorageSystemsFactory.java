@@ -92,6 +92,17 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
+            })
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+                @Override
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<Connection> self, Connection snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
+                }
             }).build();
     }
 
@@ -156,6 +167,17 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         new ChanneledResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
+                }
+            })
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+                @Override
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<Connection> self, Connection snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
                 }
             }).build();
     }
@@ -240,6 +262,17 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         new ChanneledResponse(self.shortName, request.getEventType(),
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
+                }
+            })
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+                @Override
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<Connection> self, Connection snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
                 }
             }).build();
     }
@@ -330,6 +363,17 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                              request.getResponseAddress().getChannelID(), dbResponse)
                     );
                 }
+            })
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+                @Override
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<Connection> self, Connection snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
+                }
             }).build();
     }
 
@@ -418,6 +462,17 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         new ChanneledResponse(self.shortName, request.getEventType(),
                             request.getResponseAddress().getChannelID(), dbResponse)
                     );
+                }
+            })
+            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, 1) {
+                @Override
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<Connection> self, Connection snapshot) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        LOGGER.warning("Couldn't sleep!!@!");
+                        throw new RuntimeException(e);
+                    }
                 }
             }).build();
     }

@@ -1,16 +1,14 @@
-import jdk.jfr.Event;
-
 import java.util.Random;
 
 public abstract class LoadFaker {
     public enum Events {
-        DELETE_ALL_MESSAGES(RequestDeleteAllMessages.class),
         POST_MESSAGE(RequestPostMessage.class),
-        
         GET_ALL_MESSAGES(RequestAllMessages.class),
         GET_MESSAGE_DETAILS(RequestMessageDetails.class),
         SEARCH_MESSAGES(RequestSearchMessage.class),
-        SEARCH_AND_DETAILS(RequestSearchAndDetails.class);
+        SEARCH_AND_DETAILS(RequestSearchAndDetails.class),
+        SLEEP_1(RequestSleep1.class),
+        DELETE_ALL_MESSAGES(RequestDeleteAllMessages.class);
         
         private final Class<? extends BaseEvent> theClass;
 
@@ -42,7 +40,8 @@ public abstract class LoadFaker {
     BaseEvent getRequestFromId(int id, Addressable responseAddress) {
         try {
             if (id == Events.POST_MESSAGE.ordinal()) {
-                return new RequestPostMessage(responseAddress, getRandomMessage());
+                return new RequestPostMessage(responseAddress,
+                    getRandomMessage(), getRandomWord(charsLimit * wordsLimit));
             } else if (id == Events.GET_ALL_MESSAGES.ordinal()) {
                 return new RequestAllMessages(responseAddress);
             } else if (id == Events.SEARCH_MESSAGES.ordinal()) {
@@ -54,6 +53,8 @@ public abstract class LoadFaker {
                 return new RequestSearchAndDetails(responseAddress, getRandomWord(charsLimit - 1));
             } else if (id == Events.DELETE_ALL_MESSAGES.ordinal()) {
                 return new RequestDeleteAllMessages(responseAddress);
+            } else if (id == Events.SLEEP_1.ordinal()) {
+                return new RequestSleep1(responseAddress);
             } else {
                 throw new RuntimeException("The universe is broken");
             }

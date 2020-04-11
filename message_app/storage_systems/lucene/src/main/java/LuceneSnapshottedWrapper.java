@@ -154,6 +154,13 @@ class LuceneSnapshottedWrapper extends SnapshottedStorageWrapper<IndexReader>
 
     @Override
     IndexReader refreshSnapshot(IndexReader bareSnapshot) {
+        try {
+            bareSnapshot.close();
+        } catch (IOException e) {
+            LOGGER.warning("Error when trying to close a snapshot when refreshing it with Lucene: " + e);
+            throw new RuntimeException(e);
+        }
+
         return freshConcurrentSnapshot();
     }
 

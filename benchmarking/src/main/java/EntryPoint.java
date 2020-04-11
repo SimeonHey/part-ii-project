@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.logging.LogManager;
 
 public class EntryPoint {
     private static void makeItDance(LoadFaker loadFaker,
@@ -50,7 +49,7 @@ public class EntryPoint {
         System.out.println("HELLO!");
 
         // Log to a file
-        LogManager.getLogManager().reset();
+//        LogManager.getLogManager().reset();
 //        Logger.getLogger("").addHandler(new FileHandler("mylog.txt"));
 
         ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(Constants.METRIC_REGISTRY)
@@ -94,7 +93,22 @@ public class EntryPoint {
             LoadFaker.Events.GET_MESSAGE_DETAILS, 0.33,
             LoadFaker.Events.SEARCH_MESSAGES, 0.33));
 
-        makeItDance(noGetAllNoSDLoadFaker, (StorageSystemFactory::concurReads),
-            List.of());
+        ProportionsLoadFaker noGetAllLittleSDLoadFaker = new ProportionsLoadFaker(1_000, 1, Map.of(
+            LoadFaker.Events.POST_MESSAGE, 0.30,
+            LoadFaker.Events.GET_MESSAGE_DETAILS, 0.30,
+            LoadFaker.Events.SEARCH_MESSAGES, 0.30,
+            LoadFaker.Events.SEARCH_AND_DETAILS, 0.1));
+
+        ProportionsLoadFaker noGetAllLittleSDSleep1LoadFaker = new ProportionsLoadFaker(1_000, 1, Map.of(
+            LoadFaker.Events.POST_MESSAGE, 0.3,
+            LoadFaker.Events.GET_MESSAGE_DETAILS, 0.3,
+            LoadFaker.Events.SEARCH_MESSAGES, 0.3,
+            LoadFaker.Events.SEARCH_AND_DETAILS, 0.09,
+            LoadFaker.Events.SLEEP_1, 0.01));
+
+        makeItDance(new NoSDUniformLoadFaker(1_000, 1), (StorageSystemFactory::serReads),
+            List.of(/*new Tuple2<>(RequestAllMessages.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
+                new Tuple2<>(RequestMessageDetails.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
+                new Tuple2<>(RequestSearchMessage.class.getName(), ConstantsMAPP.TEST_LUCENE_REQUEST_ADDRESS)*/));
     }
 }
