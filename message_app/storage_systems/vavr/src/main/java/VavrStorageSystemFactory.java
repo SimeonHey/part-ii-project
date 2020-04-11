@@ -20,6 +20,12 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
         });
     }
 
+    public VavrStorageSystemFactory(int httpListenPort,
+                                    Consumer<JointStorageSystem<HashMap<String, Integer>>> bootstrapProcedure)
+        throws IOException {
+        super("vavr", wrapper, httpListenPort, bootstrapProcedure);
+    }
+
     @Override
     JointStorageSystem<HashMap<String, Integer>> simpleOlep() {
         return new JointStorageSystemBuilder<>("vavr simple olep", this.httpStorageSystem, wrapper,
@@ -32,6 +38,24 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
                                    HashMap<String, Integer> snapshot) {
                     String recipient = ((RequestPostMessage) request).getRecepient();
                     wrapper.postMessage(recipient);
+
+                    // TODO: This could also be automated
+                    var response = new ChanneledResponse(self.shortName, request.getEventType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
+                    responseCallback.accept(response);
+                }
+            })
+            .registerHttpService(new ServiceBase<>(RequestAllMessages.class, -1) {
+                @Override
+                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<HashMap<String, Integer>> self, HashMap<String, Integer> snapshot) {
+                    wrapper.getAllMessages((RequestAllMessages) request);
+
+                    // TODO: This could also be automated
+                    var response = new ChanneledResponse(self.shortName, request.getEventType(),
+                        request.getResponseAddress().getChannelID(),
+                        new ConfirmationResponse(self.fullName, request.getEventType()));
+                    responseCallback.accept(response);
                 }
             })
             .registerHttpService(new ServiceBase<>(RequestGetUnreadMessages.class, -1) {

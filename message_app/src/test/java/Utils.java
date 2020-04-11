@@ -9,17 +9,22 @@ class Utils {
     private static Trinity savedInstance;
 
     private final static Function<StorageSystemFactory, JointStorageSystem> storageSystemStrategy =
-        (StorageSystemFactory::concurReads);
+        (StorageSystemFactory::simpleOlep);
 
     static class Trinity implements AutoCloseable{
         public final JointStorageSystem psqlStorageSystem;
         public final JointStorageSystem luceneStorageSystem;
         public final StorageAPI storageAPI;
+        protected JointStorageSystem vavrStorageSystem;
 
-        Trinity(JointStorageSystem psqlStorageSystem, JointStorageSystem luceneStorageSystem,
+        Trinity(JointStorageSystem psqlStorageSystem,
+                JointStorageSystem luceneStorageSystem,
+                JointStorageSystem vavrStorageSystem,
                 StorageAPI storageAPI) {
             this.psqlStorageSystem = psqlStorageSystem;
             this.luceneStorageSystem = luceneStorageSystem;
+            this.vavrStorageSystem = vavrStorageSystem;
+
             this.storageAPI = storageAPI;
         }
 
@@ -42,15 +47,19 @@ class Utils {
     static class ManualTrinity extends Trinity {
         public final ManualConsumer<Long, BaseEvent> manualConsumerPsql;
         public final ManualConsumer<Long, BaseEvent> manualConsumerLucene;
+        private final ManualConsumer<Long, BaseEvent> manualConsumerVavr;
 
         ManualTrinity(JointStorageSystem psqlConcurReads,
                       JointStorageSystem luceneConcurReads,
+                      JointStorageSystem vavrStorageSystem,
                       StorageAPI storageAPI,
                       ManualConsumer<Long, BaseEvent> manualConsumerPsql,
-                      ManualConsumer<Long, BaseEvent> manualConsumerLucene) {
-            super(psqlConcurReads, luceneConcurReads, storageAPI);
+                      ManualConsumer<Long, BaseEvent> manualConsumerLucene,
+                      ManualConsumer<Long, BaseEvent> manualConsumerVavr) {
+            super(psqlConcurReads, luceneConcurReads, vavrStorageSystem, storageAPI);
             this.manualConsumerPsql = manualConsumerPsql;
             this.manualConsumerLucene = manualConsumerLucene;
+            this.manualConsumerVavr = manualConsumerVavr;
         }
 
         public int progressPsql() {
@@ -59,6 +68,10 @@ class Utils {
 
         public int progressLucene() {
             return manualConsumerLucene.consumeAvailableRecords();
+        }
+
+        public int progressVavr() {
+            return manualConsumerVavr.consumeAvailableRecords();
         }
 
         @Override
@@ -73,10 +86,12 @@ class Utils {
 
             this.manualConsumerPsql.close();
             this.manualConsumerLucene.close();
+            this.manualConsumerVavr.close();
 
             this.storageAPI.close();
             this.psqlStorageSystem.close();
             this.luceneStorageSystem.close();
+            this.vavrStorageSystem.close();
         }
     }
 
@@ -92,12 +107,15 @@ class Utils {
         var luceneFactory = new LuceneStorageSystemFactory(ConstantsMAPP.TEST_LUCENE_PSQL_CONTACT_ENDPOINT);
         JointStorageSystem luceneStorageSystem = storageSystemStrategy.apply(luceneFactory);
 
+        var vavrFactory = new VavrStorageSystemFactory(ConstantsMAPP.VAVR_LISTEN_PORT);
+        JointStorageSystem vavrStorageSystem = storageSystemStrategy.apply(vavrFactory);
+
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultTestValues();
         StorageAPI storageAPI = StorageAPIUtils.initFromArgsForTests(storageAPIInitArgs);
 
         Thread.sleep(1000);
 
-        savedInstance = new Trinity(psqlConcurrentSnapshots, luceneStorageSystem, storageAPI);
+        savedInstance = new Trinity(psqlConcurrentSnapshots, luceneStorageSystem, vavrStorageSystem, storageAPI);
         return savedInstance;
     }
 
@@ -108,7 +126,7 @@ class Utils {
         }
 
         final ManualConsumer[] psqlManualConsumer = new ManualConsumer[1];
-        var psqlFactory = new PsqlStorageSystemsFactory(ConstantsMAPP.PSQL_LISTEN_PORT_ALT, (
+        var psqlFactory = new PsqlStorageSystemsFactory(ConstantsMAPP.PSQL_LISTEN_PORT, (
             jointStorageSystem -> {
                 psqlManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("psql"));
                 psqlManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
@@ -116,27 +134,36 @@ class Utils {
         var psqlStorageSystem = storageSystemStrategy.apply(psqlFactory);
 
         final ManualConsumer[] luceneManualConsumer = new ManualConsumer[1];
-        var luceneFactory = new LuceneStorageSystemFactory(ConstantsMAPP.TEST_LUCENE_PSQL_CONTACT_ENDPOINT_ALT,
+        var luceneFactory = new LuceneStorageSystemFactory(ConstantsMAPP.TEST_LUCENE_PSQL_CONTACT_ENDPOINT,
             jointStorageSystem -> {
                 luceneManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("lucene"));
                 luceneManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
             });
-
         JointStorageSystem luceneStorageSystem = storageSystemStrategy.apply(luceneFactory);
+
+        final ManualConsumer[] vavrManualConsumer = new ManualConsumer[1];
+        var vavrFactory = new VavrStorageSystemFactory(ConstantsMAPP.VAVR_LISTEN_PORT,
+            jointStorageSystem -> {
+                System.out.println("Created the vavr shit");
+                vavrManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("vavr"));
+                vavrManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
+            });
+        JointStorageSystem vavrStorageSystem = storageSystemStrategy.apply(vavrFactory);
+
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(
             ConstantsMAPP.TEST_KAFKA_ADDRESS,
             ConstantsMAPP.KAFKA_TOPIC,
-            ConstantsMAPP.STORAGEAPI_PORT_ALT);
+            ConstantsMAPP.STORAGEAPI_PORT);
         StorageAPI storageAPI = StorageAPIUtils.initFromArgsWithDummyKafkaForTests(storageAPIInitArgs);
 
-        savedInstanceManual = new ManualTrinity(psqlStorageSystem, luceneStorageSystem, storageAPI,
-            psqlManualConsumer[0], luceneManualConsumer[0]);
+        savedInstanceManual = new ManualTrinity(psqlStorageSystem, luceneStorageSystem, vavrStorageSystem, storageAPI,
+            psqlManualConsumer[0], luceneManualConsumer[0], vavrManualConsumer[0]);
 
         return savedInstanceManual;
     }
 
-    static void letThatSinkIn(StorageAPI storageAPI, Runnable r) throws InterruptedException {
+    static void letThatSinkIn(StorageAPI storageAPI, Runnable r) {
         r.run();
         storageAPI.waitForAllConfirmations();
     }

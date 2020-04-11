@@ -3,6 +3,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
@@ -50,6 +51,8 @@ public class FullSystemTest {
                     new Message("Simeon", "Hey"), ConstantsMAPP.UNKNOWN_RECIPIENT));
             });
 
+            Thread.sleep(1000);
+
             ResponseSearchMessage responseSearchMessage =
                 storageAPI.handleRequest(new RequestSearchMessage(new Addressable(storageAPI.getResponseAddress()),
                         "Hey"),
@@ -82,6 +85,8 @@ public class FullSystemTest {
                             new Message("Someone else", "jibberish"), ConstantsMAPP.UNKNOWN_RECIPIENT));
                 }
             });
+
+            Thread.sleep(5000);
 
             ResponseSearchMessage responseSearchMessage =
                 storageAPI.handleRequest(new RequestSearchMessage(new Addressable(storageAPI.getResponseAddress()),
@@ -124,6 +129,8 @@ public class FullSystemTest {
                         mes, ConstantsMAPP.UNKNOWN_RECIPIENT));
                 }
             });
+
+            Thread.sleep(5000);
 
             ResponseAllMessages responseAllMessages =
                 storageAPI.handleRequest(new RequestAllMessages(new Addressable(storageAPI.getResponseAddress())),
@@ -308,6 +315,61 @@ public class FullSystemTest {
                 assertTrue(current.getFromStorageSystem().startsWith("lucene"));
                 assertEquals(RequestPostMessage.class.getName(), current.getObjectType());
             }
+        }
+    }
+
+    @Test
+    public void messageCountsIncreases() throws Exception {
+        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization()) {
+            StorageAPI storageAPI = manualTrinity.storageAPI;
+            String targetRecipient = "gosho";
+
+            int unreadsExpected = 100;
+
+            for (int i = 0; i < unreadsExpected; i++) {
+                storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
+                    new Message("simeon", "hey m8"), targetRecipient));
+            }
+            manualTrinity.progressVavr();
+            storageAPI.waitForAllConfirmations();
+
+            CompletableFuture<Integer> unreadMessagesFuture = storageAPI
+                .handleRequest(new RequestGetUnreadMessages(new Addressable(storageAPI.getResponseAddress()),
+                    targetRecipient), Integer.class);
+            manualTrinity.progressVavr();
+            storageAPI.waitForAllConfirmations();
+
+            int unreads = unreadMessagesFuture.get();
+            assertEquals(unreadsExpected, unreads);
+        }
+    }
+
+    @Test
+    public void messageCountsDecreases() throws Exception {
+        try (Utils.ManualTrinity manualTrinity = Utils.manualConsumerInitialization()) {
+            StorageAPI storageAPI = manualTrinity.storageAPI;
+            String targetRecipient = "gosho";
+
+            int unreadsExpected = 100;
+
+            for (int i=0; i<unreadsExpected; i++) {
+                storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
+                    new Message("simeon", "hey m8"), targetRecipient));
+            }
+            manualTrinity.progressVavr();
+            storageAPI.waitForAllConfirmations();
+
+            storageAPI.handleRequest(new RequestAllMessages(new Addressable(storageAPI.getResponseAddress())));
+            storageAPI.waitForAllConfirmations();
+
+            CompletableFuture<Integer> unreadMessagesFuture = storageAPI
+                .handleRequest(new RequestGetUnreadMessages(new Addressable(storageAPI.getResponseAddress()),
+                    targetRecipient), Integer.class);
+            manualTrinity.progressVavr();
+            storageAPI.waitForAllConfirmations();
+
+            int unreads = unreadMessagesFuture.get();
+            assertEquals(0, unreads);
         }
     }
 }

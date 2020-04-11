@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class StorageAPI implements AutoCloseable {
     private static final Logger LOGGER = Logger.getLogger(StorageAPI.class.getName());
@@ -28,7 +29,7 @@ public class StorageAPI implements AutoCloseable {
 
     private List<ConfirmationListener> confirmationListeners = new ArrayList<>();
 
-    private final List<Tuple2<String, String>> httpFavours;
+    private final List<Tuple2<String, List<String>>> httpFavours;
 
     private final NamedTimeMeasurements favoursTimeMeasurers = new NamedTimeMeasurements("favours");
     private final Counter outstandingFavoursCounter =
@@ -41,7 +42,7 @@ public class StorageAPI implements AutoCloseable {
                HttpStorageSystem httpStorageSystem,
                String transactionsTopic,
                String selfAddress,
-               List<Tuple2<String, String>> httpFavours) {
+               List<Tuple2<String, List<String>>> httpFavours) {
         this.producer = producer;
         this.transactionsTopic = transactionsTopic;
         this.httpStorageSystem = httpStorageSystem;
@@ -56,7 +57,7 @@ public class StorageAPI implements AutoCloseable {
         LOGGER.info("Address response: " + responseAddress);
     }
 
-    private Tuple2<String, String> findHttpFavour(BaseEvent request) {
+    private Tuple2<String, List<String>> findHttpFavour(BaseEvent request) {
         for (var tuple: httpFavours) {
             if (tuple._1.equals(request.getEventType())) {
                 return tuple;
@@ -69,18 +70,22 @@ public class StorageAPI implements AutoCloseable {
     public <T>CompletableFuture<T> handleRequest(BaseEvent request, Class<T> responseType) {
         outstandingFavoursCounter.inc();
 
-        var httpFavor = findHttpFavour(request);
+        var httpFavors = findHttpFavour(request);
 
         opsSentMeters.markFor(request.getEventType());
 
-        if (httpFavor == null) { // I assume if it's not in the HTTP it's in the Kafka favour group
+        if (httpFavors == null) { // I assume if it's not in the HTTP it's in the Kafka favour group
             LOGGER.info("StorageAPI handles request " + request + " through Kafka");
 
             return kafkaRequestResponseFuture(request, responseType);
         } else {
-            LOGGER.info("StorageAPI handles request " + request + " through HTTP");
-
-            return httpRequestAsyncResponseFuture(httpFavor._2, request, responseType);
+            LOGGER.info("StorageAPI handles request " + request + " through HTTP to: " + httpFavors);
+            // TODO: This is unnecessarily ugly
+            return httpFavors._2
+                .stream()
+                .map(url -> httpRequestAsyncResponseFuture(url, request, responseType))
+                .collect(Collectors.toList())
+                .get(0);
         }
     }
 
