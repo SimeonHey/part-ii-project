@@ -1,5 +1,3 @@
-import java.util.function.Consumer;
-
 public abstract class ServiceBase<Snap> {
     private String objectTypeToHandle;
 
@@ -20,8 +18,7 @@ public abstract class ServiceBase<Snap> {
         return classOfObjectToHandle;
     }
 
-    abstract void handleRequest(BaseEvent request,
-                                Consumer<ChanneledResponse> responseCallback,
+    abstract Object handleRequest(BaseEvent request,
                                 JointStorageSystem<Snap> self,
                                 Snap snapshot);
 

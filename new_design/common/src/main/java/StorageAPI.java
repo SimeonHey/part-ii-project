@@ -93,12 +93,19 @@ public class StorageAPI implements AutoCloseable {
         handleRequest(request, Object.class);
     }
 
-    private <T> CompletableFuture<T> consumeAndDestroyAsync(long offset, Class<T> responseType) {
+    private <T> CompletableFuture<T> consumeAndDestroyAsync(long offset, Class<T> responseType, int numberOfHops) {
         return CompletableFuture.supplyAsync(() -> {
             // Will block until a response is received
-            String serializedResponse;
+            String serializedResponse = null;
             try {
-                serializedResponse = this.channeledCommunication.consumeAndDestroy(offset);
+                // In the case of multihop requests, we need to wait for the real result
+                for (int i=0; i<numberOfHops; i++) {
+                    String current = this.channeledCommunication.consumeAndDestroy(offset);
+                    if (current != null) {
+                        serializedResponse = current;
+                    }
+                }
+
                 outstandingFavoursCounter.dec();
             } catch (InterruptedException e) {
                 LOGGER.warning("Error when waiting on channel " + offset + ": " + e);
@@ -119,7 +126,7 @@ public class StorageAPI implements AutoCloseable {
         if (request.expectsResponse()) {
             LOGGER.info("Waiting for response on channel with uuid " + offset);
 
-            return consumeAndDestroyAsync(offset, responseType);
+            return consumeAndDestroyAsync(offset, responseType, request.getNumberOfHops());
         } else {
             LOGGER.info("Confirmation " + offset);
 
@@ -145,7 +152,7 @@ public class StorageAPI implements AutoCloseable {
         if (request.expectsResponse()) {
             LOGGER.info("Sent request. Waiting for response on channel with uuid " + curId);
 
-            return consumeAndDestroyAsync(curId, responseType);
+            return consumeAndDestroyAsync(curId, responseType, request.getNumberOfHops());
         } else {
             LOGGER.info("Sent request. Confirmation will arrive on channel " + curId);
 

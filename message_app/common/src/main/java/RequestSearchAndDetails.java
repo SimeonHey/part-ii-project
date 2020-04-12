@@ -5,5 +5,6 @@ public class RequestSearchAndDetails extends RequestSearchMessage {
 
     public RequestSearchAndDetails(Addressable responseAddress, String searchText) {
         super(responseAddress, searchText);
+        this.setNumberOfHops(2);
     }
 }

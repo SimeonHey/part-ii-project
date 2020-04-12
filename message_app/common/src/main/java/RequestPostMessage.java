@@ -7,7 +7,7 @@ public class RequestPostMessage extends BaseEvent {
     private final String recepient;
 
     public RequestPostMessage(Addressable responseAddress, Message message, String recepient) {
-        super(responseAddress, false);
+        super(responseAddress, false, 1);
         this.message = message;
         this.recepient = recepient;
     }

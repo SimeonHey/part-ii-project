@@ -14,7 +14,7 @@ import java.util.function.Function;
 public class EntryPoint {
     private static void makeItDance(LoadFaker loadFaker,
                                     Function<StorageSystemFactory, JointStorageSystem> factoryStrategy,
-                                    List<Tuple2<String, String>> httpFavoursList) {
+                                    List<Tuple2<String, List<String>>> httpFavoursList) {
         String selfAddress = "192.168.1.50";
         String psqlAddress = String.format("http://localhost:%d", ConstantsMAPP.PSQL_LISTEN_PORT);
 

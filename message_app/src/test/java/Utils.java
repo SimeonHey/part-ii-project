@@ -9,7 +9,7 @@ class Utils {
     private static Trinity savedInstance;
 
     private final static Function<StorageSystemFactory, JointStorageSystem> storageSystemStrategy =
-        (StorageSystemFactory::simpleOlep);
+        (StorageSystemFactory::concurReads);
 
     static class Trinity implements AutoCloseable{
         public final JointStorageSystem psqlStorageSystem;

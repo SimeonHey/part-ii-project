@@ -87,26 +87,31 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         LOGGER.info(fullName + " received an HTTP query of length " + serializedQuery.length() +
             ", deserializing...");
 
-        BaseEvent sso = EventJsonDeserializer.deserialize(Constants.gson, serializedQuery, classMap);
+        BaseEvent event = EventJsonDeserializer.deserialize(Constants.gson, serializedQuery, classMap);
 
-        LOGGER.info(String.format("%s received an HTTP query of type %s", fullName, sso.getEventType()));
+        LOGGER.info(String.format("%s received an HTTP query of type %s", fullName, event.getEventType()));
 
-        requestArrived(this.httpServiceHandlers, sso, wrapResponseWithAddress(sso.getResponseAddress()));
+        requestArrived(this.httpServiceHandlers, event, wrapResponseWithMeta(event));
         return "Thanks, processing... :)".getBytes();
     }
 
     void kafkaServiceHandler(ConsumerRecord<Long, BaseEvent> record) {
-        BaseEvent sso = record.value();
-        LOGGER.info(String.format("%s received a Kafka query: %s", fullName, sso.getEventType()));
+        BaseEvent event = record.value();
+        LOGGER.info(String.format("%s received a Kafka query: %s", fullName, event.getEventType()));
 
         // The Kafka offset is only known after the message has been published
-        sso.getResponseAddress().setChannelID(record.offset());
+        event.getResponseAddress().setChannelID(record.offset());
 
-        requestArrived(this.kafkaServiceHandlers, sso, wrapResponseWithAddress(sso.getResponseAddress()));
+        requestArrived(this.kafkaServiceHandlers, event, wrapResponseWithMeta(event));
     }
 
-    private Consumer<ChanneledResponse> wrapResponseWithAddress(Addressable responseAddress) {
-        return (ChanneledResponse response) -> respond(responseAddress, response);
+    private Consumer<Object> wrapResponseWithMeta(BaseEvent event) {
+        return (Object bareResponse) ->
+            respond(event.getResponseAddress(), new ChanneledResponse(
+                this.shortName,
+                event.getEventType(),
+                event.getResponseAddress().getChannelID(),
+                bareResponse));
     }
 
     private void respond(Addressable responseAddress, ChanneledResponse response) {
@@ -144,7 +149,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
     private void handleWithHandler(BaseEvent event,
                                    ServiceBase<Snap> serviceHandler,
-                                   Consumer<ChanneledResponse> responseCallback) {
+                                   Consumer<Object> responseCallback) {
         LOGGER.info(this.fullName + " found a handler for event type " + event.getEventType());
 
         String objectTypeStr = event.getEventType();
@@ -160,7 +165,9 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
                 processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
                 try {
-                    serviceHandler.handleRequest(event, responseCallback, this, snapshotToUse.getSnapshot());
+                    Object response =
+                        serviceHandler.handleRequest(event, this, snapshotToUse.getSnapshot());
+                    responseCallback.accept(response);
                 } catch (Exception e) {
                     LOGGER.warning("Error when handling request: " + e);
                     throw new RuntimeException(e);
@@ -177,7 +184,9 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
             // Execute in the current thread
             try {
-                serviceHandler.handleRequest(event, responseCallback, this, wrapper.getDefaultSnapshot());
+                Object response =
+                    serviceHandler.handleRequest(event, this, wrapper.getDefaultSnapshot());
+                responseCallback.accept(response);
             } catch (Exception e) {
                 LOGGER.warning("Error when handling request: " + e);
                 throw new RuntimeException(e);
@@ -191,7 +200,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
     private void requestArrived(Map<String, ServiceBase<Snap>> serviceHandlers,
                                 BaseEvent baseEvent,
-                                Consumer<ChanneledResponse> responseCallback) {
+                                Consumer<Object> responseCallback) {
         operationsReceived.mark();
         LOGGER.info("Request arrived for " + fullName + " of type " + baseEvent.getEventType());
 

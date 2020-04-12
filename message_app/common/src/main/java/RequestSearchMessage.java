@@ -5,7 +5,7 @@ public class RequestSearchMessage extends BaseEvent {
     private final String searchText;
 
     public RequestSearchMessage(Addressable responseAddress, String searchText) {
-        super(responseAddress, true);
+        super(responseAddress, true, 1);
         this.searchText = searchText;
     }
 

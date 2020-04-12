@@ -13,7 +13,7 @@ class StorageAPIUtils {
         public String transactionsTopic;
         public int listeningPort;
 
-        public List<Tuple2<String, List<String>>> httpFavoursList = List.of(
+        public List<Tuple2<String, List<String>>> httpFavoursList = List.of(/*
             new Tuple2<>(RequestAllMessages.class.getName(),
                 List.of(ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS, ConstantsMAPP.TEST_VAVR_REQUEST_ADDRESS)),
             new Tuple2<>(RequestMessageDetails.class.getName(),
@@ -21,7 +21,7 @@ class StorageAPIUtils {
             new Tuple2<>(RequestSearchMessage.class.getName(),
                 List.of(ConstantsMAPP.TEST_LUCENE_REQUEST_ADDRESS)),
             new Tuple2<>(RequestGetUnreadMessages.class.getName(),
-                List.of(ConstantsMAPP.TEST_VAVR_REQUEST_ADDRESS)));
+                List.of(ConstantsMAPP.TEST_VAVR_REQUEST_ADDRESS))*/);
 
         private StorageAPIInitArgs () {
 

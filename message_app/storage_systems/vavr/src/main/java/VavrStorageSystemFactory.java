@@ -32,45 +32,34 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
             this.bootstrapProcedure)
             .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
+                Object handleRequest(BaseEvent request,
                                    JointStorageSystem<HashMap<String, Integer>> self,
                                    HashMap<String, Integer> snapshot) {
                     String recipient = ((RequestPostMessage) request).getRecepient();
                     wrapper.postMessage(recipient);
 
-                    // TODO: This could also be automated
-                    var response = new ChanneledResponse(self.shortName, request.getEventType(),
-                        request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.fullName, request.getEventType()));
-                    responseCallback.accept(response);
+                    return null;
+
+//                    responseCallback.accept(new ConfirmationResponse(self.fullName, request.getEventType()));
                 }
             })
             .registerHttpService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                void handleRequest(BaseEvent request, Consumer<ChanneledResponse> responseCallback, JointStorageSystem<HashMap<String, Integer>> self, HashMap<String, Integer> snapshot) {
+                Object handleRequest(BaseEvent request, JointStorageSystem<HashMap<String
+                    , Integer>> self, HashMap<String, Integer> snapshot) {
                     wrapper.getAllMessages((RequestAllMessages) request);
 
-                    // TODO: This could also be automated
-                    var response = new ChanneledResponse(self.shortName, request.getEventType(),
-                        request.getResponseAddress().getChannelID(),
-                        new ConfirmationResponse(self.fullName, request.getEventType()));
-                    responseCallback.accept(response);
+//                    responseCallback.accept(new ConfirmationResponse(self.fullName, request.getEventType()));
+                    return null;
                 }
             })
             .registerHttpService(new ServiceBase<>(RequestGetUnreadMessages.class, -1) {
                 @Override
-                void handleRequest(BaseEvent request,
-                                   Consumer<ChanneledResponse> responseCallback,
+                Object handleRequest(BaseEvent request,
                                    JointStorageSystem<HashMap<String, Integer>> self,
                                    HashMap<String, Integer> snapshot) {
                     String ofUser = ((RequestGetUnreadMessages) request).getOfUser();
-                    Integer count = wrapper.getUnreadMessages(ofUser);
-
-                    // TODO: Let the response callback accept just the object to be returned - everything else should
-                    //  be wrappable
-                    responseCallback.accept(new ChanneledResponse(self.shortName,
-                        request.getEventType(), request.getResponseAddress().getChannelID(), count));
+                    return wrapper.getUnreadMessages(ofUser);
                 }
             }).build();
     }
