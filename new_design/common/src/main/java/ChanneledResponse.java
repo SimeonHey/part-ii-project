@@ -3,16 +3,20 @@ public class ChanneledResponse {
     private final String fromStorageSystem;
     private final String requestObjectType;
     private final String serializedResponse;
+    private final boolean isResponse;
 
     public ChanneledResponse(String fromStorageSystem,
                              String requestObjectType,
                              long channelUuid,
-                             Object response) {
+                             Object response,
+                             boolean isResponse) {
         this.fromStorageSystem = fromStorageSystem;
         this.requestObjectType = requestObjectType;
 
         this.channelUuid = channelUuid;
         this.serializedResponse = Constants.gson.toJson(response);
+
+        this.isResponse = isResponse;
     }
 
     public String getFromStorageSystem() {
@@ -27,13 +31,18 @@ public class ChanneledResponse {
         return serializedResponse;
     }
 
+    public boolean isResponse() {
+        return isResponse;
+    }
+
     @Override
     public String toString() {
-        return "MultithreadedResponse{" +
+        return "ChanneledResponse{" +
             "channelUuid=" + channelUuid +
             ", fromStorageSystem='" + fromStorageSystem + '\'' +
-            ", requestObjectType=" + requestObjectType +
-            ", serializedResponse length='" + serializedResponse.length() + '\'' +
+            ", requestObjectType='" + requestObjectType + '\'' +
+            ", serializedResponse='" + serializedResponse + '\'' +
+            ", isResponse=" + isResponse +
             '}';
     }
 

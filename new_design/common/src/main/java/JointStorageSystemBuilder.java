@@ -6,8 +6,7 @@ import java.util.logging.Logger;
 public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
     private final static Logger LOGGER = Logger.getLogger(JointStorageSystemBuilder.class.getName());
 
-    private final Map<String, ServiceBase<Snap>> kafkaServiceHandlers = new HashMap<>();
-    private final Map<String, ServiceBase<Snap>> httpServiceHandlers = new HashMap<>();
+    private final Map<String, ServiceBase<Snap>> serviceHandlers = new HashMap<>();
 
     private final Map<String, Class<? extends BaseEvent>> classMap = new HashMap<>();
     private final Map<String, Integer> classNumber = new HashMap<>();
@@ -27,34 +26,23 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
         this.bootstrapProcedure = bootstrapProcedure;
     }
 
-    public JointStorageSystemBuilder<Snap> registerKafkaService(ServiceBase<Snap> serviceDescription) {
+    public JointStorageSystemBuilder<Snap> registerService(ServiceBase<Snap> serviceDescription) {
         int number = this.classMap.size();
         this.classMap.put(serviceDescription.getObjectTypeToHandle(), serviceDescription.getClassOfObjectToHandle());
         this.classNumber.put(serviceDescription.getObjectTypeToHandle(), number);
 
-        this.kafkaServiceHandlers.put(serviceDescription.getObjectTypeToHandle(), serviceDescription);
+        this.serviceHandlers.put(serviceDescription.getObjectTypeToHandle(), serviceDescription);
         LOGGER.info("Registered a Kafka service: " + serviceDescription);
-        return this;
-    }
-
-    public JointStorageSystemBuilder<Snap> registerHttpService(ServiceBase<Snap> serviceDescription) {
-        int number = this.classMap.size();
-        this.classMap.put(serviceDescription.getObjectTypeToHandle(), serviceDescription.getClassOfObjectToHandle());
-        this.classNumber.put(serviceDescription.getObjectTypeToHandle(), number);
-
-        this.httpServiceHandlers.put(serviceDescription.getObjectTypeToHandle(), serviceDescription);
-
-        LOGGER.info("Registered an HTTP service: " + serviceDescription);
         return this;
     }
 
     public JointStorageSystem<Snap> build() {
         // Construct the storage system
-        var storageSystem = new JointStorageSystem<>(fullName, httpStorageSystem, wrapper, kafkaServiceHandlers,
-            httpServiceHandlers, classMap, classNumber,
+        var storageSystem = new JointStorageSystem<>(fullName, httpStorageSystem, wrapper, serviceHandlers,
+            classMap, classNumber,
             new MultithreadedEventQueueExecutor(classMap.size(),
                 new MultithreadedEventQueueExecutor.StaticChannelsScheduler(classMap.size())),
-            new MultithreadedEventQueueExecutor(1, new MultithreadedEventQueueExecutor.FifoScheduler()));
+            new MultithreadedEventQueueExecutor(10, new MultithreadedEventQueueExecutor.FifoScheduler()));
 
         LOGGER.info("Built storage system: " + storageSystem);
 

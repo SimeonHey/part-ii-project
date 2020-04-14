@@ -38,9 +38,13 @@ public class PsqlSnapshottedWrapper extends SnapshottedStorageWrapper<Connection
             try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
                 boolean hasMore = resultSet.next();
                 if (!hasMore) {
+                    LOGGER.info("Psql got no results for message with uuid = " +
+                        requestMessageDetails.getMessageUUID());
                     return new ResponseMessageDetails(null, requestMessageDetails.getMessageUUID());
                 }
 
+                LOGGER.info("Got a result for message with uuid = " +
+                    requestMessageDetails.getMessageUUID());
                 return new ResponseMessageDetails(
                     SqlUtils.extractMessageFromResultSet(resultSet),
                     SqlUtils.extractUuidFromResultSet(resultSet));

@@ -6,7 +6,7 @@ public class RequestMessageDetails extends BaseEvent {
     private final Long messageUUID;
 
     public RequestMessageDetails(Addressable responseAddress, Long messageUUID) {
-        super(responseAddress, true, 1);
+        super(responseAddress, true);
         this.messageUUID = messageUUID;
     }
 

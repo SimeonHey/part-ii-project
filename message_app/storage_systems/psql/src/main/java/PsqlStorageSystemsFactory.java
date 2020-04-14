@@ -35,51 +35,50 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql simple olep", httpStorageSystem, snapshottedWrapper,
             this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerHttpService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerHttpService(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerService(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    return wrapper.getMessageDetails(snapshot,
-                        (RequestMessageDetails) request);
+                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -87,7 +86,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }
@@ -97,51 +96,50 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql ser reads", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerService(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    return wrapper.getMessageDetails(snapshot,
-                        (RequestMessageDetails) request);
+                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -149,7 +147,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }
@@ -159,52 +157,51 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql SD no session", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerService(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    return wrapper.getMessageDetails(snapshot,
-                        (RequestMessageDetails) request);
+                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             // SEARCH AND DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestSearchAndDetails.class, -1) {
+            .registerService(new ServiceBase<>(RequestSearchAndDetails.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     // This will block until Lucene contacts us
@@ -212,12 +209,12 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         self.waitForContact(request.getResponseAddress().getChannelID(), RequestMessageDetails.class);
 
                     // Once it does, repeat what get message details does
-                    return wrapper.getMessageDetails(snapshot, requestMessageDetails);
+                    return new Response(wrapper.getMessageDetails(snapshot, requestMessageDetails));
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -225,7 +222,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }
@@ -235,52 +232,51 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql SD WITH session", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerService(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    return wrapper.getMessageDetails(snapshot,
-                        (RequestMessageDetails) request);
+                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             // SEARCH AND DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
+            .registerService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
 
@@ -294,12 +290,12 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     var dbResponse = wrapper.getMessageDetails(snapshot, requestMessageDetails);
 
                     LOGGER.info(self.fullName + ": the response from the database is: " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -307,7 +303,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }
@@ -317,52 +313,51 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql concur reads", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestAllMessages.class, 0) {
+            .registerService(new ServiceBase<>(RequestAllMessages.class, 0) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestMessageDetails.class, 0) {
+            .registerService(new ServiceBase<>(RequestMessageDetails.class, 0) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
-                    return wrapper.getMessageDetails(snapshot,
-                        (RequestMessageDetails) request);
+                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             // SEARCH AND DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
+            .registerService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<Connection> self,
                                    Connection snapshot) {
 
@@ -376,12 +371,12 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     var dbResponse = wrapper.getMessageDetails(snapshot, requestMessageDetails);
 
                     LOGGER.info(self.fullName + ": the response from the database is: " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, 1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, 1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -389,7 +384,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }

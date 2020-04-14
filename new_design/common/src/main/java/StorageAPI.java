@@ -6,7 +6,9 @@ import org.apache.kafka.clients.producer.Producer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -27,7 +29,7 @@ public class StorageAPI implements AutoCloseable {
 
     private List<Long> confirmationChannelsList = new ArrayList<>(); // Keeps track of all writes' channel ids
 
-    private List<ConfirmationListener> confirmationListeners = new ArrayList<>();
+    private BlockingQueue<ConfirmationListener> confirmationListeners = new LinkedBlockingQueue<>();
 
     private final List<Tuple2<String, List<String>>> httpFavours;
 
@@ -93,25 +95,26 @@ public class StorageAPI implements AutoCloseable {
         handleRequest(request, Object.class);
     }
 
-    private <T> CompletableFuture<T> consumeAndDestroyAsync(long offset, Class<T> responseType, int numberOfHops) {
+    private <T> CompletableFuture<T> consumeAndDestroyAsync(long offset, Class<T> responseType) {
         return CompletableFuture.supplyAsync(() -> {
+            LOGGER.info("Waiting for response on channel with uuid " + offset);
+
             // Will block until a response is received
-            String serializedResponse = null;
+            T response;
             try {
                 // In the case of multihop requests, we need to wait for the real result
-                for (int i=0; i<numberOfHops; i++) {
-                    String current = this.channeledCommunication.consumeAndDestroy(offset);
-                    if (current != null) {
-                        serializedResponse = current;
-                    }
-                }
+                // I assume it's the first non-null
+                String serializedResponse = this.channeledCommunication.consumeAndDestroy(offset, true);
+                response = Constants.gson.fromJson(serializedResponse, responseType);
 
                 outstandingFavoursCounter.dec();
             } catch (InterruptedException e) {
                 LOGGER.warning("Error when waiting on channel " + offset + ": " + e);
                 throw new RuntimeException(e);
             }
-            return Constants.gson.fromJson(serializedResponse, responseType);
+
+            LOGGER.info("Got a response for channel " + offset + ": " + response);
+            return response;
         });
     }
 
@@ -124,12 +127,9 @@ public class StorageAPI implements AutoCloseable {
         favoursTimeMeasurers.startTimer(request.getEventType(), offset);
 
         if (request.expectsResponse()) {
-            LOGGER.info("Waiting for response on channel with uuid " + offset);
-
-            return consumeAndDestroyAsync(offset, responseType, request.getNumberOfHops());
+            return consumeAndDestroyAsync(offset, responseType);
         } else {
-            LOGGER.info("Confirmation " + offset);
-
+            LOGGER.info("Sent request. Confirmation will arrive on channel " + offset);
             this.confirmationChannelsList.add(offset);
             return null;
         }
@@ -150,12 +150,9 @@ public class StorageAPI implements AutoCloseable {
         }
 
         if (request.expectsResponse()) {
-            LOGGER.info("Sent request. Waiting for response on channel with uuid " + curId);
-
-            return consumeAndDestroyAsync(curId, responseType, request.getNumberOfHops());
+            return consumeAndDestroyAsync(curId, responseType);
         } else {
             LOGGER.info("Sent request. Confirmation will arrive on channel " + curId);
-
             this.confirmationChannelsList.add(curId);
             return null;
         }
@@ -165,8 +162,13 @@ public class StorageAPI implements AutoCloseable {
         confirmationListeners.add(confirmationListener);
     }
 
+    public void clearConfirmationListeners() {
+        LOGGER.info("Removing " + confirmationListeners.size() + " confirmation listeners");
+        confirmationListeners.clear();
+    }
+
     private byte[] receiveResponse(String serializedResponse) {
-        LOGGER.info(String.format("Received response with length %d", serializedResponse.length()));
+        LOGGER.info(String.format("StorageAPI received a thing with length %d", serializedResponse.length()));
         try {
             ChanneledResponse response = this.channeledCommunication.registerResponse(serializedResponse);
             responsesReceivedMeter.mark();
@@ -177,20 +179,23 @@ public class StorageAPI implements AutoCloseable {
             // Notify all confirmation listeners as this is a response anyways
             ConfirmationResponse confirmationResponse = new ConfirmationResponse(response.getFromStorageSystem(),
                 response.getRequestObjectType());
+            LOGGER.info("Notifying " + confirmationListeners.size() + " confirmation listeners");
             confirmationListeners.forEach(listener -> listener.receivedConfirmation(confirmationResponse));
         } catch (Exception e) {
             LOGGER.warning("Error while trying to register a response in the StorageAPI: " + e);
             throw new RuntimeException(e);
         }
+
         return ("Received response of length " + serializedResponse.length()).getBytes();
     }
 
-    private void waitOnChannel(long channelID, boolean destroy) {
+    private void waitOnChannelForConfirmation(long channelID, boolean destroy) {
+        LOGGER.info("Waiting for confirmations from at least one storage system on channel " + channelID + "...");
         try {
             if (destroy) {
-                channeledCommunication.consumeAndDestroy(channelID);
+                channeledCommunication.consumeAndDestroy(channelID, false);
             } else {
-                channeledCommunication.consume(channelID);
+                channeledCommunication.consume(channelID, false);
             }
         } catch (InterruptedException e) {
             LOGGER.warning("Error while waiting on channel " + channelID);
@@ -199,9 +204,10 @@ public class StorageAPI implements AutoCloseable {
     }
 
     public void waitForAllConfirmations() {
-        LOGGER.info("Waiting for confirmations from at least one storage system...");
+        LOGGER.info("Waiting for " + confirmationChannelsList.size() + " confirmations from at least one storage system." +
+            "..");
 
-        confirmationChannelsList.forEach(id -> waitOnChannel(id, true));
+        confirmationChannelsList.forEach(id -> waitOnChannelForConfirmation(id, true));
 
         confirmationChannelsList.clear();
         LOGGER.info("Received confirmations and cleared the current list.");

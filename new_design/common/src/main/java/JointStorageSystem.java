@@ -16,8 +16,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     final String shortName;
     private final SnapshottedStorageWrapper<Snap> wrapper;
 
-    private final Map<String, ServiceBase<Snap>> kafkaServiceHandlers;
-    private final Map<String, ServiceBase<Snap>> httpServiceHandlers;
+    private final Map<String, ServiceBase<Snap>> serviceHandlers;
 
     final Map<String, Class<? extends BaseEvent>> classMap;
     private final Map<String, Integer> classNumber;
@@ -39,8 +38,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     JointStorageSystem(String fullName,
                        HttpStorageSystem httpStorageSystem,
                        SnapshottedStorageWrapper<Snap> wrapper,
-                       Map<String, ServiceBase<Snap>> kafkaServiceHandlers,
-                       Map<String, ServiceBase<Snap>> httpServiceHandlers,
+                       Map<String, ServiceBase<Snap>> serviceHandlers,
                        Map<String, Class<? extends BaseEvent>> classMap,
                        Map<String, Integer> classNumber,
                        MultithreadedEventQueueExecutor databaseOpsExecutors,
@@ -49,8 +47,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         this.shortName = Constants.getStorageSystemBaseName(fullName);
         this.wrapper = wrapper;
 
-        this.kafkaServiceHandlers = kafkaServiceHandlers;
-        this.httpServiceHandlers = httpServiceHandlers;
+        this.serviceHandlers = serviceHandlers;
 
         this.classMap = classMap;
         this.classNumber = classNumber;
@@ -91,7 +88,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
         LOGGER.info(String.format("%s received an HTTP query of type %s", fullName, event.getEventType()));
 
-        requestArrived(this.httpServiceHandlers, event, wrapResponseWithMeta(event));
+        requestArrived(event, wrapResponseWithMeta(event));
         return "Thanks, processing... :)".getBytes();
     }
 
@@ -102,16 +99,19 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         // The Kafka offset is only known after the message has been published
         event.getResponseAddress().setChannelID(record.offset());
 
-        requestArrived(this.kafkaServiceHandlers, event, wrapResponseWithMeta(event));
+        requestArrived(event, wrapResponseWithMeta(event));
     }
 
-    private Consumer<Object> wrapResponseWithMeta(BaseEvent event) {
-        return (Object bareResponse) ->
+    private Consumer<Response> wrapResponseWithMeta(BaseEvent event) {
+        return (Response bareResponse) -> {
+            LOGGER.info(this.fullName + " sending response " + bareResponse);
             respond(event.getResponseAddress(), new ChanneledResponse(
                 this.shortName,
                 event.getEventType(),
                 event.getResponseAddress().getChannelID(),
-                bareResponse));
+                bareResponse.getResponseToSendBack(),
+                bareResponse.isResponse()));
+        };
     }
 
     private void respond(Addressable responseAddress, ChanneledResponse response) {
@@ -149,7 +149,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
     private void handleWithHandler(BaseEvent event,
                                    ServiceBase<Snap> serviceHandler,
-                                   Consumer<Object> responseCallback) {
+                                   Consumer<Response> responseCallback) {
         LOGGER.info(this.fullName + " found a handler for event type " + event.getEventType());
 
         String objectTypeStr = event.getEventType();
@@ -165,7 +165,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
                 processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
                 try {
-                    Object response =
+                    Response response =
                         serviceHandler.handleRequest(event, this, snapshotToUse.getSnapshot());
                     responseCallback.accept(response);
                 } catch (Exception e) {
@@ -184,7 +184,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
             // Execute in the current thread
             try {
-                Object response =
+                Response response =
                     serviceHandler.handleRequest(event, this, wrapper.getDefaultSnapshot());
                 responseCallback.accept(response);
             } catch (Exception e) {
@@ -198,16 +198,15 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         }
     }
 
-    private void requestArrived(Map<String, ServiceBase<Snap>> serviceHandlers,
-                                BaseEvent baseEvent,
-                                Consumer<Object> responseCallback) {
+    private void requestArrived(BaseEvent baseEvent,
+                                Consumer<Response> responseCallback) {
         operationsReceived.mark();
         LOGGER.info("Request arrived for " + fullName + " of type " + baseEvent.getEventType());
 
         var serviceHandler = serviceHandlers.get(baseEvent.getEventType());
 
         if (serviceHandler == null) {
-            LOGGER.warning("Couldn't find a handler for request of type " + baseEvent.getEventType());
+            LOGGER.info("Couldn't find a handler for request of type " + baseEvent.getEventType());
             return;
         }
 
@@ -221,7 +220,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
         String serialized;
         try {
-            serialized = channeledCommunication.consumeAndDestroy(channel);
+            serialized = channeledCommunication.consumeAndDestroy(channel, true);
         } catch (InterruptedException e) {
             LOGGER.warning("Error in " + fullName + " while waiting on channel " + channel + " for external contact");
             throw new RuntimeException(e);
@@ -237,8 +236,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         return "JointStorageSystem{" +
             "fullName='" + fullName + '\'' +
             ", wrapper=" + wrapper +
-            ", kafkaServiceHandlers=" + kafkaServiceHandlers.keySet() +
-            ", httpServiceHandlers=" + httpServiceHandlers.keySet() +
+            ", serviceHandlers=" + serviceHandlers.keySet() +
             ", classMap=" + classMap.keySet() +
             ", databaseOpsExecutors=" + databaseOpsExecutors +
             ", responseExecutors=" + responseExecutors +

@@ -1,17 +1,18 @@
 import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-class Utils {
-    private static final Logger LOGGER = Logger.getLogger(Utils.class.getName());
+class TestUtils {
+    private static final Logger LOGGER = Logger.getLogger(TestUtils.class.getName());
 
     private static ManualTrinity savedInstanceManual;
-    private static Trinity savedInstance;
 
     private final static Function<StorageSystemFactory, JointStorageSystem> storageSystemStrategy =
         (StorageSystemFactory::concurReads);
 
-    static class Trinity implements AutoCloseable{
+    private static class Trinity implements AutoCloseable{
         public final JointStorageSystem psqlStorageSystem;
         public final JointStorageSystem luceneStorageSystem;
         public final StorageAPI storageAPI;
@@ -74,6 +75,16 @@ class Utils {
             return manualConsumerVavr.consumeAvailableRecords();
         }
 
+        public int progressAll() {
+            return progressPsql() + progressLucene() + progressVavr();
+        }
+
+        public void moveAllToLatest() {
+            manualConsumerPsql.moveAllToLatest();
+            manualConsumerLucene.moveAllToLatest();
+            manualConsumerVavr.moveAllToLatest();
+        }
+
         @Override
         public void close() throws Exception {
             LOGGER.info("STARTING SHUTDOWN PROCEDURE");
@@ -93,30 +104,6 @@ class Utils {
             this.luceneStorageSystem.close();
             this.vavrStorageSystem.close();
         }
-    }
-
-    static Trinity basicInitialization() throws IOException, InterruptedException {
-        if (savedInstance != null) {
-            LOGGER.info("Returning saved instance!");
-            return savedInstance;
-        }
-
-        var psqlFactory = new PsqlStorageSystemsFactory(ConstantsMAPP.PSQL_LISTEN_PORT);
-        var psqlConcurrentSnapshots = storageSystemStrategy.apply(psqlFactory);
-
-        var luceneFactory = new LuceneStorageSystemFactory(ConstantsMAPP.TEST_LUCENE_PSQL_CONTACT_ENDPOINT);
-        JointStorageSystem luceneStorageSystem = storageSystemStrategy.apply(luceneFactory);
-
-        var vavrFactory = new VavrStorageSystemFactory(ConstantsMAPP.VAVR_LISTEN_PORT);
-        JointStorageSystem vavrStorageSystem = storageSystemStrategy.apply(vavrFactory);
-
-        StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.defaultTestValues();
-        StorageAPI storageAPI = StorageAPIUtils.initFromArgsForTests(storageAPIInitArgs);
-
-        Thread.sleep(1000);
-
-        savedInstance = new Trinity(psqlConcurrentSnapshots, luceneStorageSystem, vavrStorageSystem, storageAPI);
-        return savedInstance;
     }
 
     static ManualTrinity manualConsumerInitialization() throws IOException {
@@ -144,7 +131,6 @@ class Utils {
         final ManualConsumer[] vavrManualConsumer = new ManualConsumer[1];
         var vavrFactory = new VavrStorageSystemFactory(ConstantsMAPP.VAVR_LISTEN_PORT,
             jointStorageSystem -> {
-                System.out.println("Created the vavr shit");
                 vavrManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("vavr"));
                 vavrManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
             });
@@ -160,19 +146,73 @@ class Utils {
         savedInstanceManual = new ManualTrinity(psqlStorageSystem, luceneStorageSystem, vavrStorageSystem, storageAPI,
             psqlManualConsumer[0], luceneManualConsumer[0], vavrManualConsumer[0]);
 
+        deleteAllMessages();
         return savedInstanceManual;
     }
 
-    static void letThatSinkIn(StorageAPI storageAPI, Runnable r) {
+    static void letThatSinkIn(ManualTrinity manualTrinity, Runnable r) {
         r.run();
-        storageAPI.waitForAllConfirmations();
+        manualTrinity.progressPsql();
+        manualTrinity.progressLucene();
+        manualTrinity.progressVavr();
     }
 
-    static void letThatSinkInManually(ManualTrinity manualTrinity, Runnable r) {
-        r.run();
-        int cntPsql = manualTrinity.progressPsql();
-        int cntLucene = manualTrinity.progressLucene();
+    static <T>T request(BaseEvent event, Class<T> responseType) throws ExecutionException, InterruptedException {
+        CompletableFuture<T> response = savedInstanceManual.storageAPI.handleRequest(event, responseType);
+        savedInstanceManual.progressPsql();
+        savedInstanceManual.progressLucene();
+        savedInstanceManual.progressVavr();
 
-        LOGGER.info(String.format("Manually consumed %d PSQL and %d Lucene messages", cntPsql, cntLucene));
+        return response.get();
+    }
+
+    static void request(BaseEvent event) {
+        savedInstanceManual.storageAPI.handleRequest(event);
+
+        savedInstanceManual.progressPsql();
+        savedInstanceManual.progressLucene();
+        savedInstanceManual.progressVavr();
+    }
+
+    static void postMessage(Message message) throws ExecutionException, InterruptedException {
+        request(new RequestPostMessage(new Addressable(savedInstanceManual.storageAPI.getResponseAddress()),
+            message, ConstantsMAPP.UNKNOWN_RECIPIENT));
+    }
+
+    static void postMessage(Message message, String targetRecipient) throws ExecutionException, InterruptedException {
+        request(new RequestPostMessage(new Addressable(savedInstanceManual.storageAPI.getResponseAddress()),
+            message, targetRecipient));
+    }
+
+    static void deleteAllMessages() {
+        request(new RequestDeleteAllMessages(new Addressable(savedInstanceManual.storageAPI.getResponseAddress())));
+    }
+
+    static ResponseSearchMessage searchMessage(String searchText) throws ExecutionException, InterruptedException {
+        return request(new RequestSearchMessage(
+            new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), searchText),
+            ResponseSearchMessage.class);
+    }
+
+    static ResponseMessageDetails messageDetails(long messageID) throws ExecutionException, InterruptedException {
+        return request(new RequestMessageDetails(
+            new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), messageID),
+            ResponseMessageDetails.class);
+    }
+
+    static ResponseAllMessages allMessages() throws ExecutionException, InterruptedException {
+        return request(new RequestAllMessages(new Addressable(savedInstanceManual.storageAPI.getResponseAddress())),
+            ResponseAllMessages.class);
+    }
+
+    static ResponseMessageDetails searchAndDetails(String searchText) throws ExecutionException, InterruptedException {
+        return request(new RequestSearchAndDetails(
+                new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), searchText),
+            ResponseMessageDetails.class);
+    }
+
+    static Integer getUnreads(String ofUser) throws ExecutionException, InterruptedException {
+        return request(new RequestGetUnreadMessages(
+            new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), ofUser), Integer.class);
     }
 }

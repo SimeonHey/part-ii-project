@@ -50,8 +50,6 @@ class StorageAPIUtils {
         LOGGER.info("Initializing a Kafka producer...");
         Producer<Long, BaseEvent> producer =
             KafkaUtils.createProducer(initArgs.kafkaAddress, "storageAPI");
-        KafkaUtils.produceMessage(producer, initArgs.transactionsTopic,
-            new RequestNOP(new Addressable(ConstantsMAPP.TEST_STORAGEAPI_ADDRESS)));
         LOGGER.info("Success");
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);
@@ -71,8 +69,6 @@ class StorageAPIUtils {
         // Setup connections
         LOGGER.info("Initializing a Kafka producer...");
         Producer<Long, BaseEvent> producer = new DummyProducer();
-        KafkaUtils.produceMessage(producer, initArgs.transactionsTopic,
-            new RequestNOP(new Addressable(ConstantsMAPP.TEST_STORAGEAPI_ADDRESS)));
         LOGGER.info("Success");
 
         LOGGER.info("Initializing an HTTP server on port " + initArgs.listeningPort);

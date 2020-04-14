@@ -30,57 +30,55 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
     JointStorageSystem<HashMap<String, Integer>> simpleOlep() {
         return new JointStorageSystemBuilder<>("vavr simple olep", this.httpStorageSystem, wrapper,
             this.bootstrapProcedure)
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<HashMap<String, Integer>> self,
                                    HashMap<String, Integer> snapshot) {
                     String recipient = ((RequestPostMessage) request).getRecepient();
                     wrapper.postMessage(recipient);
 
-                    return null;
-
-//                    responseCallback.accept(new ConfirmationResponse(self.fullName, request.getEventType()));
+                    return Response.CONFIRMATION;
                 }
             })
-            .registerHttpService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<HashMap<String
+                Response handleRequest(BaseEvent request, JointStorageSystem<HashMap<String
                     , Integer>> self, HashMap<String, Integer> snapshot) {
                     wrapper.getAllMessages((RequestAllMessages) request);
 
-//                    responseCallback.accept(new ConfirmationResponse(self.fullName, request.getEventType()));
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
-            .registerHttpService(new ServiceBase<>(RequestGetUnreadMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestGetUnreadMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<HashMap<String, Integer>> self,
                                    HashMap<String, Integer> snapshot) {
                     String ofUser = ((RequestGetUnreadMessages) request).getOfUser();
-                    return wrapper.getUnreadMessages(ofUser);
+
+                    return new Response(wrapper.getUnreadMessages(ofUser));
                 }
             }).build();
     }
 
     @Override
     JointStorageSystem<HashMap<String, Integer>> serReads() {
-        return null;
+        return simpleOlep();
     }
 
     @Override
     JointStorageSystem<HashMap<String, Integer>> sdRequestNoSession() {
-        return null;
+        return simpleOlep();
     }
 
     @Override
     JointStorageSystem<HashMap<String, Integer>> sdRequestSeparateSession() {
-        return null;
+        return simpleOlep();
     }
 
     @Override
     JointStorageSystem<HashMap<String, Integer>> concurReads() {
-        return null;
+        return simpleOlep();
     }
 }

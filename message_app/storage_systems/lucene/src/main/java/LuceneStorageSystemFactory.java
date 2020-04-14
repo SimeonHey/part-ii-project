@@ -40,43 +40,43 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene simple olep", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // SEARCH MESSAGE
-            .registerHttpService(new ServiceBase<>(RequestSearchMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
                     LOGGER.info("Result from search: " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -84,7 +84,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }
@@ -94,43 +94,43 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene ser reads", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // SEARCH MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
                     LOGGER.info("Result from search: " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -138,7 +138,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }
@@ -148,44 +148,44 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene sd no session", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // SEARCH MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
                     LOGGER.info("Result from search: " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
             // SEARCH AND DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestSearchAndDetails.class, -1) {
+            .registerService(new ServiceBase<>(RequestSearchAndDetails.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
@@ -198,9 +198,10 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         : responseSearchMessage.getOccurrences().get(0);
                     var nextRequest = new RequestMessageDetails(request.getResponseAddress(), idToLookFor);
 
+                    // TODO: Make a function for this
                     String serialized = ConstantsMAPP.gson.toJson(
                         new ChanneledResponse(self.shortName, request.getEventType(),
-                            request.getResponseAddress().getChannelID(), nextRequest));
+                            request.getResponseAddress().getChannelID(), nextRequest, true));
 
                     try {
                         HttpUtils.sendHttpRequest(psqlContactAddress, serialized);
@@ -209,12 +210,12 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -222,7 +223,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }
@@ -232,42 +233,42 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene SD WITH session", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
-            }).registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, -1) {
+            }).registerService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
                     LOGGER.info("Result from search: " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
             // SEARCH AND DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
+            .registerService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
@@ -282,7 +283,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
 
                     String serialized = ConstantsMAPP.gson.toJson(
                         new ChanneledResponse(self.shortName, request.getEventType(),
-                            request.getResponseAddress().getChannelID(), nextRequest));
+                            request.getResponseAddress().getChannelID(), nextRequest, true));
                     try {
                         HttpUtils.sendHttpRequest(psqlContactAddress, serialized);
                     } catch (IOException e) {
@@ -290,12 +291,12 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         throw new RuntimeException(e);
                     }
 
-                    return null; // Still sends a confirmation even though the full query hasn't finished yet
+                    return Response.CONFIRMATION; // Still sends a confirmation even though the full query hasn't finished yet
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -303,7 +304,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }
@@ -313,43 +314,43 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene SD WITH session", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerKafkaService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })// SEARCH MESSAGE
-            .registerKafkaService(new ServiceBase<>(RequestSearchMessage.class, 0) {
+            .registerService(new ServiceBase<>(RequestSearchMessage.class, 0) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
                     LOGGER.info("Result from search: " + dbResponse);
-                    return dbResponse;
+                    return new Response(dbResponse);
                 }
             })
             // SEARCH AND DETAILS
-            .registerKafkaService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
+            .registerService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
                 @Override
-                Object handleRequest(BaseEvent request,
+                Response handleRequest(BaseEvent request,
                                    JointStorageSystem<IndexReader> self,
                                    IndexReader snapshot
                 ) {
@@ -364,7 +365,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
 
                     String serialized = ConstantsMAPP.gson.toJson(
                         new ChanneledResponse(self.shortName, request.getEventType(),
-                            request.getResponseAddress().getChannelID(), nextRequest));
+                            request.getResponseAddress().getChannelID(), nextRequest, true));
                     try {
                         HttpUtils.sendHttpRequest(psqlContactAddress, serialized);
                     } catch (IOException e) {
@@ -372,12 +373,12 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             })
-            .registerKafkaService(new ServiceBase<>(RequestSleep1.class, 1) {
+            .registerService(new ServiceBase<>(RequestSleep1.class, 1) {
                 @Override
-                Object handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -385,7 +386,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         throw new RuntimeException(e);
                     }
 
-                    return null;
+                    return Response.CONFIRMATION;
                 }
             }).build();
     }
