@@ -14,16 +14,16 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
     private final String fullName;
     private final HttpStorageSystem httpStorageSystem;
     private final SnapshottedStorageWrapper<Snap> wrapper;
-    private final Consumer<JointStorageSystem<Snap>> bootstrapProcedure;
+    private final Consumer<JointStorageSystem<Snap>> kafkaConsumerSubscription;
 
     public JointStorageSystemBuilder(String fullName,
                                      HttpStorageSystem httpStorageSystem,
                                      SnapshottedStorageWrapper<Snap> wrapper,
-                                     Consumer<JointStorageSystem<Snap>> bootstrapProcedure) {
+                                     Consumer<JointStorageSystem<Snap>> kafkaConsumerSubscription) {
         this.fullName = fullName;
         this.httpStorageSystem = httpStorageSystem;
         this.wrapper = wrapper;
-        this.bootstrapProcedure = bootstrapProcedure;
+        this.kafkaConsumerSubscription = kafkaConsumerSubscription;
     }
 
     public JointStorageSystemBuilder<Snap> registerService(ServiceBase<Snap> serviceDescription) {
@@ -38,17 +38,19 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
 
     public JointStorageSystem<Snap> build() {
         // Construct the storage system
-        var storageSystem = new JointStorageSystem<>(fullName, httpStorageSystem, wrapper, serviceHandlers,
-            classMap, classNumber,
+        var storageSystem = new JointStorageSystem<>(fullName, wrapper, serviceHandlers, classMap, classNumber,
             new MultithreadedEventQueueExecutor(classMap.size(),
                 new MultithreadedEventQueueExecutor.StaticChannelsScheduler(classMap.size())),
-            new MultithreadedEventQueueExecutor(10, new MultithreadedEventQueueExecutor.FifoScheduler()));
+            new MultithreadedEventQueueExecutor(2, new MultithreadedEventQueueExecutor.FifoScheduler()));
+
+        // Subscribe to http listeners
+        httpStorageSystem.registerHandler("query", storageSystem::httpServiceHandler);
+        httpStorageSystem.registerHandler("contact", storageSystem::externalContact);
+
+        // Subscribe to Kafka
+        this.kafkaConsumerSubscription.accept(storageSystem);
 
         LOGGER.info("Built storage system: " + storageSystem);
-
-        LOGGER.info("Running the user defined bootstrap procedure");
-        this.bootstrapProcedure.accept(storageSystem);
-
         return storageSystem;
     }
 

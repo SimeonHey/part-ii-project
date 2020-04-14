@@ -11,9 +11,10 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
 
     public PsqlStorageSystemsFactory(int psqlListenPort) throws IOException {
         super("psql", wrapper, psqlListenPort, (storageSystem) -> {
-            var consumer = LoopingConsumer.fresh(
+            var consumer = new LoopingConsumer(
                 storageSystem.fullName,
                 ConstantsMAPP.TEST_KAFKA_ADDRESS,
+                ConstantsMAPP.KAFKA_TOPIC,
                 storageSystem.classMap);
             consumer.moveAllToLatest();
             consumer.subscribe(storageSystem::kafkaServiceHandler);

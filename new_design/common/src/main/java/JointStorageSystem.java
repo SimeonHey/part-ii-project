@@ -36,7 +36,6 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     private final MultithreadedEventQueueExecutor responseExecutors;
 
     JointStorageSystem(String fullName,
-                       HttpStorageSystem httpStorageSystem,
                        SnapshottedStorageWrapper<Snap> wrapper,
                        Map<String, ServiceBase<Snap>> serviceHandlers,
                        Map<String, Class<? extends BaseEvent>> classMap,
@@ -55,12 +54,6 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         this.databaseOpsExecutors = databaseOpsExecutors;
         this.responseExecutors = responseExecutors;
 
-        // Subscribe to kafka and http listeners
-        httpStorageSystem.registerHandler("query", this::httpServiceHandler);
-
-        // Settle things for contact
-        httpStorageSystem.registerHandler("contact", this::externalContact);
-
         // Metrics below
         this.processingTimeMeasurements = new NamedTimeMeasurements(this.shortName);
         this.totalProcessingTimeMeasurements = new NamedTimeMeasurements(this.shortName + ".total-time");
@@ -75,12 +68,12 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     }
 
     // Handlers
-    private byte[] externalContact(String contactResponse) {
+    byte[] externalContact(String contactResponse) {
         channeledCommunication.registerResponse(contactResponse);
         return "Thanks!".getBytes();
     }
 
-    private byte[] httpServiceHandler(String serializedQuery) {
+    byte[] httpServiceHandler(String serializedQuery) {
         LOGGER.info(fullName + " received an HTTP query of length " + serializedQuery.length() +
             ", deserializing...");
 
@@ -231,6 +224,22 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         return Constants.gson.fromJson(serialized, classOfResponse);
     }
 
+    protected void nextHopContact(String contactAddress, BaseEvent originalRequest, BaseEvent nextHopRequest) {
+        LOGGER.info(this.fullName + " contacts " + contactAddress + " with nextHopRequest " + nextHopRequest + " for " +
+            "originalRequest " + originalRequest);
+
+        String serialized = Constants.gson.toJson(
+            new ChanneledResponse(shortName, originalRequest.getEventType(),
+                originalRequest.getResponseAddress().getChannelID(), nextHopRequest, true));
+
+        try {
+            HttpUtils.sendHttpRequest(contactAddress, serialized);
+        } catch (IOException e) {
+            LOGGER.warning("Error when trying to contact " + contactAddress + " for next hop of the request");
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public String toString() {
         return "JointStorageSystem{" +
@@ -245,6 +254,8 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-
+        this.wrapper.close();
+        this.databaseOpsExecutors.close();
+        this.responseExecutors.close();
     }
 }

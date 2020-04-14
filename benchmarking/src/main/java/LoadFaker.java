@@ -43,7 +43,7 @@ public abstract class LoadFaker {
                 return new RequestPostMessage(responseAddress,
                     getRandomMessage(), getRandomWord(charsLimit * wordsLimit));
             } else if (id == Events.GET_ALL_MESSAGES.ordinal()) {
-                return new RequestAllMessages(responseAddress);
+                return new RequestAllMessages(responseAddress, ConstantsMAPP.DEFAULT_USER);
             } else if (id == Events.SEARCH_MESSAGES.ordinal()) {
                 return new RequestSearchMessage(responseAddress, getRandomWord(charsLimit - 1));
             } else if (id == Events.GET_MESSAGE_DETAILS.ordinal()) {

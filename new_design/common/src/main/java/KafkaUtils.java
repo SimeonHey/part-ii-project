@@ -22,7 +22,8 @@ public class KafkaUtils {
     private static final TimeMeasurer produceTimeMeasurer =
         new TimeMeasurer(Constants.METRIC_REGISTRY, "produce-times");
 
-    public static Consumer<Long, BaseEvent> createConsumer(String consumerGroup, String kafkaAddress,
+    public static Consumer<Long, BaseEvent> createConsumer(String consumerGroup,
+                                                           String kafkaAddress,
                                                            String kafkaTopic,
                                                            Map<String, Class<? extends BaseEvent>> classMap) {
         LOGGER.info("Creating a consumer for consumerGroup " + consumerGroup);

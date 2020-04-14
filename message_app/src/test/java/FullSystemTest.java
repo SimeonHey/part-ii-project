@@ -138,9 +138,9 @@ public class FullSystemTest {
             Message simeonHey = new Message("Simeon", "Hey");
 
             storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                simeonHey, ConstantsMAPP.UNKNOWN_RECIPIENT));
+                simeonHey, ConstantsMAPP.DEFAULT_USER));
             storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                new Message("Simeon", "What's up"), ConstantsMAPP.UNKNOWN_RECIPIENT));
+                new Message("Simeon", "What's up"), ConstantsMAPP.DEFAULT_USER));
 
             // Post the messages
             assertEquals(2, manualTrinity.progressLucene());
@@ -160,7 +160,8 @@ public class FullSystemTest {
 
             // Make sure they are deleted in PSQL
             Future<ResponseAllMessages> allMessagesFuture =
-                storageAPI.handleRequest(new RequestAllMessages(new Addressable(storageAPI.getResponseAddress())),
+                storageAPI.handleRequest(new RequestAllMessages(new Addressable(storageAPI.getResponseAddress()),
+                        ConstantsMAPP.DEFAULT_USER),
                     ResponseAllMessages.class);
 
             assertEquals(1, manualTrinity.progressPsql());
@@ -227,7 +228,7 @@ public class FullSystemTest {
         for (int i = 0; i < numRequests; i++) {
             manualTrinity.storageAPI.handleRequest(
                 new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "J Cole is the best"), ConstantsMAPP.UNKNOWN_RECIPIENT));
+                    new Message("Simeon", "J Cole is the best"), ConstantsMAPP.DEFAULT_USER));
         }
 
         manualTrinity.progressPsql();
@@ -254,7 +255,6 @@ public class FullSystemTest {
             assertTrue(current.getFromStorageSystem().startsWith("lucene"));
             assertEquals(RequestPostMessage.class.getName(), current.getObjectType());
         }
-
     }
 
     @Test
@@ -270,20 +270,24 @@ public class FullSystemTest {
         assertEquals(unreadsExpected, unreads);
     }
 
-
     @Test
     public void messageCountsDecreases() throws Exception {
         String targetRecipient = "gosho";
+        String otherRecipient = "other";
 
         int unreadsExpected = 100;
 
         for (int i = 0; i < unreadsExpected; i++) {
             TestUtils.postMessage(new Message("simeon", "hey m8"), targetRecipient);
+            TestUtils.postMessage(new Message("simeon", "hey m8"), otherRecipient);
         }
 
-        TestUtils.allMessages();
+        TestUtils.allMessages(targetRecipient);
 
-        int unreads = TestUtils.getUnreads(targetRecipient);
-        assertEquals(0, unreads);
+        int unreadsTarget = TestUtils.getUnreads(targetRecipient);
+        int unreadsOther = TestUtils.getUnreads(otherRecipient);
+
+        assertEquals(0, unreadsTarget);
+        assertEquals(unreadsExpected, unreadsOther);
     }
 }

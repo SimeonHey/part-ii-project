@@ -3,24 +3,24 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 
-public abstract class SnapshottedStorageWrapper<T> implements AutoCloseable {
+public abstract class SnapshottedStorageWrapper<S> implements AutoCloseable {
     private final static Logger LOGGER = Logger.getLogger(SnapshottedStorageWrapper.class.getName());
 
     private final Semaphore connectionsSemaphore;
-    private final BlockingQueue<SnapshotHolder<T>> concurrentConectionsPool;
+    private final BlockingQueue<SnapshotHolder<S>> concurrentConectionsPool;
 
     protected SnapshottedStorageWrapper(int maxConnections) {
         this.concurrentConectionsPool = new LinkedBlockingDeque<>(maxConnections);
         this.connectionsSemaphore = new Semaphore(maxConnections);
     }
 
-    abstract T getDefaultSnapshot();
-    abstract T freshConcurrentSnapshot();
-    abstract T refreshSnapshot(T bareSnapshot);
+    abstract S getDefaultSnapshot();
+    abstract S freshConcurrentSnapshot();
+    abstract S refreshSnapshot(S bareSnapshot);
 
-    public final SnapshotHolder<T> getConcurrentSnapshot() {
+    public final SnapshotHolder<S> getConcurrentSnapshot() {
         // First, try and re-use one from the poll, with no blocking!
-        SnapshotHolder<T> pooled = concurrentConectionsPool.poll(); // TODO: Might want to wait for a while :)
+        SnapshotHolder<S> pooled = concurrentConectionsPool.poll(); // TODO: Might want to wait for a while :)
         if (pooled != null) {
             LOGGER.info("Returning a pooled connection");
             return pooled;
@@ -48,7 +48,7 @@ public abstract class SnapshottedStorageWrapper<T> implements AutoCloseable {
         }
     }
 
-    private void concurrentConnectionClosedCallback(SnapshotHolder<T> snapshot) {
+    private void concurrentConnectionClosedCallback(SnapshotHolder<S> snapshot) {
         LOGGER.info("Putting connection " + snapshot + " back into the pool...");
 
         try {

@@ -14,10 +14,12 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
 
     public LuceneStorageSystemFactory(String psqlContactAddress) throws IOException {
         super("lucene", wrapper, ConstantsMAPP.LUCENE_LISTEN_PORT, storageSystem -> {
-            var consumer = LoopingConsumer.fresh(
+            var consumer = new LoopingConsumer(
                 storageSystem.fullName,
                 ConstantsMAPP.TEST_KAFKA_ADDRESS,
+                ConstantsMAPP.KAFKA_TOPIC,
                 storageSystem.classMap);
+
             consumer.moveAllToLatest();
             consumer.subscribe(storageSystem::kafkaServiceHandler);
             Executors.newFixedThreadPool(1).submit(consumer::listenBlockingly);
@@ -198,21 +200,12 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         : responseSearchMessage.getOccurrences().get(0);
                     var nextRequest = new RequestMessageDetails(request.getResponseAddress(), idToLookFor);
 
-                    // TODO: Make a function for this
-                    String serialized = ConstantsMAPP.gson.toJson(
-                        new ChanneledResponse(self.shortName, request.getEventType(),
-                            request.getResponseAddress().getChannelID(), nextRequest, true));
-
-                    try {
-                        HttpUtils.sendHttpRequest(psqlContactAddress, serialized);
-                    } catch (IOException e) {
-                        LOGGER.warning("Error when trying to contact psql for next hop of the request");
-                        throw new RuntimeException(e);
-                    }
+                    self.nextHopContact(psqlContactAddress, request, nextRequest);
 
                     return Response.CONFIRMATION;
                 }
             })
+            // SLEEP 1
             .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
                 Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
@@ -279,17 +272,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         ? -1
                         : responseSearchMessage.getOccurrences().get(0);
                     var nextRequest = new RequestMessageDetails(request.getResponseAddress(), idToLookFor);
-                    LOGGER.info("Contacting PSQL with details request: " + nextRequest);
 
-                    String serialized = ConstantsMAPP.gson.toJson(
-                        new ChanneledResponse(self.shortName, request.getEventType(),
-                            request.getResponseAddress().getChannelID(), nextRequest, true));
-                    try {
-                        HttpUtils.sendHttpRequest(psqlContactAddress, serialized);
-                    } catch (IOException e) {
-                        LOGGER.warning("Error when trying to contact psql for next hop of the request");
-                        throw new RuntimeException(e);
-                    }
+                    self.nextHopContact(psqlContactAddress, request, nextRequest);
 
                     return Response.CONFIRMATION; // Still sends a confirmation even though the full query hasn't finished yet
                 }
@@ -361,17 +345,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                         ? -1
                         : responseSearchMessage.getOccurrences().get(0);
                     var nextRequest = new RequestMessageDetails(request.getResponseAddress(), idToLookFor);
-                    LOGGER.info("Contacting PSQL with details request: " + nextRequest);
 
-                    String serialized = ConstantsMAPP.gson.toJson(
-                        new ChanneledResponse(self.shortName, request.getEventType(),
-                            request.getResponseAddress().getChannelID(), nextRequest, true));
-                    try {
-                        HttpUtils.sendHttpRequest(psqlContactAddress, serialized);
-                    } catch (IOException e) {
-                        LOGGER.warning("Error when trying to contact psql for next hop of the request");
-                        throw new RuntimeException(e);
-                    }
+                    self.nextHopContact(psqlContactAddress, request, nextRequest);
 
                     return Response.CONFIRMATION;
                 }

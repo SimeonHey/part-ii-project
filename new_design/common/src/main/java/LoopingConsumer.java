@@ -4,43 +4,37 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class LoopingConsumer<K, V> extends ManualConsumer<K, V>{
+public class LoopingConsumer extends ManualConsumer{
     private static final Logger LOGGER = Logger.getLogger(LoopingConsumer.class.getName());
-    private final long sleepMs;
 
-    public LoopingConsumer(Consumer<K, V> kafkaConsumer, int sleepMs) {
+    public LoopingConsumer(Consumer<Long, BaseEvent> kafkaConsumer) {
         super(kafkaConsumer);
-        this.sleepMs = sleepMs;
     }
 
-    public LoopingConsumer(Consumer<K, V> kafkaConsumer) {
-        super(kafkaConsumer);
-        this.sleepMs = Constants.KAFKA_CONSUME_DELAY_MS;
+    LoopingConsumer(String consumerGroup,
+                    String kafkaAddress,
+                    String kafkaTopic,
+                    Map<String, Class<? extends BaseEvent>> classMap) {
+        super(consumerGroup, kafkaAddress, kafkaTopic, classMap);
+        LOGGER.info("Created a new consumer for group " + consumerGroup + " on kafka address " + kafkaAddress + " to" +
+            " handle classes: " + classMap);
     }
 
     public void listenBlockingly() {
         LOGGER.info("Indefinitely listening for Kafka messages...");
 
         while (true) {
-            ConsumerRecords<K, V> consumerRecords = this.consumeRecords();
+            ConsumerRecords<Long, BaseEvent> consumerRecords = this.consumeRecords();
             consumerRecords.forEach(record ->
                 subscribers.forEach(subscriber -> subscriber.messageReceived(record)));
 
             try {
-                Thread.sleep(sleepMs);
+                Thread.sleep(Constants.KAFKA_CONSUME_DELAY_MS);
             } catch (InterruptedException e) {
                 this.close();
                 LOGGER.warning("Interrupt exception in consumer: " + e);
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    public static LoopingConsumer<Long, BaseEvent> fresh(String consumerGroup, String kafkaAddress,
-                                                      Map<String, Class<? extends BaseEvent>> classMap) {
-        LOGGER.info("Creating a new consumer for group " + consumerGroup + " on kafka address " + kafkaAddress + " to" +
-            " handle classes: " + classMap);
-        return new LoopingConsumer<>(
-            KafkaUtils.createConsumer(consumerGroup, kafkaAddress, Constants.KAFKA_TOPIC, classMap));
     }
 }

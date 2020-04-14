@@ -55,7 +55,7 @@ public class ConstantsMAPP {
 //    public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();
     public static final int TEST_STORAGEAPI_MAX_OUTSTANDING_FAVOURS = 1000;
 
-    static final String UNKNOWN_RECIPIENT = "unknown test recipient";
+    static final String DEFAULT_USER = "unknown test user";
 
     public static final Gson gson = new Gson();
 }

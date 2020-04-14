@@ -122,7 +122,8 @@ class FrontEnd extends JFrame {
         refreshButton.addActionListener(e -> {
             try {
                 setMessages(storageAPI
-                    .handleRequest(new RequestAllMessages(ConstantsMAPP.SELF_ADDRESS), ResponseAllMessages.class)
+                    .handleRequest(new RequestAllMessages(ConstantsMAPP.SELF_ADDRESS, ConstantsMAPP.DEFAULT_USER),
+                        ResponseAllMessages.class)
                     .get()
                     .getMessages());
             } catch (InterruptedException | ExecutionException ex) {

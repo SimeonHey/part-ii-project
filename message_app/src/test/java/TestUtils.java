@@ -46,17 +46,17 @@ class TestUtils {
     }
 
     static class ManualTrinity extends Trinity {
-        public final ManualConsumer<Long, BaseEvent> manualConsumerPsql;
-        public final ManualConsumer<Long, BaseEvent> manualConsumerLucene;
-        private final ManualConsumer<Long, BaseEvent> manualConsumerVavr;
+        public final ManualConsumer manualConsumerPsql;
+        public final ManualConsumer manualConsumerLucene;
+        private final ManualConsumer manualConsumerVavr;
 
         ManualTrinity(JointStorageSystem psqlConcurReads,
                       JointStorageSystem luceneConcurReads,
                       JointStorageSystem vavrStorageSystem,
                       StorageAPI storageAPI,
-                      ManualConsumer<Long, BaseEvent> manualConsumerPsql,
-                      ManualConsumer<Long, BaseEvent> manualConsumerLucene,
-                      ManualConsumer<Long, BaseEvent> manualConsumerVavr) {
+                      ManualConsumer manualConsumerPsql,
+                      ManualConsumer manualConsumerLucene,
+                      ManualConsumer manualConsumerVavr) {
             super(psqlConcurReads, luceneConcurReads, vavrStorageSystem, storageAPI);
             this.manualConsumerPsql = manualConsumerPsql;
             this.manualConsumerLucene = manualConsumerLucene;
@@ -115,7 +115,7 @@ class TestUtils {
         final ManualConsumer[] psqlManualConsumer = new ManualConsumer[1];
         var psqlFactory = new PsqlStorageSystemsFactory(ConstantsMAPP.PSQL_LISTEN_PORT, (
             jointStorageSystem -> {
-                psqlManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("psql"));
+                psqlManualConsumer[0] = new ManualConsumer(new DummyConsumer("psql"));
                 psqlManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
             }));
         var psqlStorageSystem = storageSystemStrategy.apply(psqlFactory);
@@ -123,7 +123,7 @@ class TestUtils {
         final ManualConsumer[] luceneManualConsumer = new ManualConsumer[1];
         var luceneFactory = new LuceneStorageSystemFactory(ConstantsMAPP.TEST_LUCENE_PSQL_CONTACT_ENDPOINT,
             jointStorageSystem -> {
-                luceneManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("lucene"));
+                luceneManualConsumer[0] = new ManualConsumer(new DummyConsumer("lucene"));
                 luceneManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
             });
         JointStorageSystem luceneStorageSystem = storageSystemStrategy.apply(luceneFactory);
@@ -131,7 +131,7 @@ class TestUtils {
         final ManualConsumer[] vavrManualConsumer = new ManualConsumer[1];
         var vavrFactory = new VavrStorageSystemFactory(ConstantsMAPP.VAVR_LISTEN_PORT,
             jointStorageSystem -> {
-                vavrManualConsumer[0] = new ManualConsumer<>(new DummyConsumer("vavr"));
+                vavrManualConsumer[0] = new ManualConsumer(new DummyConsumer("vavr"));
                 vavrManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
             });
         JointStorageSystem vavrStorageSystem = storageSystemStrategy.apply(vavrFactory);
@@ -176,7 +176,7 @@ class TestUtils {
 
     static void postMessage(Message message) throws ExecutionException, InterruptedException {
         request(new RequestPostMessage(new Addressable(savedInstanceManual.storageAPI.getResponseAddress()),
-            message, ConstantsMAPP.UNKNOWN_RECIPIENT));
+            message, ConstantsMAPP.DEFAULT_USER));
     }
 
     static void postMessage(Message message, String targetRecipient) throws ExecutionException, InterruptedException {
@@ -201,7 +201,12 @@ class TestUtils {
     }
 
     static ResponseAllMessages allMessages() throws ExecutionException, InterruptedException {
-        return request(new RequestAllMessages(new Addressable(savedInstanceManual.storageAPI.getResponseAddress())),
+        return allMessages(ConstantsMAPP.DEFAULT_USER);
+    }
+
+    static ResponseAllMessages allMessages(String requester) throws ExecutionException, InterruptedException {
+        return request(new RequestAllMessages(
+                new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), requester),
             ResponseAllMessages.class);
     }
 

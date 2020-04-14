@@ -10,9 +10,10 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
     public VavrStorageSystemFactory(int httpListenPort)
         throws IOException {
         super("vavr", wrapper, httpListenPort, (storageSystem) -> {
-            var consumer = LoopingConsumer.fresh(
+            var consumer = new LoopingConsumer(
                 storageSystem.fullName,
                 ConstantsMAPP.TEST_KAFKA_ADDRESS,
+                ConstantsMAPP.KAFKA_TOPIC,
                 storageSystem.classMap);
             consumer.moveAllToLatest();
             consumer.subscribe(storageSystem::kafkaServiceHandler);
@@ -35,7 +36,7 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
                 Response handleRequest(BaseEvent request,
                                    JointStorageSystem<HashMap<String, Integer>> self,
                                    HashMap<String, Integer> snapshot) {
-                    String recipient = ((RequestPostMessage) request).getRecepient();
+                    String recipient = ((RequestPostMessage) request).getRecipient();
                     wrapper.postMessage(recipient);
 
                     return Response.CONFIRMATION;

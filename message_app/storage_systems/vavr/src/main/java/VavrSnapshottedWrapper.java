@@ -17,9 +17,8 @@ public class VavrSnapshottedWrapper extends SnapshottedStorageWrapper<HashMap<St
     }
 
     public void getAllMessages(RequestAllMessages requestAllMessages) {
-        defaultSnapshot = HashMap.empty();
+        defaultSnapshot = defaultSnapshot.remove(requestAllMessages.getRequester());
     }
-
     @Override
     HashMap<String, Integer> getDefaultSnapshot() {
         return this.defaultSnapshot;

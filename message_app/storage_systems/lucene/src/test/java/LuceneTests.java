@@ -34,19 +34,19 @@ public class LuceneTests {
             new RequestSearchMessage(inNoneAddress, inNone.getMessageText());
 
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(alwaysThereAddress, alwaysThere,
-            ConstantsMAPP.UNKNOWN_RECIPIENT));
+            ConstantsMAPP.DEFAULT_USER));
 
         IndexReader snapshotReader2 = luceneSnapshottedWrapper.getDefaultSnapshot(); // Reader 2 won't
         // see subsequent updates
 
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(inReader1Address, inReader1,
-            ConstantsMAPP.UNKNOWN_RECIPIENT));
+            ConstantsMAPP.DEFAULT_USER));
 
         IndexReader snapshotReader = luceneSnapshottedWrapper.getDefaultSnapshot(); // Reader 1 won't
         // see subsequent updates
 
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(inNoneAddress, inNone,
-            ConstantsMAPP.UNKNOWN_RECIPIENT));
+            ConstantsMAPP.DEFAULT_USER));
 
         // Assert alwaysThere is always there!
         assertEquals(Collections.singletonList(alwaysThereId),
