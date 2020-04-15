@@ -18,7 +18,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
     private final Map<String, ServiceBase<Snap>> serviceHandlers;
 
-    final Map<String, Class<? extends BaseEvent>> classMap;
+    final Map<String, Class<? extends EventBase>> classMap;
     private final Map<String, Integer> classNumber;
 
     private final NamedTimeMeasurements processingTimeMeasurements;
@@ -38,7 +38,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     JointStorageSystem(String fullName,
                        SnapshottedStorageWrapper<Snap> wrapper,
                        Map<String, ServiceBase<Snap>> serviceHandlers,
-                       Map<String, Class<? extends BaseEvent>> classMap,
+                       Map<String, Class<? extends EventBase>> classMap,
                        Map<String, Integer> classNumber,
                        MultithreadedEventQueueExecutor databaseOpsExecutors,
                        MultithreadedEventQueueExecutor responseExecutors) {
@@ -77,7 +77,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         LOGGER.info(fullName + " received an HTTP query of length " + serializedQuery.length() +
             ", deserializing...");
 
-        BaseEvent event = EventJsonDeserializer.deserialize(Constants.gson, serializedQuery, classMap);
+        EventBase event = EventJsonDeserializer.deserialize(Constants.gson, serializedQuery, classMap);
 
         LOGGER.info(String.format("%s received an HTTP query of type %s", fullName, event.getEventType()));
 
@@ -85,8 +85,8 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         return "Thanks, processing... :)".getBytes();
     }
 
-    void kafkaServiceHandler(ConsumerRecord<Long, BaseEvent> record) {
-        BaseEvent event = record.value();
+    void kafkaServiceHandler(ConsumerRecord<Long, EventBase> record) {
+        EventBase event = record.value();
         LOGGER.info(String.format("%s received a Kafka query: %s", fullName, event.getEventType()));
 
         // The Kafka offset is only known after the message has been published
@@ -95,7 +95,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         requestArrived(event, wrapResponseWithMeta(event));
     }
 
-    private Consumer<Response> wrapResponseWithMeta(BaseEvent event) {
+    private Consumer<Response> wrapResponseWithMeta(EventBase event) {
         return (Response bareResponse) -> {
             LOGGER.info(this.fullName + " sending response " + bareResponse);
             respond(event.getResponseAddress(), new ChanneledResponse(
@@ -140,7 +140,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         openedSnapshotsCounter.dec();
     }
 
-    private void handleWithHandler(BaseEvent event,
+    private void handleWithHandler(EventBase event,
                                    ServiceBase<Snap> serviceHandler,
                                    Consumer<Response> responseCallback) {
         LOGGER.info(this.fullName + " found a handler for event type " + event.getEventType());
@@ -191,20 +191,20 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         }
     }
 
-    private void requestArrived(BaseEvent baseEvent,
+    private void requestArrived(EventBase eventBase,
                                 Consumer<Response> responseCallback) {
         operationsReceived.mark();
-        LOGGER.info("Request arrived for " + fullName + " of type " + baseEvent.getEventType());
+        LOGGER.info("Request arrived for " + fullName + " of type " + eventBase.getEventType());
 
-        var serviceHandler = serviceHandlers.get(baseEvent.getEventType());
+        var serviceHandler = serviceHandlers.get(eventBase.getEventType());
 
         if (serviceHandler == null) {
-            LOGGER.info("Couldn't find a handler for request of type " + baseEvent.getEventType());
+            LOGGER.info("Couldn't find a handler for request of type " + eventBase.getEventType());
             return;
         }
 
-        handleWithHandler(baseEvent, serviceHandler, responseCallback);
-        LOGGER.info("Successfully processed (but possibly not completed) request of type " + baseEvent.getEventType());
+        handleWithHandler(eventBase, serviceHandler, responseCallback);
+        LOGGER.info("Successfully processed (but possibly not completed) request of type " + eventBase.getEventType());
     }
 
     protected <T> T waitForContact(long channel, Class<T> classOfResponse) {
@@ -224,7 +224,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         return Constants.gson.fromJson(serialized, classOfResponse);
     }
 
-    protected void nextHopContact(String contactAddress, BaseEvent originalRequest, BaseEvent nextHopRequest) {
+    protected void nextHopContact(String contactAddress, EventBase originalRequest, EventBase nextHopRequest) {
         LOGGER.info(this.fullName + " contacts " + contactAddress + " with nextHopRequest " + nextHopRequest + " for " +
             "originalRequest " + originalRequest);
 

@@ -15,6 +15,7 @@ import static org.junit.Assert.assertTrue;
 
 public class FullSystemTest {
     private static final Logger LOGGER = Logger.getLogger(FullSystemTest.class.getName());
+    private static final long timestamp = System.nanoTime();
 
     @BeforeClass
     public static void init() throws IOException {
@@ -32,8 +33,8 @@ public class FullSystemTest {
 
     @Test
     public void searchNoOccurrences() throws Exception {
-        TestUtils.postMessage(new Message("Simeon", "Hey"));
-        TestUtils.postMessage(new Message("Simeon", "What's up"));
+        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "What's up", timestamp));
 
         ResponseSearchMessage responseSearchMessage = TestUtils.searchMessage("non-existent");
         LOGGER.info("Tester: Response from search is " + responseSearchMessage);
@@ -42,10 +43,10 @@ public class FullSystemTest {
 
     @Test
     public void searchHasOccurrences() throws Exception {
-        TestUtils.postMessage(new Message("Simeon", "Hey"));
-        TestUtils.postMessage(new Message("Simeon", "What's up"));
-        TestUtils.postMessage(new Message("Simeon", "Hey"));
-        TestUtils.postMessage(new Message("Simeon", "Hey"));
+        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "What's up", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
 
         ResponseSearchMessage responseSearchMessage = TestUtils.searchMessage("Hey");
         assertEquals(3, responseSearchMessage.getOccurrences().size());
@@ -53,15 +54,15 @@ public class FullSystemTest {
 
     @Test
     public void searchAndDetailsSeparately() throws Exception {
-        Message toSend = new Message("Simeon", "Hey");
+        Message toSend = new Message("Simeon", "Hey", timestamp);
         int cnt = 10;
 
         for (int i = 0; i < cnt; i++) {
             TestUtils.postMessage(toSend);
 
-            TestUtils.postMessage(new Message("Someone else", "jibberish"));
-            TestUtils.postMessage(new Message("Someone else", "jibberish"));
-            TestUtils.postMessage(new Message("Someone else", "jibberish"));
+            TestUtils.postMessage(new Message("Someone else", "jibberish", timestamp));
+            TestUtils.postMessage(new Message("Someone else", "jibberish", timestamp));
+            TestUtils.postMessage(new Message("Someone else", "jibberish", timestamp));
         }
 
 
@@ -80,15 +81,15 @@ public class FullSystemTest {
     @Test
     public void allMessages() throws Exception {
         List<Message> toSend = new ArrayList<>();
-        toSend.add(new Message("Simeon", "Hey"));
-        toSend.add(new Message("Simeon", "What's up"));
-        toSend.add(new Message("Simeon", "It's a bit lonely"));
-        toSend.add(new Message("Simeon", "But hey"));
-        toSend.add(new Message("Simeon", "It's Christmas"));
+        toSend.add(new Message("Simeon", "Hey", timestamp));
+        toSend.add(new Message("Simeon", "What's up", timestamp));
+        toSend.add(new Message("Simeon", "It's a bit lonely", timestamp));
+        toSend.add(new Message("Simeon", "But hey", timestamp));
+        toSend.add(new Message("Simeon", "It's Christmas", timestamp));
 
         int additional = 10;
         for (int i = 0; i < additional; i++) {
-            toSend.add(new Message("Simeon", "Ho"));
+            toSend.add(new Message("Simeon", "Ho", timestamp));
         }
 
 
@@ -107,8 +108,8 @@ public class FullSystemTest {
 
     @Test
     public void searchAndDetailsNoOccurrences() throws Exception {
-        TestUtils.postMessage(new Message("Simeon", "Hey"));
-        TestUtils.postMessage(new Message("Simeon", "What's up"));
+        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "What's up", timestamp));
 
         ResponseMessageDetails responseMessageDetails = TestUtils.searchAndDetails("non-existent");
 
@@ -117,10 +118,10 @@ public class FullSystemTest {
 
     @Test
     public void searchAndDetails1Occurrence() throws Exception {
-        Message simeonHey = new Message("Simeon", "Hey");
+        Message simeonHey = new Message("Simeon", "Hey", timestamp);
 
         TestUtils.postMessage(simeonHey);
-        TestUtils.postMessage(new Message("Simeon", "What's up"));
+        TestUtils.postMessage(new Message("Simeon", "What's up", timestamp));
 
         ResponseMessageDetails responseMessageDetails = TestUtils.searchAndDetails("Hey");
 
@@ -135,12 +136,12 @@ public class FullSystemTest {
 //            assertEquals(1, manualTrinity.progressLucene());
 //            assertEquals(1, manualTrinity.progressPsql());
 
-            Message simeonHey = new Message("Simeon", "Hey");
+            Message simeonHey = new Message("Simeon", "Hey", timestamp);
 
             storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
                 simeonHey, ConstantsMAPP.DEFAULT_USER));
             storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                new Message("Simeon", "What's up"), ConstantsMAPP.DEFAULT_USER));
+                new Message("Simeon", "What's up", timestamp), ConstantsMAPP.DEFAULT_USER));
 
             // Post the messages
             assertEquals(2, manualTrinity.progressLucene());
@@ -182,7 +183,7 @@ public class FullSystemTest {
 
         // Post messages
         for (int i = 1; i <= messagesToPost; i++) {
-            TestUtils.postMessage(new Message("simeon", "Message " + i));
+            TestUtils.postMessage(new Message("simeon", "Message " + i, timestamp));
         }
 
         Thread.sleep(5000);
@@ -228,7 +229,7 @@ public class FullSystemTest {
         for (int i = 0; i < numRequests; i++) {
             manualTrinity.storageAPI.handleRequest(
                 new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "J Cole is the best"), ConstantsMAPP.DEFAULT_USER));
+                    new Message("Simeon", "J Cole is the best", timestamp), ConstantsMAPP.DEFAULT_USER));
         }
 
         manualTrinity.progressPsql();
@@ -263,7 +264,7 @@ public class FullSystemTest {
         int unreadsExpected = 100;
 
         for (int i = 0; i < unreadsExpected; i++) {
-            TestUtils.postMessage(new Message("simeon", "hey m8"), targetRecipient);
+            TestUtils.postMessage(new Message("simeon", "hey m8", timestamp), targetRecipient);
         }
 
         int unreads = TestUtils.getUnreads(targetRecipient);
@@ -278,8 +279,8 @@ public class FullSystemTest {
         int unreadsExpected = 100;
 
         for (int i = 0; i < unreadsExpected; i++) {
-            TestUtils.postMessage(new Message("simeon", "hey m8"), targetRecipient);
-            TestUtils.postMessage(new Message("simeon", "hey m8"), otherRecipient);
+            TestUtils.postMessage(new Message("simeon", "hey m8", timestamp), targetRecipient);
+            TestUtils.postMessage(new Message("simeon", "hey m8", timestamp), otherRecipient);
         }
 
         TestUtils.allMessages(targetRecipient);

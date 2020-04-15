@@ -1,4 +1,4 @@
-public class RequestGetUnreadMessages extends BaseEvent {
+public class RequestGetUnreadMessages extends EventBase {
     private final String ofUser;
 
     public RequestGetUnreadMessages(Addressable responseAddress, String ofUser) {

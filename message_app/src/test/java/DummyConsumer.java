@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-public class DummyConsumer implements Consumer<Long, BaseEvent> {
+public class DummyConsumer implements Consumer<Long, EventBase> {
     private DummyKafka dummyKafka = DummyKafka.getDummyKafka();
     private final String consumerGroup;
 
@@ -26,12 +26,12 @@ public class DummyConsumer implements Consumer<Long, BaseEvent> {
     }
 
     @Override
-    public ConsumerRecords<Long, BaseEvent> poll(long timeout) {
+    public ConsumerRecords<Long, EventBase> poll(long timeout) {
         return null;
     }
 
     @Override
-    public ConsumerRecords<Long, BaseEvent> poll(Duration timeout) {
+    public ConsumerRecords<Long, EventBase> poll(Duration timeout) {
         return dummyKafka.consumeMessages(this.consumerGroup);
     }
 

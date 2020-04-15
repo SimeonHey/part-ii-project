@@ -41,7 +41,8 @@ public class SqlUtils {
     }
 
     public static Message extractMessageFromResultSet(ResultSet resultSet) throws SQLException {
-        return new Message(resultSet.getString(1), resultSet.getString(2));
+        return new Message(resultSet.getString(1), resultSet.getString(2),
+            resultSet.getString(3));
     }
 
     public static long extractUuidFromResultSet(ResultSet resultSet) throws SQLException {

@@ -8,7 +8,7 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
 
     private final Map<String, ServiceBase<Snap>> serviceHandlers = new HashMap<>();
 
-    private final Map<String, Class<? extends BaseEvent>> classMap = new HashMap<>();
+    private final Map<String, Class<? extends EventBase>> classMap = new HashMap<>();
     private final Map<String, Integer> classNumber = new HashMap<>();
 
     private final String fullName;
@@ -28,10 +28,10 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
 
     public JointStorageSystemBuilder<Snap> registerService(ServiceBase<Snap> serviceDescription) {
         int number = this.classMap.size();
-        this.classMap.put(serviceDescription.getObjectTypeToHandle(), serviceDescription.getClassOfObjectToHandle());
-        this.classNumber.put(serviceDescription.getObjectTypeToHandle(), number);
+        this.classMap.put(serviceDescription.getEventTypeToHandle(), serviceDescription.getClassOfObjectToHandle());
+        this.classNumber.put(serviceDescription.getEventTypeToHandle(), number);
 
-        this.serviceHandlers.put(serviceDescription.getObjectTypeToHandle(), serviceDescription);
+        this.serviceHandlers.put(serviceDescription.getEventTypeToHandle(), serviceDescription);
         LOGGER.info("Registered a Kafka service: " + serviceDescription);
         return this;
     }

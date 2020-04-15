@@ -1,6 +1,6 @@
 import java.util.logging.Logger;
 
-public class RequestSearchMessage extends BaseEvent {
+public class RequestSearchMessage extends EventBase {
     private static final Logger LOGGER = Logger.getLogger(RequestSearchMessage.class.getName());
     private final String searchText;
 

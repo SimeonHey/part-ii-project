@@ -3,10 +3,12 @@ import java.util.Objects;
 public class Message {
     private final String sender;
     private final String messageText;
+    private final long timestamp;
 
-    public Message(String sender, String messageText) {
+    public Message(String sender, String messageText, long timestamp) {
         this.sender = sender;
         this.messageText = messageText;
+        this.timestamp = timestamp;
     }
 
     public String getSender() {
@@ -17,11 +19,16 @@ public class Message {
         return messageText;
     }
 
+    public long getTimestamp() {
+        return timestamp;
+    }
+
     @Override
     public String toString() {
         return "Message{" +
-            "sender length='" + sender.length() + '\'' +
-            ", messageText length='" + messageText.length() + '\'' +
+            "sender='" + sender + '\'' +
+            ", messageText='" + messageText + '\'' +
+            ", timestamp=" + timestamp +
             '}';
     }
 
@@ -30,12 +37,13 @@ public class Message {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Message message = (Message) o;
-        return getSender().equals(message.getSender()) &&
+        return getTimestamp() == message.getTimestamp() &&
+            getSender().equals(message.getSender()) &&
             getMessageText().equals(message.getMessageText());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getSender(), getMessageText());
+        return Objects.hash(getSender(), getMessageText(), getTimestamp());
     }
 }

@@ -150,14 +150,7 @@ class TestUtils {
         return savedInstanceManual;
     }
 
-    static void letThatSinkIn(ManualTrinity manualTrinity, Runnable r) {
-        r.run();
-        manualTrinity.progressPsql();
-        manualTrinity.progressLucene();
-        manualTrinity.progressVavr();
-    }
-
-    static <T>T request(BaseEvent event, Class<T> responseType) throws ExecutionException, InterruptedException {
+    static <T>T request(EventBase event, Class<T> responseType) throws ExecutionException, InterruptedException {
         CompletableFuture<T> response = savedInstanceManual.storageAPI.handleRequest(event, responseType);
         savedInstanceManual.progressPsql();
         savedInstanceManual.progressLucene();
@@ -166,7 +159,7 @@ class TestUtils {
         return response.get();
     }
 
-    static void request(BaseEvent event) {
+    static void request(EventBase event) {
         savedInstanceManual.storageAPI.handleRequest(event);
 
         savedInstanceManual.progressPsql();

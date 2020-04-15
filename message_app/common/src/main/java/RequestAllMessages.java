@@ -1,6 +1,6 @@
 import java.util.logging.Logger;
 
-public class RequestAllMessages extends BaseEvent {
+public class RequestAllMessages extends EventBase {
     private static final Logger LOGGER = Logger.getLogger(RequestAllMessages.class.getName());
     private final String requester;
 

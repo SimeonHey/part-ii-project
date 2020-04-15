@@ -15,7 +15,7 @@ public class ConstantsMAPP {
     public static final int KAFKA_DEFAULT_PARTITION = 0;
     public static final int KAFKA_INIT_SLEEP = 1000;
 
-    public static final String PSQL_ADDRESS = "jdbc:postgresql://localhost/simple_olep";
+    public static final String PSQL_ADDRESS = "jdbc:postgresql://localhost/dissmessageapp";
     public static final String[] PSQL_USER_PASS = {"postgres", "default"};
     public static final Integer PSQL_LISTEN_PORT = 8002;
     public static final Integer PSQL_LISTEN_PORT_ALT = 8022;

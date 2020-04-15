@@ -22,10 +22,10 @@ public class KafkaUtils {
     private static final TimeMeasurer produceTimeMeasurer =
         new TimeMeasurer(Constants.METRIC_REGISTRY, "produce-times");
 
-    public static Consumer<Long, BaseEvent> createConsumer(String consumerGroup,
+    public static Consumer<Long, EventBase> createConsumer(String consumerGroup,
                                                            String kafkaAddress,
                                                            String kafkaTopic,
-                                                           Map<String, Class<? extends BaseEvent>> classMap) {
+                                                           Map<String, Class<? extends EventBase>> classMap) {
         LOGGER.info("Creating a consumer for consumerGroup " + consumerGroup);
 
         Properties props = new Properties();
@@ -38,12 +38,12 @@ public class KafkaUtils {
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, BaseEventDes.class.getName());
         props.put("classMap", classMap);
 
-        Consumer<Long, BaseEvent> consumer = new KafkaConsumer<>(props);
+        Consumer<Long, EventBase> consumer = new KafkaConsumer<>(props);
         consumer.assign(Collections.singletonList(new TopicPartition(kafkaTopic, Constants.KAFKA_DEFAULT_PARTITION)));
         return consumer;
     }
 
-    public static Producer<Long, BaseEvent> createProducer(String kafkaAddress, String clientId) {
+    public static Producer<Long, EventBase> createProducer(String kafkaAddress, String clientId) {
         Properties props = new Properties();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaAddress);
         props.put(ProducerConfig.CLIENT_ID_CONFIG, clientId);
@@ -53,12 +53,12 @@ public class KafkaUtils {
         return new KafkaProducer<>(props);
     }
 
-    static long produceMessage(Producer<Long, BaseEvent> producer,
+    static long produceMessage(Producer<Long, EventBase> producer,
                                String topic,
-                               BaseEvent toSend) {
+                               EventBase toSend) {
         var activeTimer = produceTimeMeasurer.startTimer();
 
-        ProducerRecord<Long, BaseEvent> record = new ProducerRecord<>(topic,
+        ProducerRecord<Long, EventBase> record = new ProducerRecord<>(topic,
             Constants.KAFKA_DEFAULT_PARTITION, null, toSend);
 
         try {

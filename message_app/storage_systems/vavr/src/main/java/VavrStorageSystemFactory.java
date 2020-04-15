@@ -33,9 +33,9 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
             this.bootstrapProcedure)
             .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<HashMap<String, Integer>> self,
-                                   HashMap<String, Integer> snapshot) {
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<HashMap<String, Integer>> self,
+                                       HashMap<String, Integer> snapshot) {
                     String recipient = ((RequestPostMessage) request).getRecipient();
                     wrapper.postMessage(recipient);
 
@@ -44,7 +44,7 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
             })
             .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request, JointStorageSystem<HashMap<String
+                Response handleRequest(EventBase request, JointStorageSystem<HashMap<String
                     , Integer>> self, HashMap<String, Integer> snapshot) {
                     wrapper.getAllMessages((RequestAllMessages) request);
 
@@ -53,9 +53,9 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
             })
             .registerService(new ServiceBase<>(RequestGetUnreadMessages.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<HashMap<String, Integer>> self,
-                                   HashMap<String, Integer> snapshot) {
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<HashMap<String, Integer>> self,
+                                       HashMap<String, Integer> snapshot) {
                     String ofUser = ((RequestGetUnreadMessages) request).getOfUser();
 
                     return new Response(wrapper.getUnreadMessages(ofUser));

@@ -10,9 +10,9 @@ public abstract class LoadFaker {
         SLEEP_1(RequestSleep1.class),
         DELETE_ALL_MESSAGES(RequestDeleteAllMessages.class);
         
-        private final Class<? extends BaseEvent> theClass;
+        private final Class<? extends EventBase> theClass;
 
-        Events(Class<? extends BaseEvent> theClass) {
+        Events(Class<? extends EventBase> theClass) {
             this.theClass = theClass;
         }
     }
@@ -37,7 +37,7 @@ public abstract class LoadFaker {
         this.wordsLimit = wordsLimit;
     }
 
-    BaseEvent getRequestFromId(int id, Addressable responseAddress) {
+    EventBase getRequestFromId(int id, Addressable responseAddress) {
         try {
             if (id == Events.POST_MESSAGE.ordinal()) {
                 return new RequestPostMessage(responseAddress,
@@ -92,7 +92,7 @@ public abstract class LoadFaker {
         }
 
         String sender = getRandomWord(charsLimit * wordsLimit);
-        return new Message(sender, messageBuilder.toString());
+        return new Message(sender, messageBuilder.toString(), System.nanoTime());
     }
 
     abstract void nextRequest(StorageAPI storageAPI);

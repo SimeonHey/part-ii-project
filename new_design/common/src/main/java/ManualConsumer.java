@@ -13,27 +13,27 @@ public class ManualConsumer {
 
     private static final long DEFAULT_BLOCK_ON_POLL_MS = 1; // TODO: Check
 
-    final List<KafkaConsumerObserver<Long, BaseEvent>> subscribers = new CopyOnWriteArrayList<>();
-    protected Consumer<Long, BaseEvent> kafkaConsumer;
+    final List<KafkaConsumerObserver<Long, EventBase>> subscribers = new CopyOnWriteArrayList<>();
+    protected Consumer<Long, EventBase> kafkaConsumer;
 
-    ManualConsumer(Consumer<Long, BaseEvent> kafkaConsumer) {
+    ManualConsumer(Consumer<Long, EventBase> kafkaConsumer) {
         this.kafkaConsumer = kafkaConsumer;
     }
 
     ManualConsumer(String consumerGroup,
                    String kafkaAddress,
                    String kafkaTopic,
-                   Map<String, Class<? extends BaseEvent>> classMap) {
+                   Map<String, Class<? extends EventBase>> classMap) {
         this.kafkaConsumer = KafkaUtils.createConsumer(consumerGroup, kafkaAddress, kafkaTopic, classMap);
     }
 
-    public void subscribe(KafkaConsumerObserver<Long, BaseEvent> subscriber) {
+    public void subscribe(KafkaConsumerObserver<Long, EventBase> subscriber) {
         this.subscribers.add(subscriber);
         LOGGER.info("Adding a subscriber for a total of " + this.subscribers.size() + " subscribers");
     }
 
-    ConsumerRecords<Long, BaseEvent> consumeRecords() {
-        ConsumerRecords<Long, BaseEvent> consumerRecords =
+    ConsumerRecords<Long, EventBase> consumeRecords() {
+        ConsumerRecords<Long, EventBase> consumerRecords =
             this.kafkaConsumer.poll(java.time.Duration.ofMillis(DEFAULT_BLOCK_ON_POLL_MS));
         this.kafkaConsumer.commitSync();
 
@@ -54,7 +54,7 @@ public class ManualConsumer {
     }
 
     public int consumeAvailableRecords() {
-        ConsumerRecords<Long, BaseEvent> consumerRecords = this.consumeRecords();
+        ConsumerRecords<Long, EventBase> consumerRecords = this.consumeRecords();
 
         LOGGER.info("Consumed " + consumerRecords.count() + " records. Pinging all of the " +
             this.subscribers.size() + " subscribers...");

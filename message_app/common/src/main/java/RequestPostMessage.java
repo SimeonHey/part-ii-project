@@ -1,6 +1,6 @@
 import java.util.logging.Logger;
 
-public class RequestPostMessage extends BaseEvent {
+public class RequestPostMessage extends EventBase {
     private static final Logger LOGGER = Logger.getLogger(RequestPostMessage.class.getName());
 
     private final Message message;

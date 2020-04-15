@@ -19,7 +19,7 @@ public class StorageAPI implements AutoCloseable {
 
     private final String responseAddress;
 
-    private final Producer<Long, BaseEvent> producer;
+    private final Producer<Long, EventBase> producer;
     private final String transactionsTopic;
 
     private final ChanneledCommunication channeledCommunication = new ChanneledCommunication();
@@ -40,7 +40,7 @@ public class StorageAPI implements AutoCloseable {
 
     private final Meter responsesReceivedMeter = Constants.METRIC_REGISTRY.meter("responses-received-meter");
 
-    StorageAPI(Producer<Long, BaseEvent> producer,
+    StorageAPI(Producer<Long, EventBase> producer,
                HttpStorageSystem httpStorageSystem,
                String transactionsTopic,
                String selfAddress,
@@ -59,7 +59,7 @@ public class StorageAPI implements AutoCloseable {
         LOGGER.info("Address response: " + responseAddress);
     }
 
-    private Tuple2<String, List<String>> findHttpFavour(BaseEvent request) {
+    private Tuple2<String, List<String>> findHttpFavour(EventBase request) {
         for (var tuple: httpFavours) {
             if (tuple._1.equals(request.getEventType())) {
                 return tuple;
@@ -69,7 +69,7 @@ public class StorageAPI implements AutoCloseable {
         return null;
     }
 
-    public <T>CompletableFuture<T> handleRequest(BaseEvent request, Class<T> responseType) {
+    public <T>CompletableFuture<T> handleRequest(EventBase request, Class<T> responseType) {
         outstandingFavoursCounter.inc();
 
         var httpFavors = findHttpFavour(request);
@@ -91,7 +91,7 @@ public class StorageAPI implements AutoCloseable {
         }
     }
 
-    public void handleRequest(BaseEvent request) {
+    public void handleRequest(EventBase request) {
         handleRequest(request, Object.class);
     }
 
@@ -118,7 +118,7 @@ public class StorageAPI implements AutoCloseable {
         });
     }
 
-    private <T> CompletableFuture<T> kafkaRequestResponseFuture(BaseEvent request, Class<T> responseType) {
+    private <T> CompletableFuture<T> kafkaRequestResponseFuture(EventBase request, Class<T> responseType) {
         long offset = KafkaUtils.produceMessage(
             this.producer,
             this.transactionsTopic,
@@ -136,7 +136,7 @@ public class StorageAPI implements AutoCloseable {
     }
 
     private <T>CompletableFuture<T> httpRequestAsyncResponseFuture(String address,
-                                                                   BaseEvent request,
+                                                                   EventBase request,
                                                                    Class<T> responseType) {
         long curId = httpRequestsUid.getAndDecrement();
         request.getResponseAddress().setChannelID(curId);

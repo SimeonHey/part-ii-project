@@ -1,31 +1,31 @@
 public abstract class ServiceBase<Snap> {
-    private String objectTypeToHandle;
+    private String eventTypeToHandle;
 
-    private Class<? extends BaseEvent> classOfObjectToHandle;
+    private Class<? extends EventBase> classOfObjectToHandle;
     protected int asyncHandleChannel;
 
-    public ServiceBase(Class<? extends BaseEvent> classOfObjectToHandle, int asyncHandleChannel) {
+    public ServiceBase(Class<? extends EventBase> classOfObjectToHandle, int asyncHandleChannel) {
         this.classOfObjectToHandle = classOfObjectToHandle;
-        this.objectTypeToHandle = classOfObjectToHandle.getName();
+        this.eventTypeToHandle = classOfObjectToHandle.getName();
         this.asyncHandleChannel = asyncHandleChannel;
     }
 
-    public String getObjectTypeToHandle() {
-        return objectTypeToHandle;
+    public String getEventTypeToHandle() {
+        return eventTypeToHandle;
     }
 
-    public Class<? extends BaseEvent> getClassOfObjectToHandle() {
+    public Class<? extends EventBase> getClassOfObjectToHandle() {
         return classOfObjectToHandle;
     }
 
-    abstract Response handleRequest(BaseEvent request,
-                           JointStorageSystem<Snap> self,
-                           Snap snapshot);
+    abstract Response handleRequest(EventBase request,
+                                    JointStorageSystem<Snap> self,
+                                    Snap snapshot);
 
     @Override
     public String toString() {
         return "ServiceBase{" +
-            "objectTypeToHandle='" + objectTypeToHandle + '\'' +
+            "objectTypeToHandle='" + eventTypeToHandle + '\'' +
             ", asyncHandleChannel=" + asyncHandleChannel +
             '}';
     }

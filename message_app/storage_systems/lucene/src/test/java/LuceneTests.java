@@ -6,6 +6,8 @@ import java.util.Collections;
 import static org.junit.Assert.assertEquals;
 
 public class LuceneTests {
+    private static final long timestamp = System.nanoTime();
+
     @Test
     public void testLuceneIsSnapshotIsolated() {
         LuceneSnapshottedWrapper luceneSnapshottedWrapper =
@@ -13,21 +15,21 @@ public class LuceneTests {
         luceneSnapshottedWrapper.deleteAllMessages(); // Clear up previous stuff
 
         // This message will show up in all sessions
-        Message alwaysThere = new Message("simeon", "always_there");
+        Message alwaysThere = new Message("simeon", "always_there", timestamp);
         long alwaysThereId = 0;
         Addressable alwaysThereAddress = new Addressable("noreply", alwaysThereId);
         RequestSearchMessage requestAlwaysThere =
             new RequestSearchMessage(alwaysThereAddress, alwaysThere.getMessageText());
 
         // This message will show up in the default session & reader 1 but not reader 2
-        Message inReader1 = new Message("simeon", "only_in_reader_1");
+        Message inReader1 = new Message("simeon", "only_in_reader_1", timestamp);
         long inReader1Id = 1;
         Addressable inReader1Address = new Addressable("noreply", inReader1Id);
         RequestSearchMessage requestInReader1 =
             new RequestSearchMessage(inReader1Address, inReader1.getMessageText());
 
         // This message will show up in the default session, but not in reader 1 nor reader 2
-        Message inNone = new Message("simeon", "In_none_of_the_readers");
+        Message inNone = new Message("simeon", "In_none_of_the_readers", timestamp);
         long inNoneId = 2;
         Addressable inNoneAddress = new Addressable("noreply", inNoneId);
         RequestSearchMessage inNoneRequest =

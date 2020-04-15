@@ -1,6 +1,6 @@
 import java.util.logging.Logger;
 
-public class RequestMessageDetails extends BaseEvent {
+public class RequestMessageDetails extends EventBase {
     private final static Logger LOGGER = Logger.getLogger(RequestMessageDetails.class.getName());
 
     private final Long messageUUID;

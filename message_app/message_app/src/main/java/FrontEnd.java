@@ -40,7 +40,7 @@ class FrontEnd extends JFrame {
         LOGGER.info("Sending message was triggered, and the text is " +
             messageField.getText());
 
-        Message message = new Message(this.sender, messageField.getText());
+        Message message = new Message(this.sender, messageField.getText(), System.nanoTime());
         this.storageAPI.handleRequest(new RequestPostMessage(ConstantsMAPP.SELF_ADDRESS, message, "unknown"));
         this.messageField.setText("");
     }

@@ -44,9 +44,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // POST MESSAGE
             .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
@@ -55,9 +55,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // DELETE ALL MESSAGES
             .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
@@ -66,9 +66,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // SEARCH MESSAGE
             .registerService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
@@ -78,7 +78,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             })
             .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -98,9 +98,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // POST MESSAGE
             .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
@@ -109,9 +109,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // DELETE ALL MESSAGES
             .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
@@ -120,9 +120,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // SEARCH MESSAGE
             .registerService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
@@ -132,7 +132,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             })
             .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -152,9 +152,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // POST MESSAGE
             .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
@@ -163,9 +163,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // DELETE ALL MESSAGES
             .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
@@ -174,9 +174,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // SEARCH MESSAGE
             .registerService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
@@ -187,9 +187,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // SEARCH AND DETAILS
             .registerService(new ServiceBase<>(RequestSearchAndDetails.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     RequestSearchAndDetails requestSearchMessage = (RequestSearchAndDetails) request;
                     ResponseSearchMessage responseSearchMessage = wrapper.searchMessage(snapshot,
@@ -208,7 +208,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // SLEEP 1
             .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -228,9 +228,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // POST MESSAGE
             .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
@@ -239,18 +239,18 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // DELETE ALL MESSAGES
             .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             }).registerService(new ServiceBase<>(RequestSearchMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
@@ -261,9 +261,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // SEARCH AND DETAILS
             .registerService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     RequestSearchAndDetails requestSearchMessage = (RequestSearchAndDetails) request;
                     ResponseSearchMessage responseSearchMessage = wrapper.searchMessage(snapshot, requestSearchMessage);
@@ -280,7 +280,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             })
             .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -300,9 +300,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // POST MESSAGE
             .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
@@ -311,9 +311,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // DELETE ALL MESSAGES
             .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
@@ -321,9 +321,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             })// SEARCH MESSAGE
             .registerService(new ServiceBase<>(RequestSearchMessage.class, 0) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     var dbResponse = wrapper.searchMessage(snapshot,
                         (RequestSearchMessage) request);
@@ -334,9 +334,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             // SEARCH AND DETAILS
             .registerService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
                 @Override
-                Response handleRequest(BaseEvent request,
-                                   JointStorageSystem<IndexReader> self,
-                                   IndexReader snapshot
+                Response handleRequest(EventBase request,
+                                       JointStorageSystem<IndexReader> self,
+                                       IndexReader snapshot
                 ) {
                     RequestSearchAndDetails requestSearchMessage = (RequestSearchAndDetails) request;
                     ResponseSearchMessage responseSearchMessage = wrapper.searchMessage(snapshot, requestSearchMessage);
@@ -353,7 +353,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
             })
             .registerService(new ServiceBase<>(RequestSleep1.class, 1) {
                 @Override
-                Response handleRequest(BaseEvent request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
+                Response handleRequest(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {

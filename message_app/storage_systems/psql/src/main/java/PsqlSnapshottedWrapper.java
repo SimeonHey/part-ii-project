@@ -17,11 +17,13 @@ public class PsqlSnapshottedWrapper extends SnapshottedStorageWrapper<Connection
         sequentialConnection = SqlUtils.freshDefaultConnection();
     }
 
-    private void insertMessage(String sender, String messageText, Long uuid) throws SQLException {
-        String query = String.format("INSERT INTO messages (sender, messageText, uuid) VALUES ($$%s$$, $$%s$$, %d)",
+    private void insertMessage(String sender, String messageText, Long timestamp, Long uuid) throws SQLException {
+        String query = String.format("INSERT INTO messages (sender, messageText, uuid, timestamp) VALUES ($$%s$$, " +
+                "$$%s$$, %d, %d)",
             sender,
             messageText,
-            uuid);
+            uuid,
+            timestamp);
 
         SqlUtils.executeStatement(query, sequentialConnection);
     }
@@ -102,7 +104,8 @@ public class PsqlSnapshottedWrapper extends SnapshottedStorageWrapper<Connection
             insertMessage(
                 requestPostMessage.getMessage().getSender(),
                 requestPostMessage.getMessage().getMessageText(),
-                requestPostMessage.getResponseAddress().getChannelID());
+                requestPostMessage.getMessage().getTimestamp(), requestPostMessage.getResponseAddress().getChannelID()
+            );
         } catch (SQLException e) {
             LOGGER.warning("Error when inserting message: " + e);
             throw new RuntimeException(e);

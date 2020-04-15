@@ -15,11 +15,11 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
-public class DummyProducer implements Producer<Long, BaseEvent> {
+public class DummyProducer implements Producer<Long, EventBase> {
     private DummyKafka dummyKafka = DummyKafka.getDummyKafka();
 
     @Override
-    public Future<RecordMetadata> send(ProducerRecord<Long, BaseEvent> record) {
+    public Future<RecordMetadata> send(ProducerRecord<Long, EventBase> record) {
         long offset = dummyKafka.produceMessage(record.key(), record.value());
 
         RecordMetadata metadata =
@@ -56,7 +56,7 @@ public class DummyProducer implements Producer<Long, BaseEvent> {
     }
 
     @Override
-    public Future<RecordMetadata> send(ProducerRecord<Long, BaseEvent> record, Callback callback) {
+    public Future<RecordMetadata> send(ProducerRecord<Long, EventBase> record, Callback callback) {
         return null;
     }
 

@@ -14,7 +14,7 @@ class DummyKafka {
 
     private static final DummyKafka DUMMY_KAFKA = new DummyKafka();
 
-    private ArrayList<ConsumerRecord<Long, BaseEvent>> records;
+    private ArrayList<ConsumerRecord<Long, EventBase>> records;
     private HashMap<String, Integer> consumeStartGroup;
 
     private DummyKafka() {
@@ -32,12 +32,12 @@ class DummyKafka {
         return DUMMY_KAFKA;
     }
 
-    synchronized long produceMessage(Long key, BaseEvent value) {
+    synchronized long produceMessage(Long key, EventBase value) {
         long offset = records.size();
 
         LOGGER.info("DUMMY KAFKA: producing message " + value + " with offset " + offset);
 
-        ConsumerRecord<Long, BaseEvent> consumerRecord =
+        ConsumerRecord<Long, EventBase> consumerRecord =
             new ConsumerRecord<>(TOPIC_PARTITION.topic(), TOPIC_PARTITION.partition(), offset, key, value);
         records.add(consumerRecord);
 
@@ -47,7 +47,7 @@ class DummyKafka {
         return records.size()-1;
     }
 
-    synchronized ConsumerRecords<Long, BaseEvent> consumeMessages(String consumerGroup) {
+    synchronized ConsumerRecords<Long, EventBase> consumeMessages(String consumerGroup) {
         // TODO: Might want to make it thread safe
 
         int consumeFrom = getConsumeFromAndUpdateIt(consumerGroup);
