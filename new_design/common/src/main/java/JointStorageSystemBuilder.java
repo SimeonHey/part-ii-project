@@ -13,12 +13,12 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
 
     private final String fullName;
     private final HttpStorageSystem httpStorageSystem;
-    private final SnapshottedStorageWrapper<Snap> wrapper;
+    private final SnapshottedStorageSystem<Snap> wrapper;
     private final Consumer<JointStorageSystem<Snap>> kafkaConsumerSubscription;
 
     public JointStorageSystemBuilder(String fullName,
                                      HttpStorageSystem httpStorageSystem,
-                                     SnapshottedStorageWrapper<Snap> wrapper,
+                                     SnapshottedStorageSystem<Snap> wrapper,
                                      Consumer<JointStorageSystem<Snap>> kafkaConsumerSubscription) {
         this.fullName = fullName;
         this.httpStorageSystem = httpStorageSystem;
@@ -26,7 +26,7 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
         this.kafkaConsumerSubscription = kafkaConsumerSubscription;
     }
 
-    public JointStorageSystemBuilder<Snap> registerService(ServiceBase<Snap> serviceDescription) {
+    public JointStorageSystemBuilder<Snap> registerAction(ServiceBase<Snap> serviceDescription) {
         int number = this.classMap.size();
         this.classMap.put(serviceDescription.getEventTypeToHandle(), serviceDescription.getClassOfObjectToHandle());
         this.classNumber.put(serviceDescription.getEventTypeToHandle(), number);

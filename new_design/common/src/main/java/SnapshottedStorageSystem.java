@@ -3,20 +3,21 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 
-public abstract class SnapshottedStorageWrapper<S> implements AutoCloseable {
-    private final static Logger LOGGER = Logger.getLogger(SnapshottedStorageWrapper.class.getName());
+public abstract class SnapshottedStorageSystem<S> implements AutoCloseable {
+    private final static Logger LOGGER = Logger.getLogger(SnapshottedStorageSystem.class.getName());
 
     private final Semaphore connectionsSemaphore;
     private final BlockingQueue<SnapshotHolder<S>> concurrentConectionsPool;
 
-    protected SnapshottedStorageWrapper(int maxConnections) {
+    protected SnapshottedStorageSystem(int maxConnections) {
         this.concurrentConectionsPool = new LinkedBlockingDeque<>(maxConnections);
         this.connectionsSemaphore = new Semaphore(maxConnections);
     }
 
     abstract S getDefaultSnapshot();
     abstract S freshConcurrentSnapshot();
-    abstract S refreshSnapshot(S bareSnapshot);
+    abstract S refreshSnapshot(S bareSnapshot); // TODO: I assume that this doesn't take up a snapshot resource, but
+    // it does with Lucene
 
     public final SnapshotHolder<S> getConcurrentSnapshot() {
         // First, try and re-use one from the poll, with no blocking!

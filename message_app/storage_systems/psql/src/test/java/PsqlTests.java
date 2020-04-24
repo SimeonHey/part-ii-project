@@ -18,7 +18,7 @@ public class PsqlTests {
     @Test
     public void testNewTransactionConnectionIsSnapshotIsolated() throws SQLException {
         // We will just test the .newTransactionConnection() method
-        PsqlSnapshottedWrapper psqlWrapper = new PsqlSnapshottedWrapper();
+        PsqlSnapshottedSystem psqlWrapper = new PsqlSnapshottedSystem();
 
         // Initialize a normal, always-commiting transaction
         Connection normalConnection = SqlUtils.obtainConnection(ConstantsMAPP.PSQL_USER_PASS[0],
@@ -51,10 +51,10 @@ public class PsqlTests {
 
     @Test
     public void testConnectionPooling() throws Exception {
-        PsqlSnapshottedWrapper psqlSnapshottedWrapper = new PsqlSnapshottedWrapper();
+        PsqlSnapshottedSystem psqlSnapshottedWrapper = new PsqlSnapshottedSystem();
         List<SnapshotHolder> openedConnections = new ArrayList<>();
 
-        for (int i=0; i<PsqlSnapshottedWrapper.MAX_OPENED_CONNECTIONS; i++) {
+        for (int i = 0; i< PsqlSnapshottedSystem.MAX_OPENED_CONNECTIONS; i++) {
             var current = psqlSnapshottedWrapper.getConcurrentSnapshot();
             openedConnections.add(current);
             LOGGER.info("Added a connectinon " + current);

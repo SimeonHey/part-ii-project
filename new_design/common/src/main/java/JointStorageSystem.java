@@ -14,7 +14,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
     final String fullName;
     final String shortName;
-    private final SnapshottedStorageWrapper<Snap> wrapper;
+    private final SnapshottedStorageSystem<Snap> wrapper;
 
     private final Map<String, ServiceBase<Snap>> serviceHandlers;
 
@@ -36,7 +36,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     private final MultithreadedEventQueueExecutor responseExecutors;
 
     JointStorageSystem(String fullName,
-                       SnapshottedStorageWrapper<Snap> wrapper,
+                       SnapshottedStorageSystem<Snap> wrapper,
                        Map<String, ServiceBase<Snap>> serviceHandlers,
                        Map<String, Class<? extends EventBase>> classMap,
                        Map<String, Integer> classNumber,
@@ -159,7 +159,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
                 try {
                     Response response =
-                        serviceHandler.handleRequest(event, this, snapshotToUse.getSnapshot());
+                        serviceHandler.handleEvent(event, this, snapshotToUse.getSnapshot());
                     responseCallback.accept(response);
                 } catch (Exception e) {
                     LOGGER.warning("Error when handling request: " + e);
@@ -178,7 +178,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
             // Execute in the current thread
             try {
                 Response response =
-                    serviceHandler.handleRequest(event, this, wrapper.getDefaultSnapshot());
+                    serviceHandler.handleEvent(event, this, wrapper.getDefaultSnapshot());
                 responseCallback.accept(response);
             } catch (Exception e) {
                 LOGGER.warning("Error when handling request: " + e);

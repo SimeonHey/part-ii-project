@@ -2,6 +2,7 @@ import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
+import com.google.gson.Gson;
 import io.vavr.Tuple2;
 
 import java.io.IOException;
@@ -39,14 +40,22 @@ public class EntryPoint {
         }
     }
 
-    private static void fakeWithLoad(LoadFaker loadFaker, StorageAPI storageAPI) {
+    private static void fakeWithLoad(LoadFaker loadFaker, StorageAPI storageAPI) throws InterruptedException {
         while (true) {
             loadFaker.nextRequest(storageAPI);
+
+//            Thread.sleep(100);
         }
     }
 
     public static void main(String[] args) throws IOException {
         System.out.println("HELLO!");
+
+        RequestSearchAndGetDetails requestSearchAndGetDetails = new RequestSearchAndGetDetails(
+            new Addressable("http://localhost:8000", 123L), "getafirst");
+        System.out.println(new Gson().toJson(requestSearchAndGetDetails));
+        if (5 == 5)
+            return;
 
         // Log to a file
 //        LogManager.getLogManager().reset();
@@ -106,7 +115,7 @@ public class EntryPoint {
             LoadFaker.Events.SEARCH_AND_DETAILS, 0.09,
             LoadFaker.Events.SLEEP_1, 0.01));
 
-        makeItDance(new NoSDUniformLoadFaker(1_000, 1), (StorageSystemFactory::serReads),
+        makeItDance(new UniformLoadFaker(1_000, 1), (StorageSystemFactory::concurReads),
             List.of(/*new Tuple2<>(RequestAllMessages.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(RequestMessageDetails.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(RequestSearchMessage.class.getName(), ConstantsMAPP.TEST_LUCENE_REQUEST_ADDRESS)*/));

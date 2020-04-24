@@ -5,7 +5,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<String, Integer>> {
-    private final static VavrSnapshottedWrapper wrapper = new VavrSnapshottedWrapper();
+    private final static VavrSnapshottedSystem wrapper = new VavrSnapshottedSystem();
 
     public VavrStorageSystemFactory(int httpListenPort)
         throws IOException {
@@ -31,31 +31,31 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
     JointStorageSystem<HashMap<String, Integer>> simpleOlep() {
         return new JointStorageSystemBuilder<>("vavr simple olep", this.httpStorageSystem, wrapper,
             this.bootstrapProcedure)
-            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<HashMap<String, Integer>> self,
-                                       HashMap<String, Integer> snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<HashMap<String, Integer>> self,
+                                     HashMap<String, Integer> snapshot) {
                     String recipient = ((RequestPostMessage) request).getRecipient();
                     wrapper.postMessage(recipient);
 
                     return Response.CONFIRMATION;
                 }
             })
-            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request, JointStorageSystem<HashMap<String
+                Response handleEvent(EventBase request, JointStorageSystem<HashMap<String
                     , Integer>> self, HashMap<String, Integer> snapshot) {
                     wrapper.getAllMessages((RequestAllMessages) request);
 
                     return Response.CONFIRMATION;
                 }
             })
-            .registerService(new ServiceBase<>(RequestGetUnreadMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestGetUnreadMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<HashMap<String, Integer>> self,
-                                       HashMap<String, Integer> snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<HashMap<String, Integer>> self,
+                                     HashMap<String, Integer> snapshot) {
                     String ofUser = ((RequestGetUnreadMessages) request).getOfUser();
 
                     return new Response(wrapper.getUnreadMessages(ofUser));

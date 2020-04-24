@@ -10,8 +10,8 @@ public class LuceneTests {
 
     @Test
     public void testLuceneIsSnapshotIsolated() {
-        LuceneSnapshottedWrapper luceneSnapshottedWrapper =
-            new LuceneSnapshottedWrapper(ConstantsMAPP.LUCENE_TEST_INDEX_DEST);
+        LuceneSnapshottedSystem luceneSnapshottedWrapper =
+            new LuceneSnapshottedSystem(ConstantsMAPP.LUCENE_TEST_INDEX_DEST);
         luceneSnapshottedWrapper.deleteAllMessages(); // Clear up previous stuff
 
         // This message will show up in all sessions

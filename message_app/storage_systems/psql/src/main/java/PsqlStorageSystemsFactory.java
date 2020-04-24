@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> {
     private static final Logger LOGGER = Logger.getLogger(PsqlStorageSystemsFactory.class.getName());
 
-    private final static PsqlSnapshottedWrapper wrapper = new PsqlSnapshottedWrapper();
+    private final static PsqlSnapshottedSystem wrapper = new PsqlSnapshottedSystem();
 
     public PsqlStorageSystemsFactory(int psqlListenPort) throws IOException {
         super("psql", wrapper, psqlListenPort, (storageSystem) -> {
@@ -26,7 +26,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
 
     public PsqlStorageSystemsFactory(int psqlListenPort,
                                      Consumer<JointStorageSystem<Connection>> bootstrapProcedure) throws IOException {
-        super("psql", new PsqlSnapshottedWrapper(), psqlListenPort, bootstrapProcedure);
+        super("psql", new PsqlSnapshottedSystem(), psqlListenPort, bootstrapProcedure);
 
         wrapper.deleteAllMessages();
     }
@@ -36,31 +36,31 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql simple olep", httpStorageSystem, snapshottedWrapper,
             this.bootstrapProcedure)
             // POST MESSAGE
-            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -69,17 +69,17 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET MESSAGE DETAILS
-            .registerService(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerAction(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
-            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Response handleRequest(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -97,31 +97,31 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql ser reads", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -130,17 +130,17 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET MESSAGE DETAILS
-            .registerService(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerAction(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
-            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Response handleRequest(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -158,31 +158,31 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql SD no session", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -191,20 +191,20 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET MESSAGE DETAILS
-            .registerService(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerAction(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             // SEARCH AND DETAILS
-            .registerService(new ServiceBase<>(RequestSearchAndDetails.class, -1) {
+            .registerAction(new ServiceBase<>(RequestSearchAndGetDetails.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     // This will block until Lucene contacts us
                     RequestMessageDetails requestMessageDetails =
                         self.waitForContact(request.getResponseAddress().getChannelID(), RequestMessageDetails.class);
@@ -213,9 +213,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return new Response(wrapper.getMessageDetails(snapshot, requestMessageDetails));
                 }
             })
-            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Response handleRequest(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -233,31 +233,31 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql SD WITH session", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -266,20 +266,20 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET MESSAGE DETAILS
-            .registerService(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerAction(new ServiceBase<>(RequestMessageDetails.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             // SEARCH AND DETAILS
-            .registerService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
+            .registerAction(new ServiceBase<>(RequestSearchAndGetDetails.class, 0) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
 
                     LOGGER.info(self.fullName + " waits to be contacted by Lucene...");
                     // This will block until Lucene contacts us
@@ -294,9 +294,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return new Response(dbResponse);
                 }
             })
-            .registerService(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
                 @Override
-                Response handleRequest(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -314,31 +314,31 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql concur reads", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerService(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
             // DELETE ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
             // GET ALL MESSAGES
-            .registerService(new ServiceBase<>(RequestAllMessages.class, 0) {
+            .registerAction(new ServiceBase<>(RequestAllMessages.class, 0) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     var dbResponse = wrapper.getAllMessages(snapshot,
                         (RequestAllMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
@@ -347,20 +347,20 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET MESSAGE DETAILS
-            .registerService(new ServiceBase<>(RequestMessageDetails.class, 0) {
+            .registerAction(new ServiceBase<>(RequestMessageDetails.class, 0) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
                     return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             // SEARCH AND DETAILS
-            .registerService(new ServiceBase<>(RequestSearchAndDetails.class, 0) {
+            .registerAction(new ServiceBase<>(RequestSearchAndGetDetails.class, 0) {
                 @Override
-                Response handleRequest(EventBase request,
-                                       JointStorageSystem<Connection> self,
-                                       Connection snapshot) {
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
 
                     LOGGER.info(self.fullName + " waits to be contacted by Lucene...");
                     // This will block until Lucene contacts us
@@ -375,9 +375,9 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return new Response(dbResponse);
                 }
             })
-            .registerService(new ServiceBase<>(RequestSleep1.class, 1) {
+            .registerAction(new ServiceBase<>(RequestSleep1.class, 1) {
                 @Override
-                Response handleRequest(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
+                Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {

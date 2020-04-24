@@ -18,9 +18,9 @@ public abstract class ServiceBase<Snap> {
         return classOfObjectToHandle;
     }
 
-    abstract Response handleRequest(EventBase request,
-                                    JointStorageSystem<Snap> self,
-                                    Snap snapshot);
+    abstract Response handleEvent(EventBase request,
+                                  JointStorageSystem<Snap> self,
+                                  Snap snapshot);
 
     @Override
     public String toString() {

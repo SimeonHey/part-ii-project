@@ -1,9 +1,9 @@
 import io.vavr.collection.HashMap;
 
-public class VavrSnapshottedWrapper extends SnapshottedStorageWrapper<HashMap<String, Integer>> {
+public class VavrSnapshottedSystem extends SnapshottedStorageSystem<HashMap<String, Integer>> {
     private HashMap<String, Integer> defaultSnapshot = HashMap.empty();
 
-    protected VavrSnapshottedWrapper() {
+    protected VavrSnapshottedSystem() {
         super(Integer.MAX_VALUE);
     }
 

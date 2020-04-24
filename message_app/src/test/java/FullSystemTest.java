@@ -149,7 +149,7 @@ public class FullSystemTest {
 
             // Search & details request
             Future<ResponseMessageDetails> responseMessageDetailsFuture = storageAPI.handleRequest(
-                new RequestSearchAndDetails(new Addressable(storageAPI.getResponseAddress()),
+                new RequestSearchAndGetDetails(new Addressable(storageAPI.getResponseAddress()),
                     simeonHey.getMessageText()), ResponseMessageDetails.class);
 
             // Progress just PSQL, which should take a snapshot of the data, and "wait" for Lucene

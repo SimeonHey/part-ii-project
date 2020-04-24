@@ -3,11 +3,11 @@ import java.util.function.Consumer;
 
 public abstract class StorageSystemFactory<T> implements AutoCloseable {
     final HttpStorageSystem httpStorageSystem;
-    final SnapshottedStorageWrapper<T> snapshottedWrapper;
+    final SnapshottedStorageSystem<T> snapshottedWrapper;
     final Consumer<JointStorageSystem<T>> bootstrapProcedure;
 
     public StorageSystemFactory(String name,
-                                SnapshottedStorageWrapper<T> snapshottedWrapper,
+                                SnapshottedStorageSystem<T> snapshottedWrapper,
                                 int httpListenPort,
                                 Consumer<JointStorageSystem<T>> bootstrapProcedure) throws IOException {
         this.snapshottedWrapper = snapshottedWrapper;

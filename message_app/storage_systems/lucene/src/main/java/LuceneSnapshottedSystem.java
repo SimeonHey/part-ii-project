@@ -28,10 +28,10 @@ import java.util.logging.Logger;
 /**
  * Proxy for Lucene transactions
  */
-class LuceneSnapshottedWrapper extends SnapshottedStorageWrapper<IndexReader>
+class LuceneSnapshottedSystem extends SnapshottedStorageSystem<IndexReader>
     implements MessageAppDatabase<IndexReader>{
 
-    private static final Logger LOGGER = Logger.getLogger(LuceneSnapshottedWrapper.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(LuceneSnapshottedSystem.class.getName());
     private static final int MAX_CONNECTIONS = Integer.MAX_VALUE;
 
     private static final String FIELD_MESSAGE = "message";
@@ -41,12 +41,12 @@ class LuceneSnapshottedWrapper extends SnapshottedStorageWrapper<IndexReader>
     private final Path indexPath;
     private final Analyzer analyzer = new StandardAnalyzer();
 
-    public LuceneSnapshottedWrapper() {
+    public LuceneSnapshottedSystem() {
         super(MAX_CONNECTIONS);
         indexPath = Paths.get(ConstantsMAPP.LUCENE_DEFAULT_INDEX_DEST);
     }
 
-    public LuceneSnapshottedWrapper(String indexDestination) {
+    public LuceneSnapshottedSystem(String indexDestination) {
         super(MAX_CONNECTIONS);
         indexPath = Paths.get(indexDestination);
     }

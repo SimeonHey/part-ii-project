@@ -4,15 +4,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-public class PsqlSnapshottedWrapper extends SnapshottedStorageWrapper<Connection>
+public class PsqlSnapshottedSystem extends SnapshottedStorageSystem<Connection>
     implements MessageAppDatabase<Connection> {
 
-    private static final Logger LOGGER = Logger.getLogger(PsqlSnapshottedWrapper.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(PsqlSnapshottedSystem.class.getName());
     public static final int MAX_OPENED_CONNECTIONS = 90;
 
     private final Connection sequentialConnection;
 
-    PsqlSnapshottedWrapper() {
+    PsqlSnapshottedSystem() {
         super(MAX_OPENED_CONNECTIONS);
         sequentialConnection = SqlUtils.freshDefaultConnection();
     }

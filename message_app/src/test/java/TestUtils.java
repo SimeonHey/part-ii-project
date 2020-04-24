@@ -204,7 +204,7 @@ class TestUtils {
     }
 
     static ResponseMessageDetails searchAndDetails(String searchText) throws ExecutionException, InterruptedException {
-        return request(new RequestSearchAndDetails(
+        return request(new RequestSearchAndGetDetails(
                 new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), searchText),
             ResponseMessageDetails.class);
     }

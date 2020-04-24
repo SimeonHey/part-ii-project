@@ -6,7 +6,7 @@ public abstract class LoadFaker {
         GET_ALL_MESSAGES(RequestAllMessages.class),
         GET_MESSAGE_DETAILS(RequestMessageDetails.class),
         SEARCH_MESSAGES(RequestSearchMessage.class),
-        SEARCH_AND_DETAILS(RequestSearchAndDetails.class),
+        SEARCH_AND_DETAILS(RequestSearchAndGetDetails.class),
         SLEEP_1(RequestSleep1.class),
         DELETE_ALL_MESSAGES(RequestDeleteAllMessages.class);
         
@@ -50,7 +50,7 @@ public abstract class LoadFaker {
                 long messageId = random.nextInt(currentRequests) % currentRequests;
                 return new RequestMessageDetails(responseAddress, messageId);
             } else if (id == Events.SEARCH_AND_DETAILS.ordinal()) {
-                return new RequestSearchAndDetails(responseAddress, getRandomWord(charsLimit - 1));
+                return new RequestSearchAndGetDetails(responseAddress, getRandomWord(charsLimit - 1));
             } else if (id == Events.DELETE_ALL_MESSAGES.ordinal()) {
                 return new RequestDeleteAllMessages(responseAddress);
             } else if (id == Events.SLEEP_1.ordinal()) {
