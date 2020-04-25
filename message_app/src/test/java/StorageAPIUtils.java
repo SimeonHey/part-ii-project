@@ -43,7 +43,7 @@ class StorageAPIUtils {
         }
     }
 
-    static StorageAPI initFromArgsForTests(StorageAPIInitArgs initArgs) throws IOException {
+    static PolyglotAPI initFromArgsForTests(StorageAPIInitArgs initArgs) throws IOException {
         LOGGER.info("Initializing storage API......");
 
         // Setup connections
@@ -56,14 +56,14 @@ class StorageAPIUtils {
         HttpStorageSystem httpStorageSystem = new HttpStorageSystem("server",
             HttpUtils.initHttpServer(initArgs.listeningPort));
 
-        StorageAPI ret = new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic, "localhost",
+        PolyglotAPI ret = new PolyglotAPI(producer, httpStorageSystem, initArgs.transactionsTopic, "localhost",
             initArgs.httpFavoursList);
 
         LOGGER.info("Successfully initialized storage api " + ret);
         return ret;
     }
 
-    static StorageAPI initFromArgsWithDummyKafkaForTests(StorageAPIInitArgs initArgs) throws IOException {
+    static PolyglotAPI initFromArgsWithDummyKafkaForTests(StorageAPIInitArgs initArgs) throws IOException {
         LOGGER.info("Initializing storage API......");
 
         // Setup connections
@@ -75,7 +75,7 @@ class StorageAPIUtils {
         HttpStorageSystem httpStorageSystem = new HttpStorageSystem("server",
             HttpUtils.initHttpServer(initArgs.listeningPort));
 
-        StorageAPI ret =  new StorageAPI(producer, httpStorageSystem, initArgs.transactionsTopic, "localhost",
+        PolyglotAPI ret =  new PolyglotAPI(producer, httpStorageSystem, initArgs.transactionsTopic, "localhost",
             initArgs.httpFavoursList);
 
         LOGGER.info("Successfully initialized storage api " + ret);

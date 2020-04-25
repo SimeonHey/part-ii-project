@@ -9,10 +9,14 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
+import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -36,7 +40,8 @@ class LuceneSnapshottedSystem extends SnapshottedStorageSystem<IndexReader>
 
     private static final String FIELD_MESSAGE = "message";
     private static final String FIELD_SENDER = "sender";
-    private static final String FIELD_UUID = "uuid";
+    private static final String FIELD_RECIPIENT = "recipient";
+    private static final String FIELD_MESSAGE_ID = "uuid";
 
     private final Path indexPath;
     private final Analyzer analyzer = new StandardAnalyzer();
@@ -54,7 +59,6 @@ class LuceneSnapshottedSystem extends SnapshottedStorageSystem<IndexReader>
     // Write requests
     @Override
     public void postMessage(RequestPostMessage requestPostMessage) {
-        LOGGER.info("Lucene posts message: " + requestPostMessage.getMessage());
         final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
 
@@ -63,29 +67,67 @@ class LuceneSnapshottedSystem extends SnapshottedStorageSystem<IndexReader>
             Document doc = new Document();
 
             String escapedSender = QueryParser.escape(requestPostMessage.getMessage().getSender());
+            String escapedRecipient = QueryParser.escape(requestPostMessage.getMessage().getRecipient());
             String escapedMessage = QueryParser.escape(requestPostMessage.getMessage().getMessageText());
 
 //            LOGGER.info("Escaped sender: " + escapedSender + "; escaped message: " + escapedMessage);
 
             doc.add(new StringField(FIELD_SENDER, escapedSender, Field.Store.YES));
+            doc.add(new StringField(FIELD_RECIPIENT, escapedRecipient, Field.Store.YES));
             doc.add(new TextField(FIELD_MESSAGE, escapedMessage, Field.Store.NO));
-            doc.add(new StoredField(FIELD_UUID, requestPostMessage.getResponseAddress().getChannelID()));
+            doc.add(new StoredField(FIELD_MESSAGE_ID, requestPostMessage.getResponseAddress().getChannelID()));
 
             indexWriter.addDocument(doc);
+            indexWriter.commit();
+            LOGGER.info("Lucene posted message: " + requestPostMessage.getMessage());
         } catch (IOException e) {
             LOGGER.warning("Error when posting message: " + e);
             throw new RuntimeException(e);
         }
     }
 
+    @Override
     public void deleteAllMessages() {
-        LOGGER.info("Lucene deletes all messages");
 
         final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
         iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
 
         try (Directory luceneIndexDir = FSDirectory.open(indexPath);
-             IndexWriter ignored = new IndexWriter(luceneIndexDir, iwc)) {
+             IndexWriter indexWriter = new IndexWriter(luceneIndexDir, iwc)) {
+            indexWriter.commit();
+            LOGGER.info("Lucene deleted all messages");
+        } catch (IOException e) {
+            LOGGER.warning("Error when deleteing all messages: " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void deleteConvoThread(RequestDeleteConversation deleteConversation) {
+        final IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
+        iwc.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+
+        try (Directory luceneIndexDir = FSDirectory.open(indexPath);
+             IndexWriter indexWriter = new IndexWriter(luceneIndexDir, iwc)) {
+
+            // Either user1 is the SENDER, user2 is the RECIPIENT
+            BooleanQuery.Builder builder1 = new BooleanQuery.Builder();
+            builder1.add(new TermQuery(new Term(FIELD_SENDER, deleteConversation.getUser1())),
+                BooleanClause.Occur.MUST);
+            builder1.add(new TermQuery(new Term(FIELD_RECIPIENT, deleteConversation.getUser2())),
+                BooleanClause.Occur.MUST);
+
+            // Or user2 is the SENDER, user1 is the RECIPIENT
+            BooleanQuery.Builder builder2 = new BooleanQuery.Builder();
+            builder2.add(new TermQuery(new Term(FIELD_SENDER, deleteConversation.getUser2())),
+                BooleanClause.Occur.MUST);
+            builder2.add(new TermQuery(new Term(FIELD_RECIPIENT, deleteConversation.getUser1())),
+                BooleanClause.Occur.MUST);
+
+            // Delete documents in which either of the terms exists
+            indexWriter.deleteDocuments(builder1.build(), builder2.build());
+            indexWriter.commit();
+            LOGGER.info("Lucene deleted messages in conversations: " + deleteConversation);
         } catch (IOException e) {
             LOGGER.warning("Error when posting message: " + e);
             throw new RuntimeException(e);
@@ -110,7 +152,7 @@ class LuceneSnapshottedSystem extends SnapshottedStorageSystem<IndexReader>
 
             Arrays.stream(searchResults.scoreDocs).forEach(scoreDoc -> {
                 try {
-                    String res = indexSearcher.doc(scoreDoc.doc).get("uuid");
+                    String res = indexSearcher.doc(scoreDoc.doc).get(FIELD_MESSAGE_ID);
                     occurrences.add(Long.valueOf(res));
                 } catch (IOException e) {
                     LOGGER.info("Exception " + e + " when analysing search result");
@@ -118,8 +160,7 @@ class LuceneSnapshottedSystem extends SnapshottedStorageSystem<IndexReader>
                 }
             });
 
-            LOGGER.info("Lucene searched for text of length " + searchMessage.getSearchText().length() +
-                " and got " + occurrences);
+            LOGGER.info("Lucene searched for text " + searchMessage.getSearchText() + " and got " + occurrences);
             return new ResponseSearchMessage(occurrences);
         } catch (IOException | ParseException e) {
             LOGGER.warning("Error when performing search: " + e);
@@ -133,7 +174,7 @@ class LuceneSnapshottedSystem extends SnapshottedStorageSystem<IndexReader>
     }
 
     @Override
-    public ResponseAllMessages getAllMessages(IndexReader snapshot, RequestAllMessages requestAllMessages) {
+    public ResponseAllMessages getConvoMessages(IndexReader snapshot, RequestConvoMessages requestConvoMessages) {
         throw new RuntimeException("Lucene doesn't have get all messages functionality implemented");
     }
 

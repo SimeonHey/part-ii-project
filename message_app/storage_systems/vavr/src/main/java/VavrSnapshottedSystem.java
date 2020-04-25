@@ -7,18 +7,19 @@ public class VavrSnapshottedSystem extends SnapshottedStorageSystem<HashMap<Stri
         super(Integer.MAX_VALUE);
     }
 
-    public void postMessage(String recipient) {
+    public void handleMessagePosted(String recipient) {
         Integer previousUnread = defaultSnapshot.getOrElse(recipient, 0);
-        defaultSnapshot = defaultSnapshot.put(recipient, previousUnread+1); // Update the default snapshot too
+        defaultSnapshot = defaultSnapshot.put(recipient, previousUnread + 1); // Update the default snapshot too
     }
 
     public Integer getUnreadMessages(String ofUser) {
         return defaultSnapshot.getOrElse(ofUser, 0);
     }
 
-    public void getAllMessages(RequestAllMessages requestAllMessages) {
-        defaultSnapshot = defaultSnapshot.remove(requestAllMessages.getRequester());
+    public void handleConvoMessagesRequest(RequestConvoMessages requestConvoMessages) {
+        defaultSnapshot = defaultSnapshot.remove(requestConvoMessages.getRequester());
     }
+
     @Override
     HashMap<String, Integer> getDefaultSnapshot() {
         return this.defaultSnapshot;

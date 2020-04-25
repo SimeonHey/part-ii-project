@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class StorageAPI implements AutoCloseable {
-    private static final Logger LOGGER = Logger.getLogger(StorageAPI.class.getName());
+public class PolyglotAPI implements AutoCloseable {
+    private static final Logger LOGGER = Logger.getLogger(PolyglotAPI.class.getName());
     private static final String ENDPOINT_RESPONSE = "response";
 
     private final String responseAddress;
@@ -37,14 +37,15 @@ public class StorageAPI implements AutoCloseable {
     private final Counter outstandingFavoursCounter =
         Constants.METRIC_REGISTRY.counter("favours.outstanding-count");
     private final NamedMeterMeasurements opsSentMeters = new NamedMeterMeasurements("ops-sent-meters");
+    private final Meter opsSentAll = Constants.METRIC_REGISTRY.meter("ops-sent-all");
 
     private final Meter responsesReceivedMeter = Constants.METRIC_REGISTRY.meter("responses-received-meter");
 
-    StorageAPI(Producer<Long, EventBase> producer,
-               HttpStorageSystem httpStorageSystem,
-               String transactionsTopic,
-               String selfAddress,
-               List<Tuple2<String, List<String>>> httpFavours) {
+    PolyglotAPI(Producer<Long, EventBase> producer,
+                HttpStorageSystem httpStorageSystem,
+                String transactionsTopic,
+                String selfAddress,
+                List<Tuple2<String, List<String>>> httpFavours) {
         this.producer = producer;
         this.transactionsTopic = transactionsTopic;
         this.httpStorageSystem = httpStorageSystem;
@@ -75,10 +76,10 @@ public class StorageAPI implements AutoCloseable {
         var httpFavors = findHttpFavour(request);
 
         opsSentMeters.markFor(request.getEventType());
+        opsSentAll.mark();
 
         if (httpFavors == null) { // I assume if it's not in the HTTP it's in the Kafka favour group
             LOGGER.info("StorageAPI handles request " + request + " through Kafka");
-
             return kafkaRequestResponseFuture(request, responseType);
         } else {
             LOGGER.info("StorageAPI handles request " + request + " through HTTP to: " + httpFavors);
@@ -91,20 +92,21 @@ public class StorageAPI implements AutoCloseable {
         }
     }
 
-    public void handleRequest(EventBase request) {
-        handleRequest(request, Object.class);
+    public CompletableFuture<ConfirmationResponse> handleRequest(EventBase request) {
+        return handleRequest(request, ConfirmationResponse.class);
     }
 
-    private <T> CompletableFuture<T> consumeAndDestroyAsync(long offset, Class<T> responseType) {
+    private <T> CompletableFuture<T> consumeAndDestroyAsync(long offset, Class<T> responseType, boolean isResponse) {
         return CompletableFuture.supplyAsync(() -> {
-            LOGGER.info("Waiting for response on channel with uuid " + offset);
+            LOGGER.info("Waiting for " + (isResponse ? "response" : "confirmation")
+                + " on channel with uuid " + offset);
 
             // Will block until a response is received
             T response;
             try {
                 // In the case of multihop requests, we need to wait for the real result
                 // I assume it's the first non-null
-                String serializedResponse = this.channeledCommunication.consumeAndDestroy(offset, true);
+                String serializedResponse = this.channeledCommunication.consumeAndDestroy(offset, isResponse);
                 response = Constants.gson.fromJson(serializedResponse, responseType);
 
                 outstandingFavoursCounter.dec();
@@ -127,11 +129,11 @@ public class StorageAPI implements AutoCloseable {
         favoursTimeMeasurers.startTimer(request.getEventType(), offset);
 
         if (request.expectsResponse()) {
-            return consumeAndDestroyAsync(offset, responseType);
+            return consumeAndDestroyAsync(offset, responseType, true);
         } else {
             LOGGER.info("Sent request. Confirmation will arrive on channel " + offset);
-            this.confirmationChannelsList.add(offset);
-            return null;
+//            this.confirmationChannelsList.add(offset);
+            return consumeAndDestroyAsync(offset, responseType, false);
         }
     }
 
@@ -150,11 +152,11 @@ public class StorageAPI implements AutoCloseable {
         }
 
         if (request.expectsResponse()) {
-            return consumeAndDestroyAsync(curId, responseType);
+            return consumeAndDestroyAsync(curId, responseType, true);
         } else {
             LOGGER.info("Sent request. Confirmation will arrive on channel " + curId);
-            this.confirmationChannelsList.add(curId);
-            return null;
+//            this.confirmationChannelsList.add(curId);
+            return consumeAndDestroyAsync(curId, responseType, false);
         }
     }
 
@@ -172,9 +174,13 @@ public class StorageAPI implements AutoCloseable {
         try {
             ChanneledResponse response = this.channeledCommunication.registerResponse(serializedResponse);
             responsesReceivedMeter.mark();
-            LOGGER.info(String.format("The response with length %d; Response details: %s", serializedResponse.length(),
+            LOGGER.info(String.format("The thing with length %d; Response details: %s", serializedResponse.length(),
                 response.toString()));
-            favoursTimeMeasurers.stopTimerAndPublish(response.getRequestObjectType(), response.getChannelUuid());
+
+            // Only register it if it is a response (i.e the end of the request for multihops)
+            if (response.isResponse() || !response.expectsResponse()) {
+                favoursTimeMeasurers.stopTimerAndPublish(response.getRequestObjectType(), response.getChannelUuid());
+            }
 
             // Notify all confirmation listeners as this is a response anyways
             ConfirmationResponse confirmationResponse = new ConfirmationResponse(response.getFromStorageSystem(),

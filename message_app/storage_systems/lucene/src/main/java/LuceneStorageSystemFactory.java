@@ -21,7 +21,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                 storageSystem.classMap);
 
             consumer.moveAllToLatest();
-            consumer.subscribe(storageSystem::kafkaServiceHandler);
+            consumer.subscribe(storageSystem::kafkaActionHandler);
             Executors.newFixedThreadPool(1).submit(consumer::listenBlockingly);
         });
         this.psqlContactAddress = psqlContactAddress;
@@ -42,7 +42,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene simple olep", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -52,8 +52,19 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVERSATION
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<IndexReader> self,
+                                     IndexReader snapshot
+                ) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -64,7 +75,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                 }
             })
             // SEARCH MESSAGE
-            .registerAction(new ServiceBase<>(RequestSearchMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -76,7 +87,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     return new Response(dbResponse);
                 }
             })
-            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, -1) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
@@ -96,7 +107,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene ser reads", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -106,8 +117,19 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVERSATION THREAD
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<IndexReader> self,
+                                     IndexReader snapshot
+                ) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -118,7 +140,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                 }
             })
             // SEARCH MESSAGE
-            .registerAction(new ServiceBase<>(RequestSearchMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -130,7 +152,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     return new Response(dbResponse);
                 }
             })
-            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, -1) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
@@ -150,7 +172,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene sd no session", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -160,8 +182,19 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVERSATION THREAD
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<IndexReader> self,
+                                     IndexReader snapshot
+                ) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -172,7 +205,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                 }
             })
             // SEARCH MESSAGE
-            .registerAction(new ServiceBase<>(RequestSearchMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -185,7 +218,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                 }
             })
             // SEARCH AND DETAILS
-            .registerAction(new ServiceBase<>(RequestSearchAndGetDetails.class, -1) {
+            .registerAction(new ActionBase<>(RequestSearchAndGetDetails.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -206,7 +239,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                 }
             })
             // SLEEP 1
-            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, -1) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
@@ -226,7 +259,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene SD WITH session", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -236,8 +269,19 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVERSATION THREAD
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<IndexReader> self,
+                                     IndexReader snapshot
+                ) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -246,7 +290,8 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
-            }).registerAction(new ServiceBase<>(RequestSearchMessage.class, -1) {
+            })
+            .registerAction(new ActionBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -259,7 +304,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                 }
             })
             // SEARCH AND DETAILS
-            .registerAction(new ServiceBase<>(RequestSearchAndGetDetails.class, 0) {
+            .registerAction(new ActionBase<>(RequestSearchAndGetDetails.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -278,7 +323,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     return Response.CONFIRMATION; // Still sends a confirmation even though the full query hasn't finished yet
                 }
             })
-            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, -1) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {
@@ -298,7 +343,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
         return new JointStorageSystemBuilder<>("lucene SD WITH session", httpStorageSystem,
             snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -308,8 +353,20 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVERSATION THREAD
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<IndexReader> self,
+                                     IndexReader snapshot
+                ) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
+
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -318,8 +375,9 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     wrapper.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
-            })// SEARCH MESSAGE
-            .registerAction(new ServiceBase<>(RequestSearchMessage.class, 0) {
+            })
+            // SEARCH MESSAGE
+            .registerAction(new ActionBase<>(RequestSearchMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -332,7 +390,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                 }
             })
             // SEARCH AND DETAILS
-            .registerAction(new ServiceBase<>(RequestSearchAndGetDetails.class, 0) {
+            .registerAction(new ActionBase<>(RequestSearchAndGetDetails.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<IndexReader> self,
@@ -351,7 +409,7 @@ public class LuceneStorageSystemFactory extends StorageSystemFactory<IndexReader
                     return Response.CONFIRMATION;
                 }
             })
-            .registerAction(new ServiceBase<>(RequestSleep1.class, 1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, 0) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<IndexReader> self, IndexReader snapshot) {
                     try {

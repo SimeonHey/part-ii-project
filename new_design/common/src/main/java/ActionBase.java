@@ -1,10 +1,10 @@
-public abstract class ServiceBase<Snap> {
+public abstract class ActionBase<Snap> {
     private String eventTypeToHandle;
 
     private Class<? extends EventBase> classOfObjectToHandle;
     protected int asyncHandleChannel;
 
-    public ServiceBase(Class<? extends EventBase> classOfObjectToHandle, int asyncHandleChannel) {
+    public ActionBase(Class<? extends EventBase> classOfObjectToHandle, int asyncHandleChannel) {
         this.classOfObjectToHandle = classOfObjectToHandle;
         this.eventTypeToHandle = classOfObjectToHandle.getName();
         this.asyncHandleChannel = asyncHandleChannel;

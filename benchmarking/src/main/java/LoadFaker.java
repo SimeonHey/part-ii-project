@@ -3,12 +3,14 @@ import java.util.Random;
 public abstract class LoadFaker {
     public enum Events {
         POST_MESSAGE(RequestPostMessage.class),
-        GET_ALL_MESSAGES(RequestAllMessages.class),
+        GET_ALL_THREAD_MESSAGES(RequestConvoMessages.class),
         GET_MESSAGE_DETAILS(RequestMessageDetails.class),
         SEARCH_MESSAGES(RequestSearchMessage.class),
         SEARCH_AND_DETAILS(RequestSearchAndGetDetails.class),
-        SLEEP_1(RequestSleep1.class),
-        DELETE_ALL_MESSAGES(RequestDeleteAllMessages.class);
+//        SLEEP_1(RequestSleep1.class),
+//        DELETE_ALL_MESSAGE(RequestDeleteAllMessages.class),
+        DELETE_CONVO_THREAD(RequestDeleteConversation.class),
+        GET_UNREADS(RequestGetUnreadMessages.class);
         
         private final Class<? extends EventBase> theClass;
 
@@ -39,22 +41,29 @@ public abstract class LoadFaker {
 
     EventBase getRequestFromId(int id, Addressable responseAddress) {
         try {
+            String user1 = getRandomWord(charsLimit-1);
+            String user2 = getRandomWord(charsLimit-1);
+            String word = getRandomWord(charsLimit - 1);
+            Message message = getRandomMessage();
+
             if (id == Events.POST_MESSAGE.ordinal()) {
-                return new RequestPostMessage(responseAddress,
-                    getRandomMessage(), getRandomWord(charsLimit * wordsLimit));
-            } else if (id == Events.GET_ALL_MESSAGES.ordinal()) {
-                return new RequestAllMessages(responseAddress, ConstantsMAPP.DEFAULT_USER);
+                return new RequestPostMessage(responseAddress, message);
+            } else if (id == Events.GET_ALL_THREAD_MESSAGES.ordinal()) {
+                return new RequestConvoMessages(responseAddress, user1, user2);
             } else if (id == Events.SEARCH_MESSAGES.ordinal()) {
-                return new RequestSearchMessage(responseAddress, getRandomWord(charsLimit - 1));
+                return new RequestSearchMessage(responseAddress, word);
             } else if (id == Events.GET_MESSAGE_DETAILS.ordinal()) {
                 long messageId = random.nextInt(currentRequests) % currentRequests;
                 return new RequestMessageDetails(responseAddress, messageId);
             } else if (id == Events.SEARCH_AND_DETAILS.ordinal()) {
-                return new RequestSearchAndGetDetails(responseAddress, getRandomWord(charsLimit - 1));
-            } else if (id == Events.DELETE_ALL_MESSAGES.ordinal()) {
-                return new RequestDeleteAllMessages(responseAddress);
-            } else if (id == Events.SLEEP_1.ordinal()) {
+                return new RequestSearchAndGetDetails(responseAddress, word);
+            } else if (id == Events.DELETE_CONVO_THREAD.ordinal()) {
+                return new RequestDeleteConversation(responseAddress, user1, user2);
+            } /*else if (id == Events.SLEEP_1.ordinal()) {
                 return new RequestSleep1(responseAddress);
+            }*/
+            else if (id == Events.GET_UNREADS.ordinal()) {
+                return new RequestGetUnreadMessages(responseAddress, user1);
             } else {
                 throw new RuntimeException("The universe is broken");
             }
@@ -63,14 +72,14 @@ public abstract class LoadFaker {
         }
     }
 
-    void callFromId(int id, StorageAPI storageAPI) {
-        storageAPI.handleRequest(getRequestFromId(id, new Addressable(storageAPI.getResponseAddress())), Object.class); // Ignores the
+    void callFromId(int id, PolyglotAPI polyglotAPI) {
+        polyglotAPI.handleRequest(getRequestFromId(id, new Addressable(polyglotAPI.getResponseAddress())), Object.class); // Ignores the
         // output
         // anyways
     }
 
-    void callFromObjectType(String objectType, StorageAPI storageAPI) {
-        callFromId(findEventByName(objectType), storageAPI);
+    void callFromObjectType(String objectType, PolyglotAPI polyglotAPI) {
+        callFromId(findEventByName(objectType), polyglotAPI);
     }
 
     String getRandomWord(int length) {
@@ -91,9 +100,10 @@ public abstract class LoadFaker {
             messageBuilder.append(getRandomWord(charsLimit - 1)).append(" ");
         }
 
-        String sender = getRandomWord(charsLimit * wordsLimit);
-        return new Message(sender, messageBuilder.toString(), System.nanoTime());
+        String sender = getRandomWord(charsLimit - 1);
+        String recipient = getRandomWord(charsLimit - 1);
+        return new Message(sender, recipient, messageBuilder.toString(), System.nanoTime());
     }
 
-    abstract void nextRequest(StorageAPI storageAPI);
+    abstract void nextRequest(PolyglotAPI polyglotAPI);
 }

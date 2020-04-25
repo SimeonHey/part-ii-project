@@ -16,7 +16,7 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
                 ConstantsMAPP.KAFKA_TOPIC,
                 storageSystem.classMap);
             consumer.moveAllToLatest();
-            consumer.subscribe(storageSystem::kafkaServiceHandler);
+            consumer.subscribe(storageSystem::kafkaActionHandler);
             Executors.newFixedThreadPool(1).submit(consumer::listenBlockingly);
         });
     }
@@ -31,33 +31,31 @@ public class VavrStorageSystemFactory extends StorageSystemFactory<HashMap<Strin
     JointStorageSystem<HashMap<String, Integer>> simpleOlep() {
         return new JointStorageSystemBuilder<>("vavr simple olep", this.httpStorageSystem, wrapper,
             this.bootstrapProcedure)
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<HashMap<String, Integer>> self,
                                      HashMap<String, Integer> snapshot) {
-                    String recipient = ((RequestPostMessage) request).getRecipient();
-                    wrapper.postMessage(recipient);
+                    String recipient = ((RequestPostMessage) request).getMessage().getRecipient();
+                    wrapper.handleMessagePosted(recipient);
 
                     return Response.CONFIRMATION;
                 }
             })
-            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestConvoMessages.class, -1) {
                 @Override
-                Response handleEvent(EventBase request, JointStorageSystem<HashMap<String
-                    , Integer>> self, HashMap<String, Integer> snapshot) {
-                    wrapper.getAllMessages((RequestAllMessages) request);
-
+                Response handleEvent(EventBase request, JointStorageSystem<HashMap<String, Integer>> self,
+                                     HashMap<String, Integer> snapshot) {
+                    wrapper.handleConvoMessagesRequest((RequestConvoMessages) request);
                     return Response.CONFIRMATION;
                 }
             })
-            .registerAction(new ServiceBase<>(RequestGetUnreadMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestGetUnreadMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<HashMap<String, Integer>> self,
                                      HashMap<String, Integer> snapshot) {
                     String ofUser = ((RequestGetUnreadMessages) request).getOfUser();
-
                     return new Response(wrapper.getUnreadMessages(ofUser));
                 }
             }).build();

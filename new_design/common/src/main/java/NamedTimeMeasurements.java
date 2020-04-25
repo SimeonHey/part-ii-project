@@ -35,7 +35,5 @@ public class NamedTimeMeasurements {
         var activeTimer = startOrGetTimer(resource, uid);
         timeMeasurers.get(resource).stopTimerAndPublish(activeTimer);
         activeTimers.get(resource).remove(uid);
-
-//        System.out.println(rootName + " -> " + resource + " -> " + uid + " took " + elapsedMs + "ms");
     }
 }

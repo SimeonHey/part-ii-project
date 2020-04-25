@@ -4,7 +4,7 @@ public class NoSDUniformLoadFaker extends LoadFaker {
     }
 
     @Override
-    void nextRequest(StorageAPI storageAPI) {
-        callFromId(random.nextInt(4), storageAPI);
+    void nextRequest(PolyglotAPI polyglotAPI) {
+        callFromId(random.nextInt(4), polyglotAPI);
     }
 }

@@ -27,7 +27,7 @@ public class SqlUtils {
     }
 
     public static void executeStatement(String sql, Connection connection) throws SQLException {
-        LOGGER.info("Executing SQL statement of length " + sql.length());
+        LOGGER.info("Executing SQL statement " + sql); // TODO Change to length
 //        connection.setAutoCommit(true);
         Statement statement = connection.createStatement();
         statement.executeUpdate(sql);
@@ -42,11 +42,11 @@ public class SqlUtils {
 
     public static Message extractMessageFromResultSet(ResultSet resultSet) throws SQLException {
         return new Message(resultSet.getString(1), resultSet.getString(2),
-            resultSet.getLong(3));
+            resultSet.getString(3), resultSet.getLong(4));
     }
 
-    public static long extractUuidFromResultSet(ResultSet resultSet) throws SQLException {
-        return resultSet.getLong(3);
+    public static long extractIDFromResultSet(ResultSet resultSet) throws SQLException {
+        return resultSet.getLong(5);
     }
 
     public static int resultSetSize(ResultSet resultSet) throws SQLException {

@@ -55,6 +55,6 @@ public class HttpStorageSystem implements AutoCloseable {
     @Override
     public void close() throws Exception {
         LOGGER.info("Stopping the HTTP server");
-        httpServer.stop(0);
+//        httpServer.stop(1);
     }
 }

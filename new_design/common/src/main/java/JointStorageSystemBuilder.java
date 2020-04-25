@@ -6,7 +6,7 @@ import java.util.logging.Logger;
 public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
     private final static Logger LOGGER = Logger.getLogger(JointStorageSystemBuilder.class.getName());
 
-    private final Map<String, ServiceBase<Snap>> serviceHandlers = new HashMap<>();
+    private final Map<String, ActionBase<Snap>> serviceHandlers = new HashMap<>();
 
     private final Map<String, Class<? extends EventBase>> classMap = new HashMap<>();
     private final Map<String, Integer> classNumber = new HashMap<>();
@@ -26,13 +26,17 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
         this.kafkaConsumerSubscription = kafkaConsumerSubscription;
     }
 
-    public JointStorageSystemBuilder<Snap> registerAction(ServiceBase<Snap> serviceDescription) {
-        int number = this.classMap.size();
-        this.classMap.put(serviceDescription.getEventTypeToHandle(), serviceDescription.getClassOfObjectToHandle());
-        this.classNumber.put(serviceDescription.getEventTypeToHandle(), number);
+    public JointStorageSystemBuilder<Snap> registerAction(ActionBase<Snap> actionHandler) {
+        if (this.classMap.containsKey(actionHandler.getEventTypeToHandle())) {
+            throw new RuntimeException("Duplicated action " + actionHandler.getEventTypeToHandle());
+        }
 
-        this.serviceHandlers.put(serviceDescription.getEventTypeToHandle(), serviceDescription);
-        LOGGER.info("Registered a Kafka service: " + serviceDescription);
+        int number = this.classMap.size();
+        this.classMap.put(actionHandler.getEventTypeToHandle(), actionHandler.getClassOfObjectToHandle());
+        this.classNumber.put(actionHandler.getEventTypeToHandle(), number);
+
+        this.serviceHandlers.put(actionHandler.getEventTypeToHandle(), actionHandler);
+        LOGGER.info("Registered a Kafka service: " + actionHandler);
         return this;
     }
 
@@ -44,7 +48,7 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
             new MultithreadedEventQueueExecutor(2, new MultithreadedEventQueueExecutor.FifoScheduler()));
 
         // Subscribe to http listeners
-        httpStorageSystem.registerHandler("query", storageSystem::httpServiceHandler);
+        httpStorageSystem.registerHandler("query", storageSystem::httpActionHandler);
         httpStorageSystem.registerHandler("contact", storageSystem::externalContact);
 
         // Subscribe to Kafka

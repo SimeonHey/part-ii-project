@@ -8,16 +8,18 @@ public class SnapshotHolder<T> implements AutoCloseable {
     private T snapshot;
     private final Consumer<SnapshotHolder<T>> closeCallback;
     private final long snapshotId;
-    private final Function<T, T> refreshProcedure;
 
     public SnapshotHolder(T snapshot,
                           long snapshotId,
-                          Consumer<SnapshotHolder<T>> closeCallback,
-                          Function<T, T> refreshProcedure) {
+                          Consumer<SnapshotHolder<T>> closeCallback) {
         this.snapshot = snapshot;
         this.snapshotId = snapshotId;
         this.closeCallback = closeCallback;
-        this.refreshProcedure = refreshProcedure;
+    }
+
+    public SnapshotHolder<T> refresh(Function<T, T> refresher) {
+        this.snapshot = refresher.apply(this.snapshot);
+        return this;
     }
 
     public T getSnapshot() {
@@ -38,8 +40,6 @@ public class SnapshotHolder<T> implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        LOGGER.info("Refreshing the snapshot and calling the close callback...");
-        this.snapshot = refreshProcedure.apply(this.snapshot);
         closeCallback.accept(this);
     }
 }

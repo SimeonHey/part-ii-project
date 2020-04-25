@@ -17,14 +17,14 @@ public class ProportionsLoadFaker extends LoadFaker {
     }
 
     @Override
-    void nextRequest(StorageAPI storageAPI) {
+    void nextRequest(PolyglotAPI polyglotAPI) {
         final double current = random.nextDouble();
         double curSum = 0;
         for (Map.Entry<LoadFaker.Events, Double> entry : proportions.entrySet()) {
             curSum += entry.getValue();
 
             if (curSum >= current) {
-                callFromId(entry.getKey().ordinal(), storageAPI);
+                callFromId(entry.getKey().ordinal(), polyglotAPI);
                 return;
             }
         }

@@ -29,7 +29,7 @@ public class ChanneledCommunication {
 
         HashMap<Long, LinkedBlockingQueue<String>> hmOfInterest = getHm(response.isResponse());
 
-        LOGGER.info("Registering a " + (response.isResponse() ? "response" : "confirmation"));
+        LOGGER.info("Registering a " + (response.isResponse() ? "response" : "confirmation") + ": " + response);
 
         createChannelIfAbsent(hmOfInterest, response.getChannelUuid());
         hmOfInterest.get(response.getChannelUuid()).add(response.getSerializedResponse());

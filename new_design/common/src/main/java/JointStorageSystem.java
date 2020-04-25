@@ -16,7 +16,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     final String shortName;
     private final SnapshottedStorageSystem<Snap> wrapper;
 
-    private final Map<String, ServiceBase<Snap>> serviceHandlers;
+    private final Map<String, ActionBase<Snap>> actionHandlers;
 
     final Map<String, Class<? extends EventBase>> classMap;
     private final Map<String, Integer> classNumber;
@@ -32,12 +32,15 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     private final Meter completedOperations;
     private final Meter operationsReceived;
 
+    private final SettableGauge<Long> lastOffsetAcceptedGauge;
+    private final SettableGauge<Long> lastOffsetProcessedGauge;
+
     private final MultithreadedEventQueueExecutor databaseOpsExecutors;
     private final MultithreadedEventQueueExecutor responseExecutors;
 
     JointStorageSystem(String fullName,
                        SnapshottedStorageSystem<Snap> wrapper,
-                       Map<String, ServiceBase<Snap>> serviceHandlers,
+                       Map<String, ActionBase<Snap>> actionHandlers,
                        Map<String, Class<? extends EventBase>> classMap,
                        Map<String, Integer> classNumber,
                        MultithreadedEventQueueExecutor databaseOpsExecutors,
@@ -46,7 +49,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         this.shortName = Constants.getStorageSystemBaseName(fullName);
         this.wrapper = wrapper;
 
-        this.serviceHandlers = serviceHandlers;
+        this.actionHandlers = actionHandlers;
 
         this.classMap = classMap;
         this.classNumber = classNumber;
@@ -65,6 +68,10 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
             new TimeMeasurer(Constants.METRIC_REGISTRY, this.shortName + ".wait-for-contact-time");
         this.openedSnapshotsCounter = Constants.METRIC_REGISTRY.counter(this.shortName + ".opened-snapshots");
         waitForSnapshotCounter = Constants.METRIC_REGISTRY.counter(this.shortName + ".wait-for-snapshot-meter");
+        this.lastOffsetAcceptedGauge = new SettableGauge<>();
+        Constants.METRIC_REGISTRY.register(this.shortName + ".last-offset-accepted", this.lastOffsetAcceptedGauge);
+        this.lastOffsetProcessedGauge = new SettableGauge<>();
+        Constants.METRIC_REGISTRY.register(this.shortName + ".last-offset-processed", this.lastOffsetProcessedGauge);
     }
 
     // Handlers
@@ -73,7 +80,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         return "Thanks!".getBytes();
     }
 
-    byte[] httpServiceHandler(String serializedQuery) {
+    byte[] httpActionHandler(String serializedQuery) {
         LOGGER.info(fullName + " received an HTTP query of length " + serializedQuery.length() +
             ", deserializing...");
 
@@ -85,25 +92,29 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         return "Thanks, processing... :)".getBytes();
     }
 
-    void kafkaServiceHandler(ConsumerRecord<Long, EventBase> record) {
+    void kafkaActionHandler(ConsumerRecord<Long, EventBase> record) {
         EventBase event = record.value();
         LOGGER.info(String.format("%s received a Kafka query: %s", fullName, event.getEventType()));
 
         // The Kafka offset is only known after the message has been published
         event.getResponseAddress().setChannelID(record.offset());
+        lastOffsetAcceptedGauge.setValue(record.offset());
 
         requestArrived(event, wrapResponseWithMeta(event));
     }
 
     private Consumer<Response> wrapResponseWithMeta(EventBase event) {
         return (Response bareResponse) -> {
+            lastOffsetProcessedGauge.setValue(event.getResponseAddress().getChannelID());
+
             LOGGER.info(this.fullName + " sending response " + bareResponse);
             respond(event.getResponseAddress(), new ChanneledResponse(
                 this.shortName,
                 event.getEventType(),
                 event.getResponseAddress().getChannelID(),
                 bareResponse.getResponseToSendBack(),
-                bareResponse.isResponse()));
+                bareResponse.isResponse(),
+                event.expectsResponse()));
         };
     }
 
@@ -141,7 +152,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     }
 
     private void handleWithHandler(EventBase event,
-                                   ServiceBase<Snap> serviceHandler,
+                                   ActionBase<Snap> actionHandler,
                                    Consumer<Response> responseCallback) {
         LOGGER.info(this.fullName + " found a handler for event type " + event.getEventType());
 
@@ -150,7 +161,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
         totalProcessingTimeMeasurements.startTimer(objectTypeStr, uid);
 
-        if (serviceHandler.asyncHandleChannel != -1) {
+        if (actionHandler.asyncHandleChannel != -1) {
             SnapshotHolder<Snap> snapshotToUse = this.obtainConcurrentSnapshot();
             // Execute asynchronously
             int number = classNumber.get(event.getEventType());
@@ -158,8 +169,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
                 processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
                 try {
-                    Response response =
-                        serviceHandler.handleEvent(event, this, snapshotToUse.getSnapshot());
+                    Response response = actionHandler.handleEvent(event, this, snapshotToUse.getSnapshot());
                     responseCallback.accept(response);
                 } catch (Exception e) {
                     LOGGER.warning("Error when handling request: " + e);
@@ -177,8 +187,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
             // Execute in the current thread
             try {
-                Response response =
-                    serviceHandler.handleEvent(event, this, wrapper.getDefaultSnapshot());
+                Response response = actionHandler.handleEvent(event, this, wrapper.getDefaultSnapshot());
                 responseCallback.accept(response);
             } catch (Exception e) {
                 LOGGER.warning("Error when handling request: " + e);
@@ -196,14 +205,14 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         operationsReceived.mark();
         LOGGER.info("Request arrived for " + fullName + " of type " + eventBase.getEventType());
 
-        var serviceHandler = serviceHandlers.get(eventBase.getEventType());
+        var actionHandler = actionHandlers.get(eventBase.getEventType());
 
-        if (serviceHandler == null) {
+        if (actionHandler == null) {
             LOGGER.info("Couldn't find a handler for request of type " + eventBase.getEventType());
             return;
         }
 
-        handleWithHandler(eventBase, serviceHandler, responseCallback);
+        handleWithHandler(eventBase, actionHandler, responseCallback);
         LOGGER.info("Successfully processed (but possibly not completed) request of type " + eventBase.getEventType());
     }
 
@@ -229,8 +238,12 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
             "originalRequest " + originalRequest);
 
         String serialized = Constants.gson.toJson(
-            new ChanneledResponse(shortName, originalRequest.getEventType(),
-                originalRequest.getResponseAddress().getChannelID(), nextHopRequest, true));
+            new ChanneledResponse(shortName,
+                originalRequest.getEventType(),
+                originalRequest.getResponseAddress().getChannelID(),
+                nextHopRequest,
+                true,
+                true));
 
         try {
             HttpUtils.sendHttpRequest(contactAddress, serialized);
@@ -245,7 +258,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         return "JointStorageSystem{" +
             "fullName='" + fullName + '\'' +
             ", wrapper=" + wrapper +
-            ", serviceHandlers=" + serviceHandlers.keySet() +
+            ", actionHandlers=" + actionHandlers.keySet() +
             ", classMap=" + classMap.keySet() +
             ", databaseOpsExecutors=" + databaseOpsExecutors +
             ", responseExecutors=" + responseExecutors +

@@ -14,7 +14,7 @@ public class ResponseSearchMessage {
     @Override
     public String toString() {
         return "ResponseSearchMessage{" +
-            ", occurrences=" + occurrences +
+            "occurrences=" + occurrences +
             '}';
     }
 }

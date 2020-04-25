@@ -10,7 +10,7 @@ public class RequestMessageDetails extends EventBase {
         this.messageUUID = messageUUID;
     }
 
-    public Long getMessageUUID() {
+    public Long getMessageID() {
         return this.messageUUID;
     }
 }

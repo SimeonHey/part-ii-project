@@ -26,8 +26,9 @@ public class Addressable implements Serializable {
         return internetAddress;
     }
 
-    public void setChannelID(Long channelID) {
+    public Addressable setChannelID(Long channelID) {
         this.channelID = channelID;
+        return this;
     }
 
     @Override

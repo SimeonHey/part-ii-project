@@ -21,6 +21,7 @@ dependencies {
     implementation project(':message_app:storage_api')
     implementation project(':message_app:storage_systems:lucene')
     implementation project(':message_app:storage_systems:psql')
+    implementation project(':message_app:storage_systems:vavr')
 
 }
 

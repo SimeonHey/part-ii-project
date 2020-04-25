@@ -2,7 +2,6 @@ import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
-import com.google.gson.Gson;
 import io.vavr.Tuple2;
 
 import java.io.IOException;
@@ -11,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.LogManager;
 
 public class EntryPoint {
     private static void makeItDance(LoadFaker loadFaker,
@@ -21,11 +21,13 @@ public class EntryPoint {
 
         try (var psqlFactory = new PsqlStorageSystemsFactory(ConstantsMAPP.PSQL_LISTEN_PORT);
              var luceneFactory = new LuceneStorageSystemFactory(psqlAddress + "/psql/contact");
+             var vavrFactory = new VavrStorageSystemFactory(ConstantsMAPP.VAVR_LISTEN_PORT);
 
              var ignored = factoryStrategy.apply(psqlFactory);
              var ignored1 = factoryStrategy.apply(luceneFactory);
+             var ignored2 = factoryStrategy.apply(vavrFactory);
 
-             var storageApi = new StorageAPI(
+             var storageApi = new PolyglotAPI(
                  KafkaUtils.createProducer(ConstantsMAPP.TEST_KAFKA_ADDRESS, "StorageApi"),
                  new HttpStorageSystem(
                      "StorageAPI",
@@ -40,25 +42,18 @@ public class EntryPoint {
         }
     }
 
-    private static void fakeWithLoad(LoadFaker loadFaker, StorageAPI storageAPI) throws InterruptedException {
+    private static void fakeWithLoad(LoadFaker loadFaker, PolyglotAPI polyglotAPI) throws InterruptedException {
         while (true) {
-            loadFaker.nextRequest(storageAPI);
-
-//            Thread.sleep(100);
+            loadFaker.nextRequest(polyglotAPI);
+            Thread.sleep(10);
         }
     }
 
     public static void main(String[] args) throws IOException {
         System.out.println("HELLO!");
 
-        RequestSearchAndGetDetails requestSearchAndGetDetails = new RequestSearchAndGetDetails(
-            new Addressable("http://localhost:8000", 123L), "getafirst");
-        System.out.println(new Gson().toJson(requestSearchAndGetDetails));
-        if (5 == 5)
-            return;
-
         // Log to a file
-//        LogManager.getLogManager().reset();
+        LogManager.getLogManager().reset();
 //        Logger.getLogger("").addHandler(new FileHandler("mylog.txt"));
 
         ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(Constants.METRIC_REGISTRY)
@@ -81,14 +76,14 @@ public class EntryPoint {
             LoadFaker.Events.GET_MESSAGE_DETAILS, 0.24,
             LoadFaker.Events.SEARCH_MESSAGES, 0.24,
             LoadFaker.Events.SEARCH_AND_DETAILS, 0.24,
-            LoadFaker.Events.GET_ALL_MESSAGES, 0.04
+            LoadFaker.Events.GET_ALL_THREAD_MESSAGES, 0.04
         ));
 
         ProportionsLoadFaker noSDsLittleGetAll = new ProportionsLoadFaker(1_000, 1, Map.of(
             LoadFaker.Events.POST_MESSAGE, 0.30,
             LoadFaker.Events.GET_MESSAGE_DETAILS, 0.30,
             LoadFaker.Events.SEARCH_MESSAGES, 0.30,
-            LoadFaker.Events.GET_ALL_MESSAGES, 0.10
+            LoadFaker.Events.GET_ALL_THREAD_MESSAGES, 0.10
         ));
 
         ProportionsLoadFaker noGetAllLoadFaker = new ProportionsLoadFaker(1_000, 1, Map.of(
@@ -112,10 +107,11 @@ public class EntryPoint {
             LoadFaker.Events.POST_MESSAGE, 0.3,
             LoadFaker.Events.GET_MESSAGE_DETAILS, 0.3,
             LoadFaker.Events.SEARCH_MESSAGES, 0.3,
-            LoadFaker.Events.SEARCH_AND_DETAILS, 0.09,
-            LoadFaker.Events.SLEEP_1, 0.01));
+            LoadFaker.Events.SEARCH_AND_DETAILS, 0.1
+//            LoadFaker.Events.SLEEP_1, 0.01)
+        ));
 
-        makeItDance(new UniformLoadFaker(1_000, 1), (StorageSystemFactory::concurReads),
+        makeItDance(new UniformLoadFaker(1_000, 1), (StorageSystemFactory::sdRequestNoSession),
             List.of(/*new Tuple2<>(RequestAllMessages.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(RequestMessageDetails.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(RequestSearchMessage.class.getName(), ConstantsMAPP.TEST_LUCENE_REQUEST_ADDRESS)*/));

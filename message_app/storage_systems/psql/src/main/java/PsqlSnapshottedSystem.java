@@ -17,13 +17,14 @@ public class PsqlSnapshottedSystem extends SnapshottedStorageSystem<Connection>
         sequentialConnection = SqlUtils.freshDefaultConnection();
     }
 
-    private void insertMessage(String sender, String messageText, Long timestamp, Long uuid) throws SQLException {
-        String query = String.format("INSERT INTO messages (sender, messageText, uuid, timestamp) VALUES ($$%s$$, " +
-                "$$%s$$, %d, %d)",
-            sender,
-            messageText,
-            uuid,
-            timestamp);
+    private void insertMessage(Message message, Long messageId) throws SQLException {
+        String query = String.format("INSERT INTO messages (sender, recipient, messagetext, timesent, messageid) " +
+                "VALUES " + "($$%s$$, $$%s$$, $$%s$$, %d, %d)",
+            message.getSender(),
+            message.getRecipient(),
+            message.getMessageText(),
+            message.getTimestamp(),
+            messageId);
 
         SqlUtils.executeStatement(query, sequentialConnection);
     }
@@ -31,25 +32,25 @@ public class PsqlSnapshottedSystem extends SnapshottedStorageSystem<Connection>
     @Override
     public ResponseMessageDetails getMessageDetails(Connection connection,
                                                     RequestMessageDetails requestMessageDetails) {
-        LOGGER.info("Psql has to get details for message " + requestMessageDetails.getMessageUUID());
+        LOGGER.info("Psql has to get details for message " + requestMessageDetails.getMessageID());
 
         try {
-            String statement = String.format("SELECT * FROM messages WHERE uuid = %d",
-                requestMessageDetails.getMessageUUID());
+            String statement = String.format("SELECT * FROM messages WHERE messageid = %d",
+                requestMessageDetails.getMessageID());
 
             try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
                 boolean hasMore = resultSet.next();
                 if (!hasMore) {
-                    LOGGER.info("Psql got no results for message with uuid = " +
-                        requestMessageDetails.getMessageUUID());
-                    return new ResponseMessageDetails(null, requestMessageDetails.getMessageUUID());
+                    LOGGER.info("Psql got no results for message with messageid = " +
+                        requestMessageDetails.getMessageID());
+                    return new ResponseMessageDetails(null, requestMessageDetails.getMessageID());
                 }
 
-                LOGGER.info("Got a result for message with uuid = " +
-                    requestMessageDetails.getMessageUUID());
+                LOGGER.info("Got a result for message with messageid = " +
+                    requestMessageDetails.getMessageID());
                 return new ResponseMessageDetails(
                     SqlUtils.extractMessageFromResultSet(resultSet),
-                    SqlUtils.extractUuidFromResultSet(resultSet));
+                    SqlUtils.extractIDFromResultSet(resultSet));
             }
 
         } catch (SQLException e) {
@@ -59,21 +60,17 @@ public class PsqlSnapshottedSystem extends SnapshottedStorageSystem<Connection>
     }
 
     @Override
-    public ResponseAllMessages getAllMessages(Connection connection,
-                                              RequestAllMessages requestAllMessages) {
-        /*
-        try {
-            Thread.sleep(200); // TODO: Remove
-        } catch (InterruptedException e) {
-            LOGGER.warning("Error while waiting");
-            throw new RuntimeException(e);
-        }*/
-
+    public ResponseAllMessages getConvoMessages(Connection connection,
+                                                RequestConvoMessages requestConvoMessages) {
         LOGGER.info("Psql has to get ALL messages");
         ResponseAllMessages responseAllMessages = new ResponseAllMessages();
 
         try {
-            String statement = "SELECT * FROM messages";
+            String statement = String.format("SELECT * FROM messages WHERE " +
+                "(sender=$$%s$$ AND recipient=$$%s$$) OR (sender=$$%s$$ AND recipient=$$%s$$)",
+                requestConvoMessages.getRequester(), requestConvoMessages.getWithUser(),
+                requestConvoMessages.getWithUser(), requestConvoMessages.getRequester());
+
             try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
 
                 while (resultSet.next()) {
@@ -101,11 +98,7 @@ public class PsqlSnapshottedSystem extends SnapshottedStorageSystem<Connection>
     public void postMessage(RequestPostMessage requestPostMessage) {
         LOGGER.info("PSQL posts message " + requestPostMessage);
         try {
-            insertMessage(
-                requestPostMessage.getMessage().getSender(),
-                requestPostMessage.getMessage().getMessageText(),
-                requestPostMessage.getMessage().getTimestamp(), requestPostMessage.getResponseAddress().getChannelID()
-            );
+            insertMessage(requestPostMessage.getMessage(), requestPostMessage.getResponseAddress().getChannelID());
         } catch (SQLException e) {
             LOGGER.warning("Error when inserting message: " + e);
             throw new RuntimeException(e);
@@ -117,6 +110,20 @@ public class PsqlSnapshottedSystem extends SnapshottedStorageSystem<Connection>
         LOGGER.info("Psql is deleting ALL messages");
         try {
             SqlUtils.executeStatement("DELETE FROM messages", sequentialConnection);
+        } catch (SQLException e) {
+            LOGGER.warning("SQL exception when doing sql stuff in delete all messages: " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void deleteConvoThread(RequestDeleteConversation deleteConversation) {
+        LOGGER.info("Psql is deleting ALL messages");
+        try {
+            SqlUtils.executeStatement(String.format("DELETE FROM messages " +
+                "WHERE (sender=$$%s$$ AND recipient=$$%s$$) OR (sender=$$%s$$ AND recipient=$$%s$$)",
+                deleteConversation.getUser1(), deleteConversation.getUser2(),
+                deleteConversation.getUser2(), deleteConversation.getUser1()), sequentialConnection);
         } catch (SQLException e) {
             LOGGER.warning("SQL exception when doing sql stuff in delete all messages: " + e);
             throw new RuntimeException(e);

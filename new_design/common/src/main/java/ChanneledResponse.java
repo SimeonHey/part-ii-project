@@ -4,12 +4,14 @@ public class ChanneledResponse {
     private final String requestObjectType;
     private final String serializedResponse;
     private final boolean isResponse;
+    private final boolean expectsResponse;
 
     public ChanneledResponse(String fromStorageSystem,
                              String requestObjectType,
                              long channelUuid,
                              Object response,
-                             boolean isResponse) {
+                             boolean isResponse,
+                             boolean expectsResponse) {
         this.fromStorageSystem = fromStorageSystem;
         this.requestObjectType = requestObjectType;
 
@@ -17,6 +19,7 @@ public class ChanneledResponse {
         this.serializedResponse = Constants.gson.toJson(response);
 
         this.isResponse = isResponse;
+        this.expectsResponse = expectsResponse;
     }
 
     public String getFromStorageSystem() {
@@ -33,6 +36,10 @@ public class ChanneledResponse {
 
     public boolean isResponse() {
         return isResponse;
+    }
+
+    public boolean expectsResponse() {
+        return expectsResponse;
     }
 
     @Override

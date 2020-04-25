@@ -17,7 +17,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 ConstantsMAPP.KAFKA_TOPIC,
                 storageSystem.classMap);
             consumer.moveAllToLatest();
-            consumer.subscribe(storageSystem::kafkaServiceHandler);
+            consumer.subscribe(storageSystem::kafkaActionHandler);
             Executors.newFixedThreadPool(1).submit(consumer::listenBlockingly);
         });
 
@@ -36,7 +36,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql simple olep", httpStorageSystem, snapshottedWrapper,
             this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -45,8 +45,18 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVO
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -56,20 +66,20 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestConvoMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(snapshot,
-                        (RequestAllMessages) request);
+                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                        (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
                     return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerAction(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerAction(new ActionBase<>(RequestMessageDetails.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -77,7 +87,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
-            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, -1) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
@@ -97,7 +107,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql ser reads", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -106,8 +116,18 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVO THREAD
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -117,20 +137,20 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestConvoMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(snapshot,
-                        (RequestAllMessages) request);
+                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                        (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
                     return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerAction(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerAction(new ActionBase<>(RequestMessageDetails.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -138,7 +158,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
-            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, -1) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
@@ -158,7 +178,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql SD no session", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -167,8 +187,19 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVO THREAD
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
+
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -178,20 +209,20 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestConvoMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(snapshot,
-                        (RequestAllMessages) request);
+                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                        (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
                     return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerAction(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerAction(new ActionBase<>(RequestMessageDetails.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -200,7 +231,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // SEARCH AND DETAILS
-            .registerAction(new ServiceBase<>(RequestSearchAndGetDetails.class, -1) {
+            .registerAction(new ActionBase<>(RequestSearchAndGetDetails.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -213,7 +244,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return new Response(wrapper.getMessageDetails(snapshot, requestMessageDetails));
                 }
             })
-            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, -1) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
@@ -233,7 +264,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql SD WITH session", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -242,8 +273,18 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVO THREAD
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -253,20 +294,20 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestConvoMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(snapshot,
-                        (RequestAllMessages) request);
+                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                        (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
                     return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerAction(new ServiceBase<>(RequestMessageDetails.class, -1) {
+            .registerAction(new ActionBase<>(RequestMessageDetails.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -275,7 +316,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // SEARCH AND DETAILS
-            .registerAction(new ServiceBase<>(RequestSearchAndGetDetails.class, 0) {
+            .registerAction(new ActionBase<>(RequestSearchAndGetDetails.class, 0) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -294,7 +335,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return new Response(dbResponse);
                 }
             })
-            .registerAction(new ServiceBase<>(RequestSleep1.class, -1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, -1) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {
@@ -314,7 +355,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
         return new JointStorageSystemBuilder<>("psql concur reads", this.httpStorageSystem,
             this.snapshottedWrapper, this.bootstrapProcedure)
             // POST MESSAGE
-            .registerAction(new ServiceBase<>(RequestPostMessage.class, -1) {
+            .registerAction(new ActionBase<>(RequestPostMessage.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -323,8 +364,18 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
+            // DELETE CONVO THREAD
+            .registerAction(new ActionBase<>(RequestDeleteConversation.class, -1) {
+                @Override
+                Response handleEvent(EventBase request,
+                                     JointStorageSystem<Connection> self,
+                                     Connection snapshot) {
+                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    return Response.CONFIRMATION;
+                }
+            })
             // DELETE ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestDeleteAllMessages.class, -1) {
+            .registerAction(new ActionBase<>(RequestDeleteAllMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -334,20 +385,20 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // GET ALL MESSAGES
-            .registerAction(new ServiceBase<>(RequestAllMessages.class, 0) {
+            .registerAction(new ActionBase<>(RequestConvoMessages.class, 0) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getAllMessages(snapshot,
-                        (RequestAllMessages) request);
+                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                        (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
                     return new Response(dbResponse);
                 }
             })
             // GET MESSAGE DETAILS
-            .registerAction(new ServiceBase<>(RequestMessageDetails.class, 0) {
+            .registerAction(new ActionBase<>(RequestMessageDetails.class, 0) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -356,7 +407,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 }
             })
             // SEARCH AND DETAILS
-            .registerAction(new ServiceBase<>(RequestSearchAndGetDetails.class, 0) {
+            .registerAction(new ActionBase<>(RequestSearchAndGetDetails.class, 0) {
                 @Override
                 Response handleEvent(EventBase request,
                                      JointStorageSystem<Connection> self,
@@ -375,7 +426,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return new Response(dbResponse);
                 }
             })
-            .registerAction(new ServiceBase<>(RequestSleep1.class, 1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, 1) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {

@@ -6,11 +6,11 @@ public class SdBiasedLoadFaker extends LoadFaker {
     }
 
     @Override
-    void nextRequest(StorageAPI storageAPI) {
+    void nextRequest(PolyglotAPI polyglotAPI) {
         if (random.nextDouble() < SD_CHANCE) {
-            callFromObjectType(RequestSearchAndGetDetails.class.getName(), storageAPI);
+            callFromObjectType(RequestSearchAndGetDetails.class.getName(), polyglotAPI);
         } else {
-            callFromId(random.nextInt(5), storageAPI);
+            callFromId(random.nextInt(5), polyglotAPI);
         }
     }
 }

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
@@ -18,23 +19,23 @@ public class FullSystemTest {
     private static final long timestamp = System.nanoTime();
 
     @BeforeClass
-    public static void init() throws IOException {
+    public static void init() throws IOException, InterruptedException, ExecutionException {
         System.out.println("Initializing....");
         TestUtils.manualConsumerInitialization();
     }
 
     @Before
-    public void refresh() throws IOException {
+    public void refresh() throws IOException, InterruptedException, ExecutionException {
         System.out.println("Refreshing stuff...");
-        TestUtils. manualConsumerInitialization().storageAPI.clearConfirmationListeners();
+        TestUtils.manualConsumerInitialization().polyglotAPI.clearConfirmationListeners();
         TestUtils.manualConsumerInitialization().moveAllToLatest();
         TestUtils.deleteAllMessages();
     }
 
     @Test
     public void searchNoOccurrences() throws Exception {
-        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
-        TestUtils.postMessage(new Message("Simeon", "What's up", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Bobi",  "Hey", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Bobi",  "What's up", timestamp));
 
         ResponseSearchMessage responseSearchMessage = TestUtils.searchMessage("non-existent");
         LOGGER.info("Tester: Response from search is " + responseSearchMessage);
@@ -43,10 +44,10 @@ public class FullSystemTest {
 
     @Test
     public void searchHasOccurrences() throws Exception {
-        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
-        TestUtils.postMessage(new Message("Simeon", "What's up", timestamp));
-        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
-        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Bobi",  "Hey", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Bobi",  "What's up", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Bobi",  "Hey", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Bobi",  "Hey", timestamp));
 
         ResponseSearchMessage responseSearchMessage = TestUtils.searchMessage("Hey");
         assertEquals(3, responseSearchMessage.getOccurrences().size());
@@ -54,15 +55,18 @@ public class FullSystemTest {
 
     @Test
     public void searchAndDetailsSeparately() throws Exception {
-        Message toSend = new Message("Simeon", "Hey", timestamp);
+        Message toSend = new Message("Simeon", "Bobi",  "Hey", timestamp);
         int cnt = 10;
 
         for (int i = 0; i < cnt; i++) {
             TestUtils.postMessage(toSend);
 
-            TestUtils.postMessage(new Message("Someone else", "jibberish", timestamp));
-            TestUtils.postMessage(new Message("Someone else", "jibberish", timestamp));
-            TestUtils.postMessage(new Message("Someone else", "jibberish", timestamp));
+            TestUtils.postMessage(new Message("Someone else", "Someone else 2",
+                "jibberish", timestamp));
+            TestUtils.postMessage(new Message("Someone else", "Someone else 2",
+                "jibberish", timestamp));
+            TestUtils.postMessage(new Message("Someone else", "Someone else 2",
+                "jibberish", timestamp));
         }
 
 
@@ -81,24 +85,22 @@ public class FullSystemTest {
     @Test
     public void allMessages() throws Exception {
         List<Message> toSend = new ArrayList<>();
-        toSend.add(new Message("Simeon", "Hey", timestamp));
-        toSend.add(new Message("Simeon", "What's up", timestamp));
-        toSend.add(new Message("Simeon", "It's a bit lonely", timestamp));
-        toSend.add(new Message("Simeon", "But hey", timestamp));
-        toSend.add(new Message("Simeon", "It's Christmas", timestamp));
+        toSend.add(new Message("Simeon", "Bobi",  "Hey", timestamp));
+        toSend.add(new Message("Simeon", "Bobi",  "What's up", timestamp));
+        toSend.add(new Message("Simeon", "Bobi",  "It's a bit lonely", timestamp));
+        toSend.add(new Message("Simeon", "Bobi",  "But hey", timestamp));
+        toSend.add(new Message("Simeon", "Bobi",  "It's Christmas", timestamp));
 
         int additional = 10;
         for (int i = 0; i < additional; i++) {
-            toSend.add(new Message("Simeon", "Ho", timestamp));
+            toSend.add(new Message("Simeon", "Bobi",  "Ho", timestamp));
         }
-
 
         for (Message mes : toSend) {
             TestUtils.postMessage(mes);
         }
 
-
-        ResponseAllMessages responseAllMessages = TestUtils.allMessages();
+        ResponseAllMessages responseAllMessages = TestUtils.getAllConvoMessages("Simeon", "Bobi");
         System.out.println("Received " + responseAllMessages);
         assertEquals(toSend.size(), responseAllMessages.getMessages().size());
 
@@ -108,8 +110,8 @@ public class FullSystemTest {
 
     @Test
     public void searchAndDetailsNoOccurrences() throws Exception {
-        TestUtils.postMessage(new Message("Simeon", "Hey", timestamp));
-        TestUtils.postMessage(new Message("Simeon", "What's up", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Bobi",  "Hey", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Bobi",  "What's up", timestamp));
 
         ResponseMessageDetails responseMessageDetails = TestUtils.searchAndDetails("non-existent");
 
@@ -118,10 +120,10 @@ public class FullSystemTest {
 
     @Test
     public void searchAndDetails1Occurrence() throws Exception {
-        Message simeonHey = new Message("Simeon", "Hey", timestamp);
+        Message simeonHey = new Message("Simeon", "Bobi",  "Hey", timestamp);
 
         TestUtils.postMessage(simeonHey);
-        TestUtils.postMessage(new Message("Simeon", "What's up", timestamp));
+        TestUtils.postMessage(new Message("Simeon", "Bobi",  "What's up", timestamp));
 
         ResponseMessageDetails responseMessageDetails = TestUtils.searchAndDetails("Hey");
 
@@ -130,50 +132,50 @@ public class FullSystemTest {
 
     @Test
     public void searchAndDetailsSnapshotIsolated() throws Exception {
-        try (TestUtils.ManualTrinity manualTrinity = TestUtils.manualConsumerInitialization()) {
-            StorageAPI storageAPI = manualTrinity.storageAPI;
-            // Consume the NOP operation and make sure that they can communicate through Kafka
+        TestUtils.ManualTrinity manualTrinity = TestUtils.manualConsumerInitialization();
+        PolyglotAPI polyglotAPI = manualTrinity.polyglotAPI;
+        // Consume the NOP operation and make sure that they can communicate through Kafka
 //            assertEquals(1, manualTrinity.progressLucene());
 //            assertEquals(1, manualTrinity.progressPsql());
 
-            Message simeonHey = new Message("Simeon", "Hey", timestamp);
+        Message simeonHey = new Message("Simeon", "Bobi", "Hey", timestamp);
 
-            storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                simeonHey, ConstantsMAPP.DEFAULT_USER));
-            storageAPI.handleRequest(new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                new Message("Simeon", "What's up", timestamp), ConstantsMAPP.DEFAULT_USER));
+        polyglotAPI.handleRequest(new RequestPostMessage(new Addressable(polyglotAPI.getResponseAddress()),
+            simeonHey));
+        polyglotAPI.handleRequest(new RequestPostMessage(new Addressable(polyglotAPI.getResponseAddress()),
+            new Message("Simeon", "Bobi", "What's up", timestamp)));
 
-            // Post the messages
-            assertEquals(2, manualTrinity.progressLucene());
-            assertEquals(2, manualTrinity.progressPsql());
+        // Post the messages
+        assertEquals(2, manualTrinity.progressLucene());
+        assertEquals(2, manualTrinity.progressPsql());
 
-            // Search & details request
-            Future<ResponseMessageDetails> responseMessageDetailsFuture = storageAPI.handleRequest(
-                new RequestSearchAndGetDetails(new Addressable(storageAPI.getResponseAddress()),
-                    simeonHey.getMessageText()), ResponseMessageDetails.class);
+        // Search & details request
+        Future<ResponseMessageDetails> responseMessageDetailsFuture = polyglotAPI.handleRequest(
+            new RequestSearchAndGetDetails(new Addressable(polyglotAPI.getResponseAddress()),
+                simeonHey.getMessageText()), ResponseMessageDetails.class);
 
-            // Progress just PSQL, which should take a snapshot of the data, and "wait" for Lucene
-            assertEquals(1, manualTrinity.progressPsql());
+        // Progress just PSQL, which should take a snapshot of the data, and "wait" for Lucene
+        assertEquals(1, manualTrinity.progressPsql());
 
-            // Now delete all messages in PSQL
-            storageAPI.handleRequest(new RequestDeleteAllMessages(new Addressable(storageAPI.getResponseAddress())));
-            assertEquals(1, manualTrinity.progressPsql());
+        // Now delete all messages in PSQL
+        polyglotAPI.handleRequest(new RequestDeleteConversation(new Addressable(polyglotAPI.getResponseAddress()),
+            ConstantsMAPP.DEFAULT_USER, ConstantsMAPP.DEFAULT_USER));
+        assertEquals(1, manualTrinity.progressPsql());
 
-            // Make sure they are deleted in PSQL
-            Future<ResponseAllMessages> allMessagesFuture =
-                storageAPI.handleRequest(new RequestAllMessages(new Addressable(storageAPI.getResponseAddress()),
-                        ConstantsMAPP.DEFAULT_USER),
-                    ResponseAllMessages.class);
+        // Make sure they are deleted in PSQL
+        Future<ResponseAllMessages> allMessagesFuture =
+            polyglotAPI.handleRequest(new RequestConvoMessages(new Addressable(polyglotAPI.getResponseAddress()),
+                    ConstantsMAPP.DEFAULT_USER, ConstantsMAPP.DEFAULT_USER),
+                ResponseAllMessages.class);
 
-            assertEquals(1, manualTrinity.progressPsql());
-            assertEquals(0, allMessagesFuture.get().getMessages().size());
+        assertEquals(1, manualTrinity.progressPsql());
+        assertEquals(0, allMessagesFuture.get().getMessages().size());
 
-            // Now allow Lucene to progress and contact PSQL
-            assertEquals(3, manualTrinity.progressLucene());
+        // Now allow Lucene to progress and contact PSQL
+        assertEquals(3, manualTrinity.progressLucene());
 
-            // Check that the result which we got back from PSQL is legit
-            assertEquals(simeonHey, responseMessageDetailsFuture.get().getMessage());
-        }
+        // Check that the result which we got back from PSQL is legit
+        assertEquals(simeonHey, responseMessageDetailsFuture.get().getMessage());
     }
 
     @Test
@@ -183,7 +185,7 @@ public class FullSystemTest {
 
         // Post messages
         for (int i = 1; i <= messagesToPost; i++) {
-            TestUtils.postMessage(new Message("simeon", "Message " + i, timestamp));
+            TestUtils.postMessage(new Message("Simeon", "Bobi",  "Message " + i, timestamp));
         }
 
         Thread.sleep(5000);
@@ -209,15 +211,15 @@ public class FullSystemTest {
     @Test
     public void confirmationListenersWork() throws Exception {
         TestUtils.ManualTrinity manualTrinity = TestUtils.manualConsumerInitialization();
-        StorageAPI storageAPI = manualTrinity.storageAPI;
+        PolyglotAPI polyglotAPI = manualTrinity.polyglotAPI;
 
         manualTrinity.progressAll();
         Thread.sleep(1000);
-        manualTrinity.storageAPI.waitForAllConfirmations();
+        manualTrinity.polyglotAPI.waitForAllConfirmations();
 
         int numRequests = 1;
         ArrayBlockingQueue<ConfirmationResponse> confirmationResponses = new ArrayBlockingQueue<>(numRequests);
-        manualTrinity.storageAPI.registerConfirmationListener(confirmationResponse -> {
+        manualTrinity.polyglotAPI.registerConfirmationListener(confirmationResponse -> {
             try {
                 System.out.println("Received confirmation!");
                 confirmationResponses.put(confirmationResponse);
@@ -227,14 +229,14 @@ public class FullSystemTest {
         });
 
         for (int i = 0; i < numRequests; i++) {
-            manualTrinity.storageAPI.handleRequest(
-                new RequestPostMessage(new Addressable(storageAPI.getResponseAddress()),
-                    new Message("Simeon", "J Cole is the best", timestamp), ConstantsMAPP.DEFAULT_USER));
+            manualTrinity.polyglotAPI.handleRequest(
+                new RequestPostMessage(new Addressable(polyglotAPI.getResponseAddress()),
+                    new Message("Simeon", "Bobi",  "J Cole is the best", timestamp)));
         }
 
         manualTrinity.progressPsql();
         Thread.sleep(1000);
-        manualTrinity.storageAPI.waitForAllConfirmations();
+        manualTrinity.polyglotAPI.waitForAllConfirmations();
 
         assertEquals(numRequests, confirmationResponses.size());
         while (confirmationResponses.size() > 0) {
@@ -247,7 +249,7 @@ public class FullSystemTest {
 
         manualTrinity.progressLucene();
         Thread.sleep(1000);
-        manualTrinity.storageAPI.waitForAllConfirmations();
+        manualTrinity.polyglotAPI.waitForAllConfirmations();
 
         assertEquals(numRequests, confirmationResponses.size());
         while (confirmationResponses.size() > 0) {
@@ -264,7 +266,7 @@ public class FullSystemTest {
         int unreadsExpected = 100;
 
         for (int i = 0; i < unreadsExpected; i++) {
-            TestUtils.postMessage(new Message("simeon", "hey m8", timestamp), targetRecipient);
+            TestUtils.postMessage(new Message("Simeon", targetRecipient,  "hey m8", timestamp));
         }
 
         int unreads = TestUtils.getUnreads(targetRecipient);
@@ -273,22 +275,89 @@ public class FullSystemTest {
 
     @Test
     public void messageCountsDecreases() throws Exception {
+        String sender = "Simeon";
         String targetRecipient = "gosho";
         String otherRecipient = "other";
 
         int unreadsExpected = 100;
 
         for (int i = 0; i < unreadsExpected; i++) {
-            TestUtils.postMessage(new Message("simeon", "hey m8", timestamp), targetRecipient);
-            TestUtils.postMessage(new Message("simeon", "hey m8", timestamp), otherRecipient);
+            TestUtils.postMessage(new Message(sender, targetRecipient,  "hey m8", timestamp));
+            TestUtils.postMessage(new Message(sender, otherRecipient,  "hey m8", timestamp));
         }
 
-        TestUtils.allMessages(targetRecipient);
+        TestUtils.getAllConvoMessages(sender, targetRecipient); // This will trigger the count to be resetted
 
         int unreadsTarget = TestUtils.getUnreads(targetRecipient);
         int unreadsOther = TestUtils.getUnreads(otherRecipient);
 
         assertEquals(0, unreadsTarget);
         assertEquals(unreadsExpected, unreadsOther);
+    }
+
+    @Test
+    public void deleteConversationPsql() throws ExecutionException, InterruptedException {
+        String mainUser = "simeon";
+        String friend1 = "gosho";
+        String friend2 = "bobi";
+
+        Message message1 = new Message(mainUser, friend1, "Hey bro", timestamp);
+        Message message2 = new Message(mainUser, friend2, "Whats up", timestamp);
+
+        TestUtils.postMessage(message1);
+        TestUtils.postMessage(message2);
+
+        // Delete just one of those conversations
+        TestUtils.deleteConversation(mainUser, friend1);
+
+        // Assert it is deleted
+        ResponseAllMessages responseAllMessages = TestUtils.getAllConvoMessages(mainUser, friend1);
+        assertEquals(List.of(), responseAllMessages.getMessages());
+
+        // Assert that the other one is not deleted
+        ResponseAllMessages responseAllMessages1 = TestUtils.getAllConvoMessages(mainUser, friend2);
+        assertEquals(List.of(message2), responseAllMessages1.getMessages());
+
+        // Delete everything
+        TestUtils.deleteAllMessages();
+        // Assert that it is deleted everywhere
+        ResponseAllMessages responseAllMessages2 = TestUtils.getAllConvoMessages(mainUser, friend2);
+        assertEquals(List.of(), responseAllMessages2.getMessages());
+    }
+
+    @Test
+    public void deleteConversationLucene() throws ExecutionException, InterruptedException {
+        String mainUser = "simeon";
+        String friend1 = "gosho";
+        String friend2 = "bobi";
+
+        Message message1 = new Message(mainUser, friend1, "heybro", timestamp);
+        Message message2 = new Message(mainUser, friend2, "whatsup", timestamp);
+
+        ResponseSearchMessage responseSearchMessage1, responseSearchMessage2;
+
+        // Post and assert it is there
+        TestUtils.postMessage(message1);
+        TestUtils.postMessage(message2);
+
+        responseSearchMessage1 = TestUtils.searchMessage(message1.getMessageText());
+        responseSearchMessage2 = TestUtils.searchMessage(message2.getMessageText());
+        assertEquals(1, responseSearchMessage1.getOccurrences().size());
+        assertEquals(1, responseSearchMessage2.getOccurrences().size());
+
+        // Delete just one of those conversations and test
+        TestUtils.deleteConversation(mainUser, friend1);
+
+        responseSearchMessage1 = TestUtils.searchMessage(message1.getMessageText());
+        responseSearchMessage2 = TestUtils.searchMessage(message2.getMessageText());
+        assertEquals(0, responseSearchMessage1.getOccurrences().size());
+        assertEquals(1, responseSearchMessage2.getOccurrences().size());
+
+        // Delete everything and test that it is deleted everywhere
+        TestUtils.deleteAllMessages();
+        responseSearchMessage1 = TestUtils.searchMessage(message1.getMessageText());
+        responseSearchMessage2 = TestUtils.searchMessage(message2.getMessageText());
+        assertEquals(0, responseSearchMessage1.getOccurrences().size());
+        assertEquals(0, responseSearchMessage2.getOccurrences().size());
     }
 }

@@ -43,7 +43,7 @@ public class ConstantsMAPP {
     public static final String TEST_VAVR_REQUEST_ADDRESS = String.format("http://localhost:%d/vavr/query",
         VAVR_LISTEN_PORT);
 
-    public static final String TEST_KAFKA_ADDRESS = "192.168.1.51:9092";
+    public static final String TEST_KAFKA_ADDRESS = "localhost:9092"; //"192.168.1.51:9092";
     public static final String TEST_STORAGEAPI_ADDRESS = String.format("http://localhost:%d/server", STORAGEAPI_PORT);
     public static final String TEST_STORAGEAPI_ADDRESS_ALT = String.format("http://localhost:%d/server",
         STORAGEAPI_PORT_ALT);

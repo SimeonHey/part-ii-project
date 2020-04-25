@@ -15,27 +15,27 @@ class TestUtils {
     private static class Trinity implements AutoCloseable{
         public final JointStorageSystem psqlStorageSystem;
         public final JointStorageSystem luceneStorageSystem;
-        public final StorageAPI storageAPI;
+        public final PolyglotAPI polyglotAPI;
         protected JointStorageSystem vavrStorageSystem;
 
         Trinity(JointStorageSystem psqlStorageSystem,
                 JointStorageSystem luceneStorageSystem,
                 JointStorageSystem vavrStorageSystem,
-                StorageAPI storageAPI) {
+                PolyglotAPI polyglotAPI) {
             this.psqlStorageSystem = psqlStorageSystem;
             this.luceneStorageSystem = luceneStorageSystem;
             this.vavrStorageSystem = vavrStorageSystem;
 
-            this.storageAPI = storageAPI;
+            this.polyglotAPI = polyglotAPI;
         }
 
         @Override
         public void close() throws Exception {
             LOGGER.info("STARTING SHUTDOWN PROCEDURE");
 
-            this.storageAPI.handleRequest(new RequestDeleteAllMessages(
-                new Addressable(storageAPI.getResponseAddress()))); // Produces a Kafka message
-            this.storageAPI.waitForAllConfirmations();
+            this.polyglotAPI.handleRequest(new RequestDeleteAllMessages(
+                new Addressable(polyglotAPI.getResponseAddress()))); // Produces a Kafka message
+            this.polyglotAPI.waitForAllConfirmations();
             Thread.sleep(1000);
 
             /*this.storageAPI.close();
@@ -53,11 +53,11 @@ class TestUtils {
         ManualTrinity(JointStorageSystem psqlConcurReads,
                       JointStorageSystem luceneConcurReads,
                       JointStorageSystem vavrStorageSystem,
-                      StorageAPI storageAPI,
+                      PolyglotAPI polyglotAPI,
                       ManualConsumer manualConsumerPsql,
                       ManualConsumer manualConsumerLucene,
                       ManualConsumer manualConsumerVavr) {
-            super(psqlConcurReads, luceneConcurReads, vavrStorageSystem, storageAPI);
+            super(psqlConcurReads, luceneConcurReads, vavrStorageSystem, polyglotAPI);
             this.manualConsumerPsql = manualConsumerPsql;
             this.manualConsumerLucene = manualConsumerLucene;
             this.manualConsumerVavr = manualConsumerVavr;
@@ -99,14 +99,14 @@ class TestUtils {
             this.manualConsumerLucene.close();
             this.manualConsumerVavr.close();
 
-            this.storageAPI.close();
+            this.polyglotAPI.close();
             this.psqlStorageSystem.close();
             this.luceneStorageSystem.close();
             this.vavrStorageSystem.close();
         }
     }
 
-    static ManualTrinity manualConsumerInitialization() throws IOException {
+    static ManualTrinity manualConsumerInitialization() throws IOException, InterruptedException, ExecutionException {
         if (savedInstanceManual != null) {
             LOGGER.info("Returning MANUAL saved instance!");
             return savedInstanceManual;
@@ -116,7 +116,7 @@ class TestUtils {
         var psqlFactory = new PsqlStorageSystemsFactory(ConstantsMAPP.PSQL_LISTEN_PORT, (
             jointStorageSystem -> {
                 psqlManualConsumer[0] = new ManualConsumer(new DummyConsumer("psql"));
-                psqlManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
+                psqlManualConsumer[0].subscribe(jointStorageSystem::kafkaActionHandler);
             }));
         var psqlStorageSystem = storageSystemStrategy.apply(psqlFactory);
 
@@ -124,7 +124,7 @@ class TestUtils {
         var luceneFactory = new LuceneStorageSystemFactory(ConstantsMAPP.TEST_LUCENE_PSQL_CONTACT_ENDPOINT,
             jointStorageSystem -> {
                 luceneManualConsumer[0] = new ManualConsumer(new DummyConsumer("lucene"));
-                luceneManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
+                luceneManualConsumer[0].subscribe(jointStorageSystem::kafkaActionHandler);
             });
         JointStorageSystem luceneStorageSystem = storageSystemStrategy.apply(luceneFactory);
 
@@ -132,7 +132,7 @@ class TestUtils {
         var vavrFactory = new VavrStorageSystemFactory(ConstantsMAPP.VAVR_LISTEN_PORT,
             jointStorageSystem -> {
                 vavrManualConsumer[0] = new ManualConsumer(new DummyConsumer("vavr"));
-                vavrManualConsumer[0].subscribe(jointStorageSystem::kafkaServiceHandler);
+                vavrManualConsumer[0].subscribe(jointStorageSystem::kafkaActionHandler);
             });
         JointStorageSystem vavrStorageSystem = storageSystemStrategy.apply(vavrFactory);
 
@@ -141,9 +141,9 @@ class TestUtils {
             ConstantsMAPP.TEST_KAFKA_ADDRESS,
             ConstantsMAPP.KAFKA_TOPIC,
             ConstantsMAPP.STORAGEAPI_PORT);
-        StorageAPI storageAPI = StorageAPIUtils.initFromArgsWithDummyKafkaForTests(storageAPIInitArgs);
+        PolyglotAPI polyglotAPI = StorageAPIUtils.initFromArgsWithDummyKafkaForTests(storageAPIInitArgs);
 
-        savedInstanceManual = new ManualTrinity(psqlStorageSystem, luceneStorageSystem, vavrStorageSystem, storageAPI,
+        savedInstanceManual = new ManualTrinity(psqlStorageSystem, luceneStorageSystem, vavrStorageSystem, polyglotAPI,
             psqlManualConsumer[0], luceneManualConsumer[0], vavrManualConsumer[0]);
 
         deleteAllMessages();
@@ -151,7 +151,7 @@ class TestUtils {
     }
 
     static <T>T request(EventBase event, Class<T> responseType) throws ExecutionException, InterruptedException {
-        CompletableFuture<T> response = savedInstanceManual.storageAPI.handleRequest(event, responseType);
+        CompletableFuture<T> response = savedInstanceManual.polyglotAPI.handleRequest(event, responseType);
         savedInstanceManual.progressPsql();
         savedInstanceManual.progressLucene();
         savedInstanceManual.progressVavr();
@@ -159,58 +159,57 @@ class TestUtils {
         return response.get();
     }
 
-    static void request(EventBase event) {
-        savedInstanceManual.storageAPI.handleRequest(event);
+    static void request(EventBase event) throws InterruptedException, ExecutionException {
+        var future = savedInstanceManual.polyglotAPI.handleRequest(event);
 
         savedInstanceManual.progressPsql();
         savedInstanceManual.progressLucene();
         savedInstanceManual.progressVavr();
+
+        var confirmation = future.get();
+        LOGGER.info("Utils class successfully posted request " + event + " and got confirmation " + confirmation);
     }
 
     static void postMessage(Message message) throws ExecutionException, InterruptedException {
-        request(new RequestPostMessage(new Addressable(savedInstanceManual.storageAPI.getResponseAddress()),
-            message, ConstantsMAPP.DEFAULT_USER));
+        request(new RequestPostMessage(new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()), message));
     }
 
-    static void postMessage(Message message, String targetRecipient) throws ExecutionException, InterruptedException {
-        request(new RequestPostMessage(new Addressable(savedInstanceManual.storageAPI.getResponseAddress()),
-            message, targetRecipient));
+    static void deleteAllMessages() throws InterruptedException, ExecutionException {
+        request(new RequestDeleteAllMessages(new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress())));
     }
 
-    static void deleteAllMessages() {
-        request(new RequestDeleteAllMessages(new Addressable(savedInstanceManual.storageAPI.getResponseAddress())));
+    static void deleteConversation(String user1, String user2) throws InterruptedException, ExecutionException {
+        request(new RequestDeleteConversation(new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()),
+            user1, user2));
     }
 
     static ResponseSearchMessage searchMessage(String searchText) throws ExecutionException, InterruptedException {
         return request(new RequestSearchMessage(
-            new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), searchText),
+            new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()), searchText),
             ResponseSearchMessage.class);
     }
 
     static ResponseMessageDetails messageDetails(long messageID) throws ExecutionException, InterruptedException {
         return request(new RequestMessageDetails(
-            new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), messageID),
+            new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()), messageID),
             ResponseMessageDetails.class);
     }
 
-    static ResponseAllMessages allMessages() throws ExecutionException, InterruptedException {
-        return allMessages(ConstantsMAPP.DEFAULT_USER);
-    }
-
-    static ResponseAllMessages allMessages(String requester) throws ExecutionException, InterruptedException {
-        return request(new RequestAllMessages(
-                new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), requester),
+    static ResponseAllMessages getAllConvoMessages(String requester, String withUser) throws ExecutionException,
+        InterruptedException {
+        return request(new RequestConvoMessages(
+                new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()), requester, withUser),
             ResponseAllMessages.class);
     }
 
     static ResponseMessageDetails searchAndDetails(String searchText) throws ExecutionException, InterruptedException {
         return request(new RequestSearchAndGetDetails(
-                new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), searchText),
+                new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()), searchText),
             ResponseMessageDetails.class);
     }
 
     static Integer getUnreads(String ofUser) throws ExecutionException, InterruptedException {
         return request(new RequestGetUnreadMessages(
-            new Addressable(savedInstanceManual.storageAPI.getResponseAddress()), ofUser), Integer.class);
+            new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()), ofUser), Integer.class);
     }
 }
