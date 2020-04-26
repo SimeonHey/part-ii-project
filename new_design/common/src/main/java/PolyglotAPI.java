@@ -33,7 +33,7 @@ public class PolyglotAPI implements AutoCloseable {
 
     private final List<Tuple2<String, List<String>>> httpFavours;
 
-    private final NamedTimeMeasurements favoursTimeMeasurers = new NamedTimeMeasurements("favours");
+    private final NamedTimeMeasurements requestsTimeMeasurers = new NamedTimeMeasurements("favours");
     private final Counter outstandingFavoursCounter =
         Constants.METRIC_REGISTRY.counter("favours.outstanding-count");
     private final NamedMeterMeasurements opsSentMeters = new NamedMeterMeasurements("ops-sent-meters");
@@ -126,7 +126,9 @@ public class PolyglotAPI implements AutoCloseable {
             this.transactionsTopic,
             request);
 
-        favoursTimeMeasurers.startTimer(request.getEventType(), offset);
+        requestsTimeMeasurers.startTimer("psql." + request.getEventType(), offset);
+        requestsTimeMeasurers.startTimer("lucene." + request.getEventType(), offset);
+        requestsTimeMeasurers.startTimer("vavr." + request.getEventType(), offset);
 
         if (request.expectsResponse()) {
             return consumeAndDestroyAsync(offset, responseType, true);
@@ -142,7 +144,9 @@ public class PolyglotAPI implements AutoCloseable {
                                                                    Class<T> responseType) {
         long curId = httpRequestsUid.getAndDecrement();
         request.getResponseAddress().setChannelID(curId);
-        favoursTimeMeasurers.startTimer(request.getEventType(), curId);
+        requestsTimeMeasurers.startTimer("psql." + request.getEventType(), curId);
+        requestsTimeMeasurers.startTimer("lucene." + request.getEventType(), curId);
+        requestsTimeMeasurers.startTimer("vavr." + request.getEventType(), curId);
 
         try {
             HttpUtils.sendHttpRequest(address, Constants.gson.toJson(request));
@@ -178,9 +182,9 @@ public class PolyglotAPI implements AutoCloseable {
                 response.toString()));
 
             // Only register it if it is a response (i.e the end of the request for multihops)
-            if (response.isResponse() || !response.expectsResponse()) {
-                favoursTimeMeasurers.stopTimerAndPublish(response.getRequestObjectType(), response.getChannelUuid());
-            }
+            requestsTimeMeasurers.stopTimerAndPublish(response.getFromStorageSystem() + "." +
+                    response.getRequestObjectType(), response.getChannelUuid());
+
 
             // Notify all confirmation listeners as this is a response anyways
             ConfirmationResponse confirmationResponse = new ConfirmationResponse(response.getFromStorageSystem(),

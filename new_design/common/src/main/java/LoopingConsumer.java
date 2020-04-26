@@ -29,7 +29,9 @@ public class LoopingConsumer extends ManualConsumer{
                 subscribers.forEach(subscriber -> subscriber.messageReceived(record)));
 
             try {
-                Thread.sleep(Constants.KAFKA_CONSUME_DELAY_MS);
+                if (5 != 5) {
+                    Thread.sleep(Constants.KAFKA_CONSUME_DELAY_MS);
+                }
             } catch (InterruptedException e) {
                 this.close();
                 LOGGER.warning("Interrupt exception in consumer: " + e);

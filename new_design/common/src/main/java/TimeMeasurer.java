@@ -26,9 +26,9 @@ public class TimeMeasurer {
     }
 
     public long stopTimerAndPublish(ActiveTimer activeTimer) {
+        activeTimer.timerContext.stop();
         long elaspedMs = (System.nanoTime() - activeTimer.startTime) / 1000000;
         settableGauge.setValue(elaspedMs);
-        activeTimer.timerContext.stop();
 
         return elaspedMs;
     }

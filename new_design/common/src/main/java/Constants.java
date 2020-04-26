@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Constants {
     public static final String KAFKA_TOPIC = "transactions";
-    public static final int KAFKA_CONSUME_DELAY_MS = 100;
+    public static final int KAFKA_CONSUME_DELAY_MS = 1;
     public static final int KAFKA_DEFAULT_PARTITION = 0;
 
     public static final Addressable NO_RESPONSE = new Addressable("dontrespond", 0L);

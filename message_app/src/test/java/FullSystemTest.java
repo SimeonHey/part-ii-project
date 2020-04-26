@@ -360,4 +360,25 @@ public class FullSystemTest {
         assertEquals(0, responseSearchMessage1.getOccurrences().size());
         assertEquals(0, responseSearchMessage2.getOccurrences().size());
     }
+
+    @Test
+    public void playin() throws ExecutionException, InterruptedException {
+        Message message1 = new Message("simeon", "bobi", "heyyo", 1);
+        Message message2 = new Message("bobi", "simeon", "heyyo", 1);
+
+        TestUtils.postMessage(message1);
+        for (int i=1; i<=20; i++) {
+            TestUtils.sleep1(false);
+        }
+
+        long start = System.nanoTime();
+        System.out.println("Done sending sleeps!");
+        TestUtils.postMessage(message2);
+        ResponseAllMessages responseAllMessages = TestUtils.getAllConvoMessages("simeon", "bobi");
+        long elapsed = System.nanoTime() - start;
+
+        System.out.println("Elapsed " + elapsed / 1000000L + " ms");
+
+        assertEquals(List.of(message1, message2), responseAllMessages.getMessages());
+    }
 }

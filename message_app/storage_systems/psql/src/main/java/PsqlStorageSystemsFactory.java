@@ -65,7 +65,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
-            // GET ALL MESSAGES
+            // GET CONVO MESSAGES
             .registerAction(new ActionBase<>(RequestConvoMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
@@ -136,7 +136,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
-            // GET ALL MESSAGES
+            // GET CONVO MESSAGES
             .registerAction(new ActionBase<>(RequestConvoMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
@@ -208,7 +208,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
-            // GET ALL MESSAGES
+            // GET CONVO MESSAGES
             .registerAction(new ActionBase<>(RequestConvoMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
@@ -293,7 +293,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
-            // GET ALL MESSAGES
+            // GET CONVO MESSAGES
             .registerAction(new ActionBase<>(RequestConvoMessages.class, -1) {
                 @Override
                 Response handleEvent(EventBase request,
@@ -384,7 +384,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return Response.CONFIRMATION;
                 }
             })
-            // GET ALL MESSAGES
+            // GET CONVO MESSAGES
             .registerAction(new ActionBase<>(RequestConvoMessages.class, 0) {
                 @Override
                 Response handleEvent(EventBase request,
@@ -426,7 +426,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     return new Response(dbResponse);
                 }
             })
-            .registerAction(new ActionBase<>(RequestSleep1.class, 1) {
+            .registerAction(new ActionBase<>(RequestSleep1.class, 0) {
                 @Override
                 Response handleEvent(EventBase request, JointStorageSystem<Connection> self, Connection snapshot) {
                     try {

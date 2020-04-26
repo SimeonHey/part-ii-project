@@ -41,12 +41,15 @@ public class JointStorageSystemBuilder<Snap> implements AutoCloseable {
     }
 
     public JointStorageSystem<Snap> build() {
+        LOGGER.info("Building a storage system " + fullName + "...");
         // Construct the storage system
         var storageSystem = new JointStorageSystem<>(fullName, wrapper, serviceHandlers, classMap, classNumber,
-            new MultithreadedEventQueueExecutor(classMap.size(),
-                new MultithreadedEventQueueExecutor.StaticChannelsScheduler(classMap.size())),
+            new MultithreadedEventQueueExecutor(10,
+                //new MultithreadedEventQueueExecutor.FifoScheduler()),
+                 new MultithreadedEventQueueExecutor.StaticChannelsScheduler(classMap.size())), // A chennel for each
             new MultithreadedEventQueueExecutor(2, new MultithreadedEventQueueExecutor.FifoScheduler()));
 
+        LOGGER.info("Registering handlers...");
         // Subscribe to http listeners
         httpStorageSystem.registerHandler("query", storageSystem::httpActionHandler);
         httpStorageSystem.registerHandler("contact", storageSystem::externalContact);

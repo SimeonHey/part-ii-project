@@ -28,6 +28,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
     private final Counter openedSnapshotsCounter;
     private final Counter waitForSnapshotCounter;
+    private final TimeMeasurer waitForSnapshotTimeMeasurer;
 
     private final Meter completedOperations;
     private final Meter operationsReceived;
@@ -72,6 +73,8 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
         Constants.METRIC_REGISTRY.register(this.shortName + ".last-offset-accepted", this.lastOffsetAcceptedGauge);
         this.lastOffsetProcessedGauge = new SettableGauge<>();
         Constants.METRIC_REGISTRY.register(this.shortName + ".last-offset-processed", this.lastOffsetProcessedGauge);
+        this.waitForSnapshotTimeMeasurer = new TimeMeasurer(Constants.METRIC_REGISTRY, this.shortName +
+            ".wait-for-snapshot-time");
     }
 
     // Handlers
@@ -134,10 +137,12 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
     private SnapshotHolder<Snap> obtainConcurrentSnapshot() {
         waitForSnapshotCounter.inc();
+        var timer = waitForSnapshotTimeMeasurer.startTimer();
         var snapshot = wrapper.getConcurrentSnapshot();
 
         waitForSnapshotCounter.dec();
         openedSnapshotsCounter.inc(); // say you got it after you get it
+        waitForSnapshotTimeMeasurer.stopTimerAndPublish(timer);
         return snapshot;
     }
 
@@ -154,7 +159,6 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     private void handleWithHandler(EventBase event,
                                    ActionBase<Snap> actionHandler,
                                    Consumer<Response> responseCallback) {
-        LOGGER.info(this.fullName + " found a handler for event type " + event.getEventType());
 
         String objectTypeStr = event.getEventType();
         long uid = event.getResponseAddress().getChannelID();
@@ -165,7 +169,12 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
             SnapshotHolder<Snap> snapshotToUse = this.obtainConcurrentSnapshot();
             // Execute asynchronously
             int number = classNumber.get(event.getEventType());
+            LOGGER.info(this.shortName + " submitted job for running the handler for event type " +
+                event.getEventType() + " CONCURRENTLY");
+
             databaseOpsExecutors.submitOperation(number, () -> {
+                LOGGER.info(this.shortName + " is finally running the handler for event type " + event.getEventType() +
+                    " CONCURRENTLY");
                 processingTimeMeasurements.startTimer(objectTypeStr, uid);
 
                 try {
@@ -183,8 +192,9 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
                 completedOperations.mark();
             });
         } else {
+            LOGGER.info(this.shortName + " runs handler for event type " + event.getEventType() +
+                " IN THE MAIN THREAD");
             processingTimeMeasurements.startTimer(objectTypeStr, uid);
-
             // Execute in the current thread
             try {
                 Response response = actionHandler.handleEvent(event, this, wrapper.getDefaultSnapshot());
@@ -203,7 +213,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     private void requestArrived(EventBase eventBase,
                                 Consumer<Response> responseCallback) {
         operationsReceived.mark();
-        LOGGER.info("Request arrived for " + fullName + " of type " + eventBase.getEventType());
+        LOGGER.info("Request arrived for " + shortName + " of type " + eventBase.getEventType());
 
         var actionHandler = actionHandlers.get(eventBase.getEventType());
 

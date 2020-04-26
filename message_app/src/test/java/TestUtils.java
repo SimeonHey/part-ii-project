@@ -50,6 +50,15 @@ class TestUtils {
         public final ManualConsumer manualConsumerLucene;
         private final ManualConsumer manualConsumerVavr;
 
+        private final MultithreadedEventQueueExecutor executorPsql =
+            new MultithreadedEventQueueExecutor(1, new MultithreadedEventQueueExecutor.FifoScheduler());
+
+        private final MultithreadedEventQueueExecutor executorLucene =
+            new MultithreadedEventQueueExecutor(1, new MultithreadedEventQueueExecutor.FifoScheduler());
+
+        private final MultithreadedEventQueueExecutor executorVavr =
+            new MultithreadedEventQueueExecutor(1, new MultithreadedEventQueueExecutor.FifoScheduler());
+
         ManualTrinity(JointStorageSystem psqlConcurReads,
                       JointStorageSystem luceneConcurReads,
                       JointStorageSystem vavrStorageSystem,
@@ -77,6 +86,24 @@ class TestUtils {
 
         public int progressAll() {
             return progressPsql() + progressLucene() + progressVavr();
+        }
+
+        public void progressPsqlAsync() {
+            executorPsql.submitOperation(manualConsumerPsql::consumeAvailableRecords);
+        }
+
+        public void progressLuceneAsync() {
+            executorLucene.submitOperation(manualConsumerLucene::consumeAvailableRecords);
+        }
+
+        public void progressVavrAsync() {
+            executorVavr.submitOperation(manualConsumerVavr::consumeAvailableRecords);
+        }
+
+        public void progressAllAsync() {
+            progressPsqlAsync();
+            progressLuceneAsync();
+            progressVavrAsync();
         }
 
         public void moveAllToLatest() {
@@ -152,9 +179,7 @@ class TestUtils {
 
     static <T>T request(EventBase event, Class<T> responseType) throws ExecutionException, InterruptedException {
         CompletableFuture<T> response = savedInstanceManual.polyglotAPI.handleRequest(event, responseType);
-        savedInstanceManual.progressPsql();
-        savedInstanceManual.progressLucene();
-        savedInstanceManual.progressVavr();
+        savedInstanceManual.progressAll();
 
         return response.get();
     }
@@ -162,12 +187,17 @@ class TestUtils {
     static void request(EventBase event) throws InterruptedException, ExecutionException {
         var future = savedInstanceManual.polyglotAPI.handleRequest(event);
 
-        savedInstanceManual.progressPsql();
-        savedInstanceManual.progressLucene();
-        savedInstanceManual.progressVavr();
+        savedInstanceManual.progressAll();
 
         var confirmation = future.get();
         LOGGER.info("Utils class successfully posted request " + event + " and got confirmation " + confirmation);
+    }
+
+    static void requestNoWait(EventBase event) throws InterruptedException, ExecutionException {
+        System.out.println("DOING IT NO WAITING: " + event);
+        savedInstanceManual.polyglotAPI.handleRequest(event);
+        savedInstanceManual.progressAllAsync();
+        System.out.println("DID IT NO WAITING: " + event);
     }
 
     static void postMessage(Message message) throws ExecutionException, InterruptedException {
@@ -211,5 +241,13 @@ class TestUtils {
     static Integer getUnreads(String ofUser) throws ExecutionException, InterruptedException {
         return request(new RequestGetUnreadMessages(
             new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()), ofUser), Integer.class);
+    }
+
+    static void sleep1(boolean wait) throws ExecutionException, InterruptedException {
+        if (wait) {
+            request(new RequestSleep1(new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress())));
+        } else {
+            requestNoWait(new RequestSleep1(new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress())));
+        }
     }
 }

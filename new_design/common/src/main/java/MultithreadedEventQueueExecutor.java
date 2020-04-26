@@ -24,8 +24,9 @@ class MultithreadedEventQueueExecutor implements Closeable {
 
         @Override
         public Runnable takeOperation(int threadIdentifier) throws InterruptedException {
+            Runnable operation = operations.take();
             LOGGER.info("Thread with identifier " + threadIdentifier + " received an operation");
-            return operations.take();
+            return operation;
         }
     }
 
