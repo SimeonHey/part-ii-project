@@ -114,7 +114,7 @@ public class EntryPoint {
             .build(mine);
         csvReporter.start(1, TimeUnit.SECONDS);
 
-        makeItDance(new UniformLoadFaker(1_000, 1), (StorageSystemFactory::sdRequestNoSession),
+        makeItDance(new UniformLoadFaker(1_000, 1), (StorageSystemFactory::sdRequestSeparateSession),
             List.of(/*new Tuple2<>(RequestAllMessages.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(RequestMessageDetails.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
                 new Tuple2<>(RequestSearchMessage.class.getName(), ConstantsMAPP.TEST_LUCENE_REQUEST_ADDRESS)*/));
