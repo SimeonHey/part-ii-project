@@ -19,7 +19,7 @@ dependencies {
 //    implementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.29'
 
     implementation project(':message_app:common')
-    implementation project(path: ':new_design:common')
+    implementation project(path: ':olep_framework')
 
     implementation group: 'commons-cli', name: 'commons-cli', version: '1.4'
 

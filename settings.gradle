@@ -17,9 +17,8 @@ include 'services:webservice'
 
 rootProject.name = 'part-ii-project'
 
-include 'new_design'
-include 'new_design:common'
-include 'new_design:common:metrics'
+include 'olep_framework'
+//include 'olep_framework:metrics'
 
 
 include 'message_app'
@@ -27,6 +26,5 @@ include 'message_app:common'
 include 'message_app:storage_systems:psql'
 include 'message_app:storage_systems:lucene'
 include 'message_app:storage_systems:vavr'
-include 'message_app:storage_api'
 
 include 'benchmarking'
