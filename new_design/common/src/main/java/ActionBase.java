@@ -2,12 +2,12 @@ public abstract class ActionBase<Snap> {
     private String eventTypeToHandle;
 
     private Class<? extends EventBase> classOfObjectToHandle;
-    protected int asyncHandleChannel;
+    protected boolean handleConcurrentlyWithSnapshot;
 
-    public ActionBase(Class<? extends EventBase> classOfObjectToHandle, int asyncHandleChannel) {
+    public ActionBase(Class<? extends EventBase> classOfObjectToHandle, boolean handleConcurrentlyWithSnapshot) {
         this.classOfObjectToHandle = classOfObjectToHandle;
         this.eventTypeToHandle = classOfObjectToHandle.getName();
-        this.asyncHandleChannel = asyncHandleChannel;
+        this.handleConcurrentlyWithSnapshot = handleConcurrentlyWithSnapshot;
     }
 
     public String getEventTypeToHandle() {
@@ -19,14 +19,14 @@ public abstract class ActionBase<Snap> {
     }
 
     abstract Response handleEvent(EventBase request,
-                                  JointStorageSystem<Snap> self,
+                                  StorageSystem<Snap> self,
                                   Snap snapshot);
 
     @Override
     public String toString() {
         return "ServiceBase{" +
             "objectTypeToHandle='" + eventTypeToHandle + '\'' +
-            ", asyncHandleChannel=" + asyncHandleChannel +
+            ", asyncHandleChannel=" + handleConcurrentlyWithSnapshot +
             '}';
     }
 }

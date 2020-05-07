@@ -9,19 +9,19 @@ class TestUtils {
 
     private static ManualTrinity savedInstanceManual;
 
-    private final static Function<StorageSystemFactory, JointStorageSystem> storageSystemStrategy =
-        (StorageSystemFactory::concurReads);
+    private final static Function<StorageSystemFactory, StorageSystem> storageSystemStrategy =
+        (StorageSystemFactory::simpleOlep);
 
     private static class Trinity implements AutoCloseable{
-        public final JointStorageSystem psqlStorageSystem;
-        public final JointStorageSystem luceneStorageSystem;
+        public final StorageSystem psqlStorageSystem;
+        public final StorageSystem luceneStorageSystem;
         public final PolyglotAPI polyglotAPI;
-        protected JointStorageSystem vavrStorageSystem;
+        protected StorageSystem vavrStorageSystem;
 
-        Trinity(JointStorageSystem psqlStorageSystem,
-                JointStorageSystem luceneStorageSystem,
-                JointStorageSystem vavrStorageSystem,
-                PolyglotAPI polyglotAPI) {
+        Trinity(StorageSystem psqlStorageSystem,
+				StorageSystem luceneStorageSystem,
+				StorageSystem vavrStorageSystem,
+				PolyglotAPI polyglotAPI) {
             this.psqlStorageSystem = psqlStorageSystem;
             this.luceneStorageSystem = luceneStorageSystem;
             this.vavrStorageSystem = vavrStorageSystem;
@@ -59,13 +59,13 @@ class TestUtils {
         private final MultithreadedEventQueueExecutor executorVavr =
             new MultithreadedEventQueueExecutor(1, new MultithreadedEventQueueExecutor.FifoScheduler());
 
-        ManualTrinity(JointStorageSystem psqlConcurReads,
-                      JointStorageSystem luceneConcurReads,
-                      JointStorageSystem vavrStorageSystem,
-                      PolyglotAPI polyglotAPI,
-                      ManualConsumer manualConsumerPsql,
-                      ManualConsumer manualConsumerLucene,
-                      ManualConsumer manualConsumerVavr) {
+        ManualTrinity(StorageSystem psqlConcurReads,
+					  StorageSystem luceneConcurReads,
+					  StorageSystem vavrStorageSystem,
+					  PolyglotAPI polyglotAPI,
+					  ManualConsumer manualConsumerPsql,
+					  ManualConsumer manualConsumerLucene,
+					  ManualConsumer manualConsumerVavr) {
             super(psqlConcurReads, luceneConcurReads, vavrStorageSystem, polyglotAPI);
             this.manualConsumerPsql = manualConsumerPsql;
             this.manualConsumerLucene = manualConsumerLucene;
@@ -153,7 +153,7 @@ class TestUtils {
                 luceneManualConsumer[0] = new ManualConsumer(new DummyConsumer("lucene"));
                 luceneManualConsumer[0].subscribe(jointStorageSystem::kafkaActionHandler);
             });
-        JointStorageSystem luceneStorageSystem = storageSystemStrategy.apply(luceneFactory);
+        StorageSystem luceneStorageSystem = storageSystemStrategy.apply(luceneFactory);
 
         final ManualConsumer[] vavrManualConsumer = new ManualConsumer[1];
         var vavrFactory = new VavrStorageSystemFactory(ConstantsMAPP.VAVR_LISTEN_PORT,
@@ -161,7 +161,7 @@ class TestUtils {
                 vavrManualConsumer[0] = new ManualConsumer(new DummyConsumer("vavr"));
                 vavrManualConsumer[0].subscribe(jointStorageSystem::kafkaActionHandler);
             });
-        JointStorageSystem vavrStorageSystem = storageSystemStrategy.apply(vavrFactory);
+        StorageSystem vavrStorageSystem = storageSystemStrategy.apply(vavrFactory);
 
 
         StorageAPIUtils.StorageAPIInitArgs storageAPIInitArgs = StorageAPIUtils.StorageAPIInitArgs.customValues(
@@ -238,9 +238,9 @@ class TestUtils {
             ResponseMessageDetails.class);
     }
 
-    static Integer getUnreads(String ofUser) throws ExecutionException, InterruptedException {
-        return request(new RequestGetUnreadMessages(
-            new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()), ofUser), Integer.class);
+    static Integer getAllMessages(String ofUser1, String ofUser2) throws ExecutionException, InterruptedException {
+        return request(new RequestGetTotalNumberOfMessages(
+            new Addressable(savedInstanceManual.polyglotAPI.getResponseAddress()), ofUser1, ofUser2), Integer.class);
     }
 
     static void sleep1(boolean wait) throws ExecutionException, InterruptedException {

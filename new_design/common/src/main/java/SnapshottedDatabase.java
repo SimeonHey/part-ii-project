@@ -3,18 +3,18 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 
-public abstract class SnapshottedStorageSystem<S> implements AutoCloseable {
-    private final static Logger LOGGER = Logger.getLogger(SnapshottedStorageSystem.class.getName());
+public abstract class SnapshottedDatabase<S> implements AutoCloseable {
+    private final static Logger LOGGER = Logger.getLogger(SnapshottedDatabase.class.getName());
 
     private final Semaphore snapshotsSemaphore;
     private final BlockingQueue<SnapshotHolder<S>> concurrentConectionsPool;
 
-    protected SnapshottedStorageSystem(int maxSnapshots) {
+    protected SnapshottedDatabase(int maxSnapshots) {
         this.concurrentConectionsPool = new LinkedBlockingDeque<>(maxSnapshots);
         this.snapshotsSemaphore = new Semaphore(maxSnapshots);
     }
 
-    abstract S getDefaultSnapshot();
+    abstract S getMainDataView();
     abstract S freshConcurrentSnapshot();
     abstract S refreshSnapshot(S bareSnapshot); // TODO: I assume that this doesn't take up a snapshot resource, but
     // it does with Lucene

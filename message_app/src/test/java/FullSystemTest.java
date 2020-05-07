@@ -262,14 +262,15 @@ public class FullSystemTest {
 
     @Test
     public void messageCountsIncreases() throws Exception {
+        String sender = "simeon";
         String targetRecipient = "gosho";
         int unreadsExpected = 100;
 
         for (int i = 0; i < unreadsExpected; i++) {
-            TestUtils.postMessage(new Message("Simeon", targetRecipient,  "hey m8", timestamp));
+            TestUtils.postMessage(new Message(sender, targetRecipient,  "hey m8", timestamp));
         }
 
-        int unreads = TestUtils.getUnreads(targetRecipient);
+        int unreads = TestUtils.getAllMessages(sender, targetRecipient);
         assertEquals(unreadsExpected, unreads);
     }
 
@@ -286,10 +287,10 @@ public class FullSystemTest {
             TestUtils.postMessage(new Message(sender, otherRecipient,  "hey m8", timestamp));
         }
 
-        TestUtils.getAllConvoMessages(sender, targetRecipient); // This will trigger the count to be resetted
+        TestUtils.deleteConversation(sender, targetRecipient); // This will trigger the count to be resetted
 
-        int unreadsTarget = TestUtils.getUnreads(targetRecipient);
-        int unreadsOther = TestUtils.getUnreads(otherRecipient);
+        int unreadsTarget = TestUtils.getAllMessages(sender, targetRecipient);
+        int unreadsOther = TestUtils.getAllMessages(sender, otherRecipient);
 
         assertEquals(0, unreadsTarget);
         assertEquals(unreadsExpected, unreadsOther);
@@ -339,6 +340,7 @@ public class FullSystemTest {
         // Post and assert it is there
         TestUtils.postMessage(message1);
         TestUtils.postMessage(message2);
+        System.out.println("Posted messages, searching now");
 
         responseSearchMessage1 = TestUtils.searchMessage(message1.getMessageText());
         responseSearchMessage2 = TestUtils.searchMessage(message2.getMessageText());

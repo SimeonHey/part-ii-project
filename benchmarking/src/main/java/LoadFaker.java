@@ -6,11 +6,11 @@ public abstract class LoadFaker {
         GET_ALL_THREAD_MESSAGES(RequestConvoMessages.class),
         GET_MESSAGE_DETAILS(RequestMessageDetails.class),
         SEARCH_MESSAGES(RequestSearchMessage.class),
-        SEARCH_AND_DETAILS(RequestSearchAndGetDetails.class),
 //        SLEEP_1(RequestSleep1.class),
 //        DELETE_ALL_MESSAGE(RequestDeleteAllMessages.class),
         DELETE_CONVO_THREAD(RequestDeleteConversation.class),
-        GET_UNREADS(RequestGetUnreadMessages.class);
+        GET_TOTAL_MESSAGES(RequestGetTotalNumberOfMessages.class),
+        SEARCH_AND_DETAILS(RequestSearchAndGetDetails.class);
         
         private final Class<? extends EventBase> theClass;
 
@@ -41,8 +41,8 @@ public abstract class LoadFaker {
 
     EventBase getRequestFromId(int id, Addressable responseAddress) {
         try {
-            String user1 = getRandomWord(charsLimit-1);
-            String user2 = getRandomWord(charsLimit-1);
+            String user1 = getRandomWord(charsLimit - 1);
+            String user2 = getRandomWord(charsLimit - 1);
             String word = getRandomWord(charsLimit - 1);
             Message message = getRandomMessage();
 
@@ -62,8 +62,8 @@ public abstract class LoadFaker {
             } /*else if (id == Events.SLEEP_1.ordinal()) {
                 return new RequestSleep1(responseAddress);
             }*/
-            else if (id == Events.GET_UNREADS.ordinal()) {
-                return new RequestGetUnreadMessages(responseAddress, user1);
+            else if (id == Events.GET_TOTAL_MESSAGES.ordinal()) {
+                return new RequestGetTotalNumberOfMessages(responseAddress, user1, user2);
             } else {
                 throw new RuntimeException("The universe is broken");
             }
@@ -97,7 +97,7 @@ public abstract class LoadFaker {
         StringBuilder messageBuilder = new StringBuilder();
 
         for (int i=0; i<wordsLimit; i++) {
-            messageBuilder.append(getRandomWord(charsLimit - 1)).append(" ");
+            messageBuilder.append(getRandomWord(charsLimit)).append(" ");
         }
 
         String sender = getRandomWord(charsLimit - 1);

@@ -12,11 +12,13 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.LogManager;
 
 public class EntryPoint {
     private static void makeItDance(LoadFaker loadFaker,
-                                    Function<StorageSystemFactory, JointStorageSystem> factoryStrategy,
-                                    List<Tuple2<String, List<String>>> httpFavoursList) {
+                                    Function<StorageSystemFactory, StorageSystem> factoryStrategy,
+                                    List<Tuple2<String, List<String>>> httpFavoursList,
+                                    long secondsToHoldRate) {
         String selfAddress = "192.168.1.50";
         String psqlAddress = String.format("http://localhost:%d", ConstantsMAPP.PSQL_LISTEN_PORT);
 
@@ -38,20 +40,20 @@ public class EntryPoint {
                  httpFavoursList)) {
 
             System.out.println("Initialized stuff! Faking load...");
-            fakeWithLoad(loadFaker, storageApi);
+            fakeWithLoad(loadFaker, storageApi, secondsToHoldRate);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static void fakeWithLoad(LoadFaker loadFaker, PolyglotAPI polyglotAPI) throws InterruptedException, ExecutionException {
+    private static void fakeWithLoad(LoadFaker loadFaker,
+                                     PolyglotAPI polyglotAPI,
+                                     long secondsToHoldRate) throws InterruptedException, ExecutionException {
         long targetRatePerSecond = 10;
         long nanosPerSec = 1_000_000_000;
         long nanosPerRequest = nanosPerSec / targetRatePerSecond;
-//        long millisPerRequest = nanosPerRequest / 1_000_000;
-//        long toSleep = millisPerRequest / 5;
-        long nanosPerChange = nanosPerSec * 120L; // Each 60 seconds
+        long nanosPerChange = nanosPerSec * secondsToHoldRate; // Each 60 seconds
 
         long lastRatechangeTime = System.nanoTime();
         long lastSentTime = System.nanoTime();
@@ -66,13 +68,13 @@ public class EntryPoint {
             if (elapsedLastRequest > nanosPerRequest) {
                 loadFaker.nextRequest(polyglotAPI);
                 lastSentTime += nanosPerRequest;
-//                System.out.println("Sent at " + lastSentTime);
             }
 
             long elapsedRatechangeTime = System.nanoTime() - lastRatechangeTime;
             if (elapsedRatechangeTime > nanosPerChange) {
                 lastRatechangeTime = System.nanoTime();
                 targetRatePerSecond += 10;
+
                 nanosPerRequest = nanosPerSec / targetRatePerSecond;
                 polyglotAPI.handleRequest(
                     new RequestDeleteAllMessages(new Addressable(polyglotAPI.getResponseAddress()))).get();
@@ -86,7 +88,7 @@ public class EntryPoint {
         System.out.println("HELLO!");
 
         // Log to a file
-//        LogManager.getLogManager().reset();
+        LogManager.getLogManager().reset();
 //        Logger.getLogger("").addHandler(new FileHandler("mylog.txt"));
 
         ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(Constants.METRIC_REGISTRY)
@@ -114,9 +116,18 @@ public class EntryPoint {
             .build(mine);
         csvReporter.start(1, TimeUnit.SECONDS);
 
-        makeItDance(new UniformLoadFaker(1_000, 1), (StorageSystemFactory::sdRequestSeparateSession),
-            List.of(/*new Tuple2<>(RequestAllMessages.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
-                new Tuple2<>(RequestMessageDetails.class.getName(), ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS),
-                new Tuple2<>(RequestSearchMessage.class.getName(), ConstantsMAPP.TEST_LUCENE_REQUEST_ADDRESS)*/));
+        makeItDance(new NoSDUniformLoadFaker(5, 200),
+            (StorageSystemFactory::simpleOlep),
+            List.of(
+                new Tuple2<>(RequestConvoMessages.class.getName(), List.of(
+                    ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS)),
+                new Tuple2<>(RequestMessageDetails.class.getName(), List.of(
+                    ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS)),
+                new Tuple2<>(RequestSearchMessage.class.getName(), List.of(
+                    ConstantsMAPP.TEST_LUCENE_REQUEST_ADDRESS)),
+                new Tuple2<>(RequestGetTotalNumberOfMessages.class.getName(), List.of(
+                    ConstantsMAPP.TEST_VAVR_REQUEST_ADDRESS))
+                    ),
+            120L);
     }
 }

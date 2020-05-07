@@ -10,7 +10,7 @@ public class Constants {
 
     public static final Addressable NO_RESPONSE = new Addressable("dontrespond", 0L);
 
-    public static final long STORAGE_SYSTEMS_POLL_TIMEOUT = 30;
+    public static final long STORAGE_SYSTEMS_POLL_TIMEOUT = 30; // TODO: This might be too small
     public static final TimeUnit STORAGE_SYSTEMS_POLL_UNIT = TimeUnit.SECONDS;
 
     public static final MetricRegistry METRIC_REGISTRY = new MetricRegistry();

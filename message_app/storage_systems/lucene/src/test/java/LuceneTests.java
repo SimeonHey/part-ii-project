@@ -48,19 +48,19 @@ public class LuceneTests {
 
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(alwaysThereAddress, alwaysThere));
 
-        IndexReader snapshotReader2 = luceneSnapshottedWrapper.getDefaultSnapshot(); // Reader 2 won't
+        IndexReader snapshotReader2 = luceneSnapshottedWrapper.getMainDataView(); // Reader 2 won't
         // see subsequent updates
 
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(inReader1Address, inReader1));
 
-        IndexReader snapshotReader = luceneSnapshottedWrapper.getDefaultSnapshot(); // Reader 1 won't
+        IndexReader snapshotReader = luceneSnapshottedWrapper.getMainDataView(); // Reader 1 won't
         // see subsequent updates
 
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(inNoneAddress, inNone));
 
         // Assert alwaysThere is always there!
         assertEquals(Collections.singletonList(alwaysThereId),
-            luceneSnapshottedWrapper.searchMessage(luceneSnapshottedWrapper.getDefaultSnapshot(),
+            luceneSnapshottedWrapper.searchMessage(luceneSnapshottedWrapper.getMainDataView(),
                 requestAlwaysThere).getOccurrences());
         assertEquals(Collections.singletonList(alwaysThereId),
             luceneSnapshottedWrapper.searchMessage(snapshotReader,
@@ -71,7 +71,7 @@ public class LuceneTests {
 
         // Assert inReader1 is in reader1 and the non-snapshotted version
         assertEquals(Collections.singletonList(inReader1Id),
-            luceneSnapshottedWrapper.searchMessage(luceneSnapshottedWrapper.getDefaultSnapshot(),
+            luceneSnapshottedWrapper.searchMessage(luceneSnapshottedWrapper.getMainDataView(),
                 requestInReader1).getOccurrences());
         assertEquals(Collections.singletonList(inReader1Id),
             luceneSnapshottedWrapper.searchMessage(snapshotReader,
@@ -81,7 +81,7 @@ public class LuceneTests {
 
         // Assert inNone is only in the non-snapshotted version
         assertEquals(Collections.singletonList(inNoneId),
-            luceneSnapshottedWrapper.searchMessage(luceneSnapshottedWrapper.getDefaultSnapshot(),
+            luceneSnapshottedWrapper.searchMessage(luceneSnapshottedWrapper.getMainDataView(),
                 inNoneRequest).getOccurrences());
         assertEquals(Collections.emptyList(),
             luceneSnapshottedWrapper.searchMessage(snapshotReader, inNoneRequest).getOccurrences());
@@ -105,7 +105,7 @@ public class LuceneTests {
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(Constants.NO_RESPONSE.setChannelID(1L), message1));
         luceneSnapshottedWrapper.postMessage(new RequestPostMessage(Constants.NO_RESPONSE.setChannelID(2L), message2));
         
-        IndexReader defaultSnapshot = luceneSnapshottedWrapper.getDefaultSnapshot();
+        IndexReader defaultSnapshot = luceneSnapshottedWrapper.getMainDataView();
         
         responseSearch1 = luceneSnapshottedWrapper.searchMessage(luceneSnapshottedWrapper.refreshSnapshot(defaultSnapshot),
                 new RequestSearchMessage(Constants.NO_RESPONSE.setChannelID(1L), message1.getMessageText()));

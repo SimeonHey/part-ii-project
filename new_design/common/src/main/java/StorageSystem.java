@@ -7,14 +7,14 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-public class JointStorageSystem<Snap> implements AutoCloseable {
-    private final static Logger LOGGER = Logger.getLogger(JointStorageSystem.class.getName());
+public class StorageSystem<Snap> implements AutoCloseable {
+    private final static Logger LOGGER = Logger.getLogger(StorageSystem.class.getName());
 
     private final ChanneledCommunication channeledCommunication = new ChanneledCommunication();
 
     final String fullName;
-    final String shortName;
-    private final SnapshottedStorageSystem<Snap> wrapper;
+    private final String shortName;
+    private final SnapshottedDatabase<Snap> wrapper;
 
     private final Map<String, ActionBase<Snap>> actionHandlers;
 
@@ -39,13 +39,13 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
     private final MultithreadedEventQueueExecutor databaseOpsExecutors;
     private final MultithreadedEventQueueExecutor responseExecutors;
 
-    JointStorageSystem(String fullName,
-                       SnapshottedStorageSystem<Snap> wrapper,
-                       Map<String, ActionBase<Snap>> actionHandlers,
-                       Map<String, Class<? extends EventBase>> classMap,
-                       Map<String, Integer> classNumber,
-                       MultithreadedEventQueueExecutor databaseOpsExecutors,
-                       MultithreadedEventQueueExecutor responseExecutors) {
+    StorageSystem(String fullName,
+                  SnapshottedDatabase<Snap> wrapper,
+                  Map<String, ActionBase<Snap>> actionHandlers,
+                  Map<String, Class<? extends EventBase>> classMap,
+                  Map<String, Integer> classNumber,
+                  MultithreadedEventQueueExecutor databaseOpsExecutors,
+                  MultithreadedEventQueueExecutor responseExecutors) {
         this.fullName = fullName;
         this.shortName = Constants.getStorageSystemBaseName(fullName);
         this.wrapper = wrapper;
@@ -165,7 +165,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
 
         totalProcessingTimeMeasurements.startTimer(objectTypeStr, uid);
 
-        if (actionHandler.asyncHandleChannel != -1) {
+        if (actionHandler.handleConcurrentlyWithSnapshot) {
             SnapshotHolder<Snap> snapshotToUse = this.obtainConcurrentSnapshot();
             // Execute asynchronously
             int number = classNumber.get(event.getEventType());
@@ -197,7 +197,7 @@ public class JointStorageSystem<Snap> implements AutoCloseable {
             processingTimeMeasurements.startTimer(objectTypeStr, uid);
             // Execute in the current thread
             try {
-                Response response = actionHandler.handleEvent(event, this, wrapper.getDefaultSnapshot());
+                Response response = actionHandler.handleEvent(event, this, wrapper.getMainDataView());
                 responseCallback.accept(response);
             } catch (Exception e) {
                 LOGGER.warning("Error when handling request: " + e);

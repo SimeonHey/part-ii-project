@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-public class PsqlSnapshottedSystem extends SnapshottedStorageSystem<Connection>
+public class PsqlSnapshottedSystem extends SnapshottedDatabase<Connection>
     implements MessageAppDatabase<Connection> {
 
     private static final Logger LOGGER = Logger.getLogger(PsqlSnapshottedSystem.class.getName());
@@ -131,7 +131,7 @@ public class PsqlSnapshottedSystem extends SnapshottedStorageSystem<Connection>
     }
 
     @Override
-    public Connection getDefaultSnapshot() {
+    public Connection getMainDataView() {
         return sequentialConnection;
     }
 

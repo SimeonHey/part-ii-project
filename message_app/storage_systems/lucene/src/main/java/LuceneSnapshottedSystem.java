@@ -32,7 +32,7 @@ import java.util.logging.Logger;
 /**
  * Proxy for Lucene transactions
  */
-class LuceneSnapshottedSystem extends SnapshottedStorageSystem<IndexReader>
+class LuceneSnapshottedSystem extends SnapshottedDatabase<IndexReader>
     implements MessageAppDatabase<IndexReader>{
 
     private static final Logger LOGGER = Logger.getLogger(LuceneSnapshottedSystem.class.getName());
@@ -189,7 +189,7 @@ class LuceneSnapshottedSystem extends SnapshottedStorageSystem<IndexReader>
     }
 
     @Override
-    public IndexReader getDefaultSnapshot() {
+    public IndexReader getMainDataView() {
         return freshConcurrentSnapshot();
     }
 
