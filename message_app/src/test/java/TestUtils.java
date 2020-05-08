@@ -115,12 +115,6 @@ class TestUtils {
         @Override
         public void close() throws Exception {
             LOGGER.info("STARTING SHUTDOWN PROCEDURE");
-            /*this.storageAPI.deleteAllMessages();
-
-            this.progressLucene();
-            this.progressPsql();
-
-            Thread.sleep(1000); // TODO: Could do with a hook in the producers*/
 
             this.manualConsumerPsql.close();
             this.manualConsumerLucene.close();

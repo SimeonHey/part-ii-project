@@ -23,8 +23,8 @@ public class VavrSnapshottedDatabase extends SnapshottedDatabase<HashMap<Tuple2<
 		var pair = getPair(user1, user2);
 
 		// Updates are always applied to the main data view
-		Integer previousUnread = getTotalMessages(mainDataView, user1, user2);
-		mainDataView = mainDataView.put(pair, previousUnread + 1);
+		Integer previousCount = getTotalMessages(mainDataView, user1, user2);
+		mainDataView = mainDataView.put(pair, previousCount + 1);
 	}
 
 	void deleteConversation(String user1, String user2) {

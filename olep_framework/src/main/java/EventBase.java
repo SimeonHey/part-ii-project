@@ -4,7 +4,7 @@ public class EventBase {
     private final boolean expectsResponse;
 
     public EventBase(Addressable responseAddress, boolean expectsResponse) {
-        this.objectType = this.getClass().getName(); // TODO: Is reflection unnecessary here?
+        this.objectType = this.getClass().getName();
         this.responseAddress = responseAddress;
         this.expectsResponse = expectsResponse;
     }

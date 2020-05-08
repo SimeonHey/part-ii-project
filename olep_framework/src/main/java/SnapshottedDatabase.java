@@ -21,7 +21,7 @@ public abstract class SnapshottedDatabase<S> implements AutoCloseable {
 
     public final SnapshotHolder<S> getConcurrentSnapshot() {
         // First, try and re-use one from the poll, with no blocking!
-        SnapshotHolder<S> pooled = concurrentConectionsPool.poll(); // TODO: Might want to wait for a while :)
+        SnapshotHolder<S> pooled = concurrentConectionsPool.poll();
         if (pooled != null) {
             LOGGER.info("Refreshing and returning a pooled snapshot");
             return pooled.refresh(this::refreshSnapshot);

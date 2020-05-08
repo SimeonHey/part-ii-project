@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 public class ManualConsumer {
     private final static Logger LOGGER = Logger.getLogger(ManualConsumer.class.getName());
 
-    private static final long DEFAULT_BLOCK_ON_POLL_MS = 1; // TODO: Check
+    private static final long DEFAULT_BLOCK_ON_POLL_MS = 1;
 
     final List<KafkaConsumerObserver<Long, EventBase>> subscribers = new CopyOnWriteArrayList<>();
     protected Consumer<Long, EventBase> kafkaConsumer;

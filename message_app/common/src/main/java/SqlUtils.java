@@ -27,7 +27,7 @@ public class SqlUtils {
     }
 
     public static void executeStatement(String sql, Connection connection) throws SQLException {
-        LOGGER.info("Executing SQL statement " + sql); // TODO Change to length
+        LOGGER.info("Executing SQL statement " + sql);
 //        connection.setAutoCommit(true);
         Statement statement = connection.createStatement();
         statement.executeUpdate(sql);

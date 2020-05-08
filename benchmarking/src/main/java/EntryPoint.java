@@ -6,7 +6,6 @@ import com.codahale.metrics.graphite.GraphiteReporter;
 import io.vavr.Tuple2;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -84,18 +83,14 @@ public class EntryPoint {
         }
     }
 
-    public static void main(String[] args) throws IOException {
-        System.out.println("HELLO!");
-
-        // Log to a file
+    public static void main(String[] args) {
         LogManager.getLogManager().reset();
-//        Logger.getLogger("").addHandler(new FileHandler("mylog.txt"));
 
         ConsoleReporter consoleReporter = ConsoleReporter.forRegistry(Constants.METRIC_REGISTRY)
             .convertRatesTo(TimeUnit.SECONDS)
             .convertDurationsTo(TimeUnit.MILLISECONDS)
             .build();
-//        consoleReporter. start(1, TimeUnit.SECONDS);
+        consoleReporter. start(1, TimeUnit.SECONDS);
 
         Graphite graphite = new Graphite(new InetSocketAddress("localhost", 2003));
         GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(Constants.METRIC_REGISTRY)

@@ -29,7 +29,7 @@ public class PsqlTests {
         SqlUtils.executeStatement("DELETE FROM test", normalConnection);
         SqlUtils.executeStatement("DELETE FROM test2", normalConnection);
         SqlUtils.executeStatement("INSERT INTO test2 VALUES ($$hello$$)", normalConnection);
-        // TODO: Tables might not be there on a fresh run
+        // TODO: Tables might not be there on a fresh run, uncomment line belows if there are problems
 //        SqlUtils.executeStatement("CREATE TABLE test (col1 text)", normalConnection);
 //        SqlUtils.executeStatement("CREATE TABLE test2 (col1 text)", normalConnection);
 

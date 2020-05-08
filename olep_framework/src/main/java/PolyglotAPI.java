@@ -83,7 +83,6 @@ public class PolyglotAPI implements AutoCloseable {
             return kafkaRequestResponseFuture(request, responseType);
         } else {
             LOGGER.info("StorageAPI handles request " + request + " through HTTP to: " + httpFavors);
-            // TODO: This is unnecessarily ugly
             return httpFavors._2
                 .stream()
                 .map(url -> httpRequestAsyncResponseFuture(url, request, responseType))

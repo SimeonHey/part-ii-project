@@ -68,8 +68,8 @@ public class PsqlSnapshottedSystem extends SnapshottedDatabase<Connection>
         try {
             String statement = String.format("SELECT * FROM messages WHERE " +
                 "(sender=$$%s$$ AND recipient=$$%s$$) OR (sender=$$%s$$ AND recipient=$$%s$$)",
-                requestConvoMessages.getRequester(), requestConvoMessages.getWithUser(),
-                requestConvoMessages.getWithUser(), requestConvoMessages.getRequester());
+                requestConvoMessages.getUser1(), requestConvoMessages.getUser2(),
+                requestConvoMessages.getUser2(), requestConvoMessages.getUser1());
 
             try (ResultSet resultSet = SqlUtils.executeStatementForResult(statement, connection)) {
 

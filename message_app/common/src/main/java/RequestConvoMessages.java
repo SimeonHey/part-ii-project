@@ -1,21 +1,16 @@
-import java.util.logging.Logger;
-
 public class RequestConvoMessages extends EventBase {
-    private static final Logger LOGGER = Logger.getLogger(RequestConvoMessages.class.getName());
-    private final String requester;
-    private final String withUser;
+    private final String user1;
+    private final String user2;
 
-    RequestConvoMessages(Addressable addressable, String requester, String withUser) {
+    RequestConvoMessages(Addressable addressable, String user1, String user2) {
         super(addressable, true);
-        this.requester = requester;
-        this.withUser = withUser;
+        this.user1 = user1;
+        this.user2 = user2;
     }
 
-    public String getRequester() {
-        return requester;
+    public String getUser1() {
+        return user1;
     }
 
-    public String getWithUser() {
-        return withUser;
-    }
+    public String getUser2() { return user2; }
 }

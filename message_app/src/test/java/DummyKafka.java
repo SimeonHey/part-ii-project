@@ -48,8 +48,6 @@ class DummyKafka {
     }
 
     synchronized ConsumerRecords<Long, EventBase> consumeMessages(String consumerGroup) {
-        // TODO: Might want to make it thread safe
-
         int consumeFrom = getConsumeFromAndUpdateIt(consumerGroup);
         LOGGER.info("DUMMY KAFKA: " + consumerGroup + " consuming messages of length " +
             (this.records.size() - consumeFrom) + " starting from " + consumeFrom + ": " +

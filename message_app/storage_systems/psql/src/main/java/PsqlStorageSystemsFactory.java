@@ -7,10 +7,10 @@ import java.util.logging.Logger;
 public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> {
     private static final Logger LOGGER = Logger.getLogger(PsqlStorageSystemsFactory.class.getName());
 
-    private final static PsqlSnapshottedSystem wrapper = new PsqlSnapshottedSystem();
+    private final static PsqlSnapshottedSystem database = new PsqlSnapshottedSystem();
 
     public PsqlStorageSystemsFactory(int psqlListenPort) throws IOException {
-        super("psql", wrapper, psqlListenPort, (storageSystem) -> {
+        super("psql", database, psqlListenPort, (storageSystem) -> {
             var consumer = new LoopingConsumer(
                 storageSystem.fullName,
                 ConstantsMAPP.TEST_KAFKA_ADDRESS,
@@ -21,14 +21,14 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
             Executors.newFixedThreadPool(1).submit(consumer::listenBlockingly);
         });
 
-        wrapper.deleteAllMessages();
+        database.deleteAllMessages();
     }
 
     public PsqlStorageSystemsFactory(int psqlListenPort,
                                      Consumer<StorageSystem<Connection>> bootstrapProcedure) throws IOException {
         super("psql", new PsqlSnapshottedSystem(), psqlListenPort, bootstrapProcedure);
 
-        wrapper.deleteAllMessages();
+        database.deleteAllMessages();
     }
 
     @Override
@@ -41,7 +41,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.postMessage((RequestPostMessage) request);
+                    database.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -51,7 +51,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    database.deleteConvoThread((RequestDeleteConversation) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -61,7 +61,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteAllMessages();
+                    database.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
@@ -71,7 +71,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                    var dbResponse = database.getConvoMessages(snapshot,
                         (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
@@ -84,7 +84,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
+                    return new Response(database.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             .registerAction(new ActionBase<>(RequestSleep1.class, false) {
@@ -112,7 +112,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.postMessage((RequestPostMessage) request);
+                    database.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -122,7 +122,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    database.deleteConvoThread((RequestDeleteConversation) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -132,7 +132,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteAllMessages();
+                    database.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
@@ -142,7 +142,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                    var dbResponse = database.getConvoMessages(snapshot,
                         (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
@@ -155,7 +155,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
+                    return new Response(database.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             .registerAction(new ActionBase<>(RequestSleep1.class, false) {
@@ -183,7 +183,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.postMessage((RequestPostMessage) request);
+                    database.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -193,7 +193,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    database.deleteConvoThread((RequestDeleteConversation) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -204,7 +204,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteAllMessages();
+                    database.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
@@ -214,7 +214,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                    var dbResponse = database.getConvoMessages(snapshot,
                         (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
@@ -227,7 +227,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
+                    return new Response(database.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             // SEARCH AND DETAILS
@@ -241,7 +241,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                         self.waitForContact(request.getResponseAddress().getChannelID(), RequestMessageDetails.class);
 
                     // Once it does, repeat what get message details does
-                    return new Response(wrapper.getMessageDetails(snapshot, requestMessageDetails));
+                    return new Response(database.getMessageDetails(snapshot, requestMessageDetails));
                 }
             })
             .registerAction(new ActionBase<>(RequestSleep1.class, false) {
@@ -269,7 +269,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.postMessage((RequestPostMessage) request);
+                    database.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -279,7 +279,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    database.deleteConvoThread((RequestDeleteConversation) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -289,7 +289,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteAllMessages();
+                    database.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
@@ -299,7 +299,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                    var dbResponse = database.getConvoMessages(snapshot,
                         (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
@@ -312,7 +312,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
+                    return new Response(database.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             // SEARCH AND DETAILS
@@ -329,7 +329,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     LOGGER.info("Contact successful! Request is: " + requestMessageDetails);
 
                     // Once it does, repeat what get message details does
-                    var dbResponse = wrapper.getMessageDetails(snapshot, requestMessageDetails);
+                    var dbResponse = database.getMessageDetails(snapshot, requestMessageDetails);
 
                     LOGGER.info(self.fullName + ": the response from the database is: " + dbResponse);
                     return new Response(dbResponse);
@@ -360,7 +360,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.postMessage((RequestPostMessage) request);
+                    database.postMessage((RequestPostMessage) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -370,7 +370,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteConvoThread((RequestDeleteConversation) request);
+                    database.deleteConvoThread((RequestDeleteConversation) request);
                     return Response.CONFIRMATION;
                 }
             })
@@ -380,7 +380,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    wrapper.deleteAllMessages();
+                    database.deleteAllMessages();
                     return Response.CONFIRMATION;
                 }
             })
@@ -390,7 +390,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    var dbResponse = wrapper.getConvoMessages(snapshot,
+                    var dbResponse = database.getConvoMessages(snapshot,
                         (RequestConvoMessages) request);
                     LOGGER.info("Successfully executed the get all messages procedure in the wrapper; the database " +
                         "response is " + dbResponse);
@@ -403,7 +403,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                 Response handleEvent(EventBase request,
                                      StorageSystem<Connection> self,
                                      Connection snapshot) {
-                    return new Response(wrapper.getMessageDetails(snapshot, (RequestMessageDetails) request));
+                    return new Response(database.getMessageDetails(snapshot, (RequestMessageDetails) request));
                 }
             })
             // SEARCH AND DETAILS
@@ -420,7 +420,7 @@ public class PsqlStorageSystemsFactory extends StorageSystemFactory<Connection> 
                     LOGGER.info("Contact successful! Request is: " + requestMessageDetails);
 
                     // Once it does, repeat what get message details does
-                    var dbResponse = wrapper.getMessageDetails(snapshot, requestMessageDetails);
+                    var dbResponse = database.getMessageDetails(snapshot, requestMessageDetails);
 
                     LOGGER.info(self.fullName + ": the response from the database is: " + dbResponse);
                     return new Response(dbResponse);
