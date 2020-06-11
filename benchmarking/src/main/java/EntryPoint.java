@@ -17,7 +17,8 @@ public class EntryPoint {
     private static void makeItDance(LoadFaker loadFaker,
                                     Function<StorageSystemFactory, StorageSystem> factoryStrategy,
                                     List<Tuple2<String, List<String>>> httpFavoursList,
-                                    long secondsToHoldRate) {
+                                    long secondsToHoldRate,
+                                    long initialRate) {
         String selfAddress = "192.168.1.50";
         String psqlAddress = String.format("http://localhost:%d", ConstantsMAPP.PSQL_LISTEN_PORT);
 
@@ -39,7 +40,7 @@ public class EntryPoint {
                  httpFavoursList)) {
 
             System.out.println("Initialized stuff! Faking load...");
-            fakeWithLoad(loadFaker, storageApi, secondsToHoldRate);
+            fakeWithLoad(loadFaker, storageApi, secondsToHoldRate, initialRate);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -48,8 +49,9 @@ public class EntryPoint {
 
     private static void fakeWithLoad(LoadFaker loadFaker,
                                      PolyglotAPI polyglotAPI,
-                                     long secondsToHoldRate) throws InterruptedException, ExecutionException {
-        long targetRatePerSecond = 10;
+                                     long secondsToHoldRate,
+                                     long initialRate) throws InterruptedException, ExecutionException {
+        long targetRatePerSecond = initialRate;
         long nanosPerSec = 1_000_000_000;
         long nanosPerRequest = nanosPerSec / targetRatePerSecond;
         long nanosPerChange = nanosPerSec * secondsToHoldRate; // Each 60 seconds
@@ -90,7 +92,7 @@ public class EntryPoint {
             .convertRatesTo(TimeUnit.SECONDS)
             .convertDurationsTo(TimeUnit.MILLISECONDS)
             .build();
-        consoleReporter. start(1, TimeUnit.SECONDS);
+//        consoleReporter. start(1, TimeUnit.SECONDS);
 
         Graphite graphite = new Graphite(new InetSocketAddress("localhost", 2003));
         GraphiteReporter graphiteReporter = GraphiteReporter.forRegistry(Constants.METRIC_REGISTRY)
@@ -109,11 +111,11 @@ public class EntryPoint {
             .convertRatesTo(TimeUnit.SECONDS)
             .convertDurationsTo(TimeUnit.MILLISECONDS)
             .build(mine);
-        csvReporter.start(1, TimeUnit.SECONDS);
+//        csvReporter.start(1, TimeUnit.SECONDS);
 
-        makeItDance(new NoSDUniformLoadFaker(5, 200),
-            (StorageSystemFactory::simpleOlep),
-            List.of(
+        makeItDance(new UniformLoadFaker(5, 200),
+            (StorageSystemFactory::concurReads),
+            List.of(/*
                 new Tuple2<>(RequestConvoMessages.class.getName(), List.of(
                     ConstantsMAPP.TEST_PSQL_REQUEST_ADDRESS)),
                 new Tuple2<>(RequestMessageDetails.class.getName(), List.of(
@@ -122,7 +124,7 @@ public class EntryPoint {
                     ConstantsMAPP.TEST_LUCENE_REQUEST_ADDRESS)),
                 new Tuple2<>(RequestGetTotalNumberOfMessages.class.getName(), List.of(
                     ConstantsMAPP.TEST_VAVR_REQUEST_ADDRESS))
-                    ),
-            120L);
+                    */),
+            120L, 50);
     }
 }

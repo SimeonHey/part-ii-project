@@ -134,16 +134,12 @@ public class FullSystemTest {
     public void searchAndDetailsSnapshotIsolated() throws Exception {
         TestUtils.ManualTrinity manualTrinity = TestUtils.manualConsumerInitialization();
         PolyglotAPI polyglotAPI = manualTrinity.polyglotAPI;
-        // Consume the NOP operation and make sure that they can communicate through Kafka
-//            assertEquals(1, manualTrinity.progressLucene());
-//            assertEquals(1, manualTrinity.progressPsql());
 
         Message simeonHey = new Message("Simeon", "Bobi", "Hey", timestamp);
-
+        Message other = new Message("Simeon", "Bobi", "What's up", timestamp);
         polyglotAPI.handleRequest(new RequestPostMessage(new Addressable(polyglotAPI.getResponseAddress()),
             simeonHey));
-        polyglotAPI.handleRequest(new RequestPostMessage(new Addressable(polyglotAPI.getResponseAddress()),
-            new Message("Simeon", "Bobi", "What's up", timestamp)));
+        polyglotAPI.handleRequest(new RequestPostMessage(new Addressable(polyglotAPI.getResponseAddress()), other));
 
         // Post the messages
         assertEquals(2, manualTrinity.progressLucene());

@@ -20,6 +20,7 @@ rootProject.name = 'part-ii-project'
 include 'olep_framework'
 //include 'olep_framework:metrics'
 
+include 'notes_listener'
 
 include 'message_app'
 include 'message_app:common'

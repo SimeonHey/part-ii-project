@@ -77,9 +77,13 @@ public class HttpUtils {
         }
     }
 
-    static HttpServer initHttpServer(int onPort) throws IOException {
-        HttpServer httpServer =
-            HttpServer.create(new InetSocketAddress(onPort), 0);
+    static HttpServer initHttpServer(int onPort) {
+        HttpServer httpServer;
+        try {
+            httpServer = HttpServer.create(new InetSocketAddress(onPort), 0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         httpServer.setExecutor(null);
         httpServer.start();
 

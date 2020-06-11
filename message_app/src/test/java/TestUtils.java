@@ -10,7 +10,7 @@ class TestUtils {
     private static ManualTrinity savedInstanceManual;
 
     private final static Function<StorageSystemFactory, StorageSystem> storageSystemStrategy =
-        (StorageSystemFactory::simpleOlep);
+        (StorageSystemFactory::concurReads);
 
     private static class Trinity implements AutoCloseable{
         public final StorageSystem psqlStorageSystem;

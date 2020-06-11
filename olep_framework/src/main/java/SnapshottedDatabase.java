@@ -10,7 +10,7 @@ public abstract class SnapshottedDatabase<S> implements AutoCloseable {
     private final BlockingQueue<SnapshotHolder<S>> concurrentConectionsPool;
 
     protected SnapshottedDatabase(int maxSnapshots) {
-        this.concurrentConectionsPool = new LinkedBlockingDeque<>(maxSnapshots);
+        this.concurrentConectionsPool = maxSnapshots > 0 ? new LinkedBlockingDeque<>(maxSnapshots) : null;
         this.snapshotsSemaphore = new Semaphore(maxSnapshots);
     }
 

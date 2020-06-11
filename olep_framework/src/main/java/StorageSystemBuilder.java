@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -31,7 +30,7 @@ public class StorageSystemBuilder<Snap> implements AutoCloseable {
     public StorageSystemBuilder(String fullName,
                                 SnapshottedDatabase<Snap> wrapper,
                                 int httpListenPort,
-                                String[] addressTopic) throws IOException {
+                                String[] addressTopic) {
         this.fullName = fullName;
         this.httpStorageSystem = new HttpStorageSystem(fullName, HttpUtils.initHttpServer(httpListenPort));
         this.wrapper = wrapper;
